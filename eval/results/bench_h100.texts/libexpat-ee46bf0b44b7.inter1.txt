@@ -1,0 +1,50 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
++ #undef MAX_ALLOC_COUNT
+
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+END_TEST *
+make_suite(void) {
+  TCase *tc_alloc = tcase_create("allocation tests");
++ tcase_add_test(tc_alloc, test_alloc_attribute_whitespace);
+}
+
+
+==== Cross-function context ====
+
+-- called function: tcase_create — expat/tests/minicheck.c:26 [gtags_unique] --
+TCase * tcase_create(const char *name) {
+   TCase *tc =(TCase *)calloc(1, sizeof(TCase));
+   if(tc != NULL) {
+     tc->name = name;
+   }
+   return tc;
+}
+   [reads: name; writes: -]
+
+-- called function: tcase_add_test — expat/tests/minicheck.c:57 [gtags_unique, new version] --
+void tcase_add_test(TCase *tc, tcase_test_function test) {
+   assert(tc != NULL);
+   if(tc->allocated == tc->ntests) {
+     int nalloc = tc->allocated + 100;
+     size_t new_size = sizeof(tcase_test_function)* nalloc;
+     tcase_test_function *new_tests = realloc(tc->tests, new_size);
+     assert(new_tests != NULL);
+     tc->tests = new_tests;
+     tc->allocated = nalloc;
+   }
+   tc->tests[tc->ntests] = test;
+   tc->ntests++;
+}
+   [reads: tc, test; writes: tc*]
+
+-- caller of make_suite: main — expat/tests/runtests.c:8349 --
+int main(int argc, char *argv[]) {
+   ...
+>  Suite *s = make_suite();
+   SRunner *sr = srunner_create(s);
+   ...
+   srunner_run_all(sr, verbosity);
+   nf = srunner_ntests_failed(sr);
+   srunner_free(sr);
+   return(nf == 0)? EXIT_SUCCESS : EXIT_FAILURE;
+}

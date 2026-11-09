@@ -1,0 +1,53 @@
+Context for merged statement of old file: gzguts.h with new file: gzguts.h:
++ #ifdef EAGAIN
++ #ifdef EWOULDBLOCK
++ # define BLOCKED(e)((e)== EAGAIN ||(e)== EWOULDBLOCK)
+  #else
++ # define BLOCKED(e)((e)== EAGAIN)
+  #endif
+  #else
++ #ifdef EWOULDBLOCK
++ # define BLOCKED(e)((e)== EWOULDBLOCK)
+  #else
++ # define BLOCKED(e)(0)
+  #endif
+  #endif
+
+Context for merged statement of old file: gzread.c with new file: gzread.c:
+local gz_load(gz_statep state, unsigned char *buf, unsigned len,
+                  unsigned *have) {
+  errno = 0;
+  if (ret < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  return 0;
+  }
+  }
+}
+
+Context for merged statement of old file: gzwrite.c with new file: gzwrite.c:
+local gz_comp(gz_statep state, int flush) {
+  if (state->direct) {
+  while ((strm->avail_in)) {
+  errno = 0;
+  if (writ < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  }
+  }
+  }
+  }
+  do {
+  if (strm->avail_out == 0 ||(flush != Z_NO_FLUSH &&(flush != Z_FINISH || ret == Z_STREAM_END))) {
+  while ((strm->next_out > state->x.next)) {
+  errno = 0;
+  if (writ < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  }
+  }
+  }
+  }
+  } while ((have));
+}
+

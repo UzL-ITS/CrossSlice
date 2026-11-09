@@ -1,0 +1,275 @@
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmGetExternalsFromFile (
+    void) {
+  FILE *ExternalRefFile;
+  ExternalRefFile = fopen(Gbl_ExternalRefFilename, "r");
+- while ((fgets(StringBuffer, ASL_MSG_BUFFER_SIZE, ExternalRefFile))) {
++ while ((fgets(StringBuffer, ASL_STRING_BUFFER_SIZE, ExternalRefFile))) {
+  Token = strtok(StringBuffer, METHOD_SEPARATORS);
+  if (!Token) {
+  }
+  if (strcmp(Token, "External")) {
+  }
+  if (!Token) {
+  }
+  if (strcmp(Token, "MethodObj")) {
+  }
+  if (!Token) {
+  }
+  ArgCount = strtoul(Token, NULL, 0);
+  if (errno) {
+  fprintf(stderr, "Invalid argument count(%s)\n", Token);
+  }
+  if (ArgCount > 7) {
+  fprintf(stderr, "Invalid argument count(%u)\n", ArgCount);
+  }
+  AcpiOsPrintf("%s: Importing method external(%u arguments)%s\n", Gbl_ExternalRefFilename, ArgCount, MethodName);
+  AcpiDmAddPathToExternalList(MethodName, ACPI_TYPE_METHOD, ArgCount, (ACPI_EXT_RESOLVED_REFERENCE | ACPI_EXT_ORIGIN_FROM_FILE));
+  }
+}
+
+Context for merged statement of old file: source/compiler/aslglobal.h with new file: source/compiler/aslglobal.h:
+#ifndef __ASLGLOBAL_H
++ #define ASL_MSG_BUFFER_SIZE(1024 * 128)
+- #define ASL_MSG_BUFFER_SIZE(1024 * 32)
++ #define ASL_STRING_BUFFER_SIZE(1024 * 32)
+- ASL_EXTERN char
+  ASL_EXTERN char
++ ASL_EXTERN char
+- ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
++ ASL_EXTERN UINT32
+- ASL_EXTERN ASL_ERROR_MSG
+  ASL_EXTERN ASL_ERROR_MSG
++ ASL_EXTERN ASL_ERROR_MSG
+  ASL_EXTERN char *Gbl_DirectoryPath;
+- ASL_EXTERN char
+  ASL_EXTERN char
++ ASL_EXTERN char
+  ASL_EXTERN char *Gbl_CurrentInputFilename;
+- ASL_EXTERN char
+  ASL_EXTERN char
++ ASL_EXTERN char
+- ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
++ ASL_EXTERN UINT32
+- ASL_EXTERN ACPI_PARSE_OBJECT
+  ASL_EXTERN ACPI_PARSE_OBJECT
+- ASL_EXTERN UINT32
++ ASL_EXTERN ACPI_PARSE_OBJECT
+  ASL_EXTERN UINT32
++ ASL_EXTERN UINT32
+- ASL_EXTERN char
+  ASL_EXTERN char
++ ASL_EXTERN char
+- ASL_EXTERN UINT8
+  ASL_EXTERN UINT8
+- ASL_EXTERN ACPI_PARSE_OBJECT
++ ASL_EXTERN UINT8
+  ASL_EXTERN ACPI_PARSE_OBJECT
+- ASL_EXTERN UINT32
++ ASL_EXTERN ACPI_PARSE_OBJECT
+  ASL_EXTERN UINT32
++ ASL_EXTERN UINT32
+  ASL_EXTERN char
+- ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
++ ASL_EXTERN UINT32
+  ASL_EXTERN UINT8 ASL_INIT_GLOBAL(Gbl_HexBytesWereWritten, FALSE);
+- ASL_EXTERN UINT32
+  ASL_EXTERN UINT32
+- ASL_EXTERN char
++ ASL_EXTERN UINT32
+  ASL_EXTERN char
++ ASL_EXTERN char
+- ASL_EXTERN ACPI_COMMENT_NODE
+  ASL_EXTERN ACPI_COMMENT_NODE
++ ASL_EXTERN ACPI_COMMENT_NODE
+  ASL_EXTERN char
+  ASL_EXTERN UINT8 AslGbl_NextEvent;
+  ASL_EXTERN UINT8 AslGbl_NamespaceEvent;
+  ASL_EXTERN UINT8 Gbl_AmlBuffer[HEX_LISTING_LINE_SIZE];
+  ASL_EXTERN char MsgBuffer[ASL_MSG_BUFFER_SIZE];
+- ASL_EXTERN char StringBuffer[ASL_MSG_BUFFER_SIZE];
++ ASL_EXTERN char StringBuffer[ASL_STRING_BUFFER_SIZE];
+- ASL_EXTERN char StringBuffer2[ASL_MSG_BUFFER_SIZE];
++ ASL_EXTERN char StringBuffer2[ASL_STRING_BUFFER_SIZE];
+  ASL_EXTERN UINT32 Gbl_DisabledMessages[ASL_MAX_DISABLED_MESSAGES];
+  #endif
+
+Context for merged statement of old file: source/compiler/asloptions.c with new file: source/compiler/asloptions.c:
+int AslDoResponseFile (
+    char                    *Filename) {
+  FILE *ResponseFile;
+  ResponseFile = fopen(Filename, "r");
+- while ((fgets(StringBuffer, ASL_MSG_BUFFER_SIZE, ResponseFile))) {
++ while ((fgets(StringBuffer, ASL_STRING_BUFFER_SIZE, ResponseFile))) {
+  AslMergeOptionTokens(StringBuffer, StringBuffer2);
+  if (OptStatus) {
+  printf("Invalid option in command file %s: %s\n", Filename, StringBuffer);
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ASL_INIT_GLOBAL — source/compiler/aslglobal.h:167 [priority_fallback] --
+#define ASL_INIT_GLOBAL(a,b)        (a)
+
+-- called function: AcpiDmAddPathToExternalList — source/common/dmextern.c:895 [gtags_unique] --
+static void AcpiDmAddPathToExternalList ( char                    *Path, UINT8                   Type, UINT32                  Value, UINT16                  Flags) {
+   char *InternalPath;
+   char *ExternalPath;
+   ...
+   if(!Path) {
+   ...
+   }
+   if((*Path == AML_ROOT_PREFIX)&&(Path[1])) {
+     Path++;
+   }
+   Status = AcpiNsInternalizeName(Path, &InternalPath);
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   Status = AcpiDmCreateNewExternal(ExternalPath, InternalPath, Type, Value, (Flags | ACPI_EXT_INTERNAL_PATH_ALLOCATED));
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+}
+   [reads: Flags, Path, Type, Value; writes: -]
+
+-- called function: strtoul — source/components/utilities/utclib.c:803 [priority_fallback] --
+UINT32 strtoul ( const char              *String, char                    **Terminator, UINT32                  Base) {
+   UINT32 converted = 0;
+   UINT32 index;
+   ...
+   UINT32 ReturnValue = 0;
+   ...
+   StringStart = String;
+   while(isspace(*String)|| *String == '\t') {
+     ++String;
+   }
+   if(*String == '-') {
+   ...
+     ++String;
+   } else if(*String == '+') {
+     ++String;
+   ...
+   } else {
+   }
+   ...
+   if(Base == 0) {
+     if(*String == '0') {
+       if(tolower(*(++String))== 'x') {
+         Base = 16;
+         ++String;
+       } else {
+         Base = 8;
+       }
+     } else {
+       Base = 10;
+     }
+   } else
+   ...
+     if(Base == 8 && *String == '0') {
+       String++;
+     }
+   if(Base == 16 && *String == '0' && tolower(*(++String))== 'x') {
+     String++;
+   }
+   while(*String) {
+     if(isdigit(*String)) {
+       index =(UINT32)((UINT8)*String - '0');
+     } else {
+       index =(UINT32)toupper(*String);
+       if(isupper(index)) {
+         index = index - 'A' + 10;
+   ...
+       } else {
+       }
+     }
+     if(index >= Base) {
+   ...
+     }
+     if(ReturnValue >((ACPI_UINT32_MAX -(UINT32)index)/(UINT32)Base)) {
+   ...
+       ReturnValue = 0;
+     } else {
+       ReturnValue *= Base;
+       ReturnValue += index;
+       converted = 1;
+     }
+     ++String;
+   }
+   ...
+   if(Terminator) {
+     if(converted == 0 && ReturnValue == 0 && String != NULL) {
+       *Terminator =(char *)StringStart;
+     } else {
+       *Terminator =(char *)String;
+     }
+   }
+   if(Status == AE_ERROR) {
+     ReturnValue = ACPI_UINT32_MAX;
+   }
+   if(sign == ACPI_SIGN_NEGATIVE) {
+     ReturnValue =(ACPI_UINT32_MAX - ReturnValue)+ 1;
+   }
+   return(ReturnValue);
+}
+   [reads: Base, String, Terminator; writes: Terminator*]
+
+-- called macro: ASL_STRING_BUFFER_SIZE — source/compiler/aslglobal.h:255 [gtags_unique, new version] --
+#define ASL_STRING_BUFFER_SIZE          (1024 * 32) /* 32k */
+
+-- called function: AslMergeOptionTokens — source/compiler/asloptions.c:1024 [gtags_unique, new version] --
+static void AslMergeOptionTokens ( char                    *InBuffer, char                    *OutBuffer) {
+   char *Token;
+   *OutBuffer = 0;
+   Token = strtok(InBuffer, ASL_TOKEN_SEPARATORS);
+   while(Token) {
+     strcat(OutBuffer, Token);
+   ...
+   }
+}
+   [reads: InBuffer, OutBuffer; writes: OutBuffer*]
+
+-- caller of AcpiDmGetExternalsFromFile: AdDoExternalFileList — source/common/adisasm.c:803 --
+static ACPI_STATUS AdDoExternalFileList ( char                    *Filename) {
+   ...
+>  AcpiDmGetExternalsFromFile();
+   ...
+}
+
+-- caller of AslDoResponseFile: AslDoOptions — source/compiler/asloptions.c:288 --
+static int AslDoOptions ( int                     argc, char                    **argv, BOOLEAN                 IsResponseFile) {
+   ...
+   while((j = AcpiGetopt(argc, argv, ASL_SUPPORTED_OPTIONS))!= ACPI_OPT_END)
+     switch(j) {
+   ...
+>      if(AslDoResponseFile(AcpiGbl_Optarg)) {
+   ...
+       }
+     }
+}

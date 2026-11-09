@@ -1,0 +1,141 @@
+Context for merged statement of old file: source/components/disassembler/dmresrc.c with new file: source/components/disassembler/dmresrc.c:
+ACPI_STATUS AcpiDmIsResourceTemplate (
+    ACPI_WALK_STATE         *WalkState,
+    ACPI_PARSE_OBJECT       *Op) {
+  ACPI_PARSE_OBJECT *NextOp;
+  UINT8 *Aml;
+  UINT8 *EndAml;
+  ACPI_SIZE Length;
+  NextOp = Op->Common.Value.Arg;
+  NextOp = NextOp->Common.Next;
+  Aml = NextOp->Named.Data;
+  Length =(ACPI_SIZE)NextOp->Common.Value.Integer;
+- Status = AcpiUtWalkAmlResources(WalkState, Aml, Length, NULL, (void **)&EndAml);
++ Status = AcpiUtWalkAmlResources(WalkState, Aml, Length, NULL, ACPI_CAST_INDIRECT_PTR(void, &EndAml));
+  if (ACPI_FAILURE(Status)) {
+  return(AE_TYPE);
+  }
+}
+
+Context for merged statement of old file: source/include/acglobal.h with new file: source/include/acglobal.h:
+#ifndef __ACGLOBAL_H__
+   #ifdef ACPI_DISASSEMBLER
+- BOOLEAN ACPI_INIT_GLOBAL(AcpiGbl_IgnoreNoopOperator, FALSE);
++ ACPI_EXTERN BOOLEAN ACPI_INIT_GLOBAL(AcpiGbl_IgnoreNoopOperator, FALSE);
+  #endif
+  #endif
+
+
+==== Cross-function context ====
+
+-- called function: AcpiUtWalkAmlResources — source/components/utilities/utresrc.c:525 [gtags_unique] --
+ACPI_STATUS AcpiUtWalkAmlResources ( ACPI_WALK_STATE         *WalkState, UINT8                   *Aml, ACPI_SIZE               AmlLength, ACPI_WALK_AML_CALLBACK  UserFunction, void {
+   ...
+   UINT8 *EndAml;
+   UINT8 ResourceIndex;
+   UINT32 Length;
+   UINT32 Offset = 0;
+   UINT8 EndTag[2] = {0x79, 0x00};
+   ...
+   if(AmlLength < sizeof(AML_RESOURCE_END_TAG)) {
+   ...
+   }
+   EndAml = Aml + AmlLength;
+   while(Aml < EndAml) {
+     Status = AcpiUtValidateResource(WalkState, Aml, &ResourceIndex);
+     if(ACPI_FAILURE(Status)) {
+       return_ACPI_STATUS(Status);
+     }
+     Length = AcpiUtGetDescriptorLength(Aml);
+     if(UserFunction) {
+       Status = UserFunction(Aml, Length, Offset, ResourceIndex, Context);
+       if(ACPI_FAILURE(Status)) {
+         return_ACPI_STATUS(Status);
+       }
+     }
+     if(AcpiUtGetResourceType(Aml)== ACPI_RESOURCE_NAME_END_TAG) {
+       if((Aml + 1)>= EndAml) {
+   ...
+       }
+       if(!UserFunction) {
+         *Context = Aml;
+   ...
+       }
+     }
+     Aml += Length;
+     Offset += Length;
+   }
+   if(UserFunction) {
+     (void)AcpiUtValidateResource(WalkState, EndTag, &ResourceIndex);
+     Status = UserFunction(EndTag, 2, Offset, ResourceIndex, Context);
+     if(ACPI_FAILURE(Status)) {
+       return_ACPI_STATUS(Status);
+   ...
+     }
+   }
+}
+   [reads: Aml, AmlLength, Context, UserFunction, WalkState; writes: Context*]
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:133 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called macro: ACPI_CAST_INDIRECT_PTR — source/include/actypes.h:533 [gtags_unique, new version] --
+#define ACPI_CAST_INDIRECT_PTR(t, p)    ((t **) (ACPI_UINTPTR_T) (p))
+
+-- called macro: ACPI_DISASSEMBLER — source/include/platform/acenv.h:206 [priority_fallback, new version] --
+#define ACPI_DISASSEMBLER
+
+-- called macro: ACPI_INIT_GLOBAL — source/include/acglobal.h:128 [priority_fallback, new version] --
+#define ACPI_INIT_GLOBAL(a,b) a=b
+
+-- caller of AcpiDmIsResourceTemplate: AcpiDmFindResources — source/common/dmrestag.c:1013 --
+void AcpiDmFindResources ( ACPI_PARSE_OBJECT       *Root) {
+   ACPI_PARSE_OBJECT *Op = Root;
+   ...
+   while(Op) {
+     if(Op->Common.AmlOpcode == AML_BUFFER_OP) {
+   ...
+       if(Parent->Common.AmlOpcode == AML_NAME_OP) {
+>        if(ACPI_SUCCESS(AcpiDmIsResourceTemplate(NULL, Op))) {
+   ...
+         }
+       }
+     }
+   }
+}
+
+-- caller of AcpiDmIsResourceTemplate: AcpiDmDisassembleOneOp — source/components/disassembler/dmopcode.c:720 --
+void AcpiDmDisassembleOneOp ( ACPI_WALK_STATE         *WalkState, ACPI_OP_WALK_INFO       *Info, ACPI_PARSE_OBJECT       *Op) {
+   ...
+   switch(Op->Common.DisasmOpcode) {
+   ...
+     Op->Common.DisasmOpcode = 0;
+     Op->Common.DisasmFlags |= ACPI_PARSEOP_IGNORE;
+   ...
+   }
+   ...
+   switch(Op->Common.AmlOpcode) {
+   ...
+     if((Child->Common.AmlOpcode == AML_LEQUAL_OP)||(Child->Common.AmlOpcode == AML_LGREATER_OP)||(Child->Common.AmlOpcode == AML_LLESS_OP)) {
+   ...
+       Op->Common.DisasmOpcode = ACPI_DASM_LNOT_PREFIX;
+     } else {
+     }
+   ...
+     if(!AcpiGbl_NoResourceDisassembly) {
+>      Status = AcpiDmIsResourceTemplate(WalkState, Op);
+       if(ACPI_SUCCESS(Status)) {
+   ...
+       } else if(Status == AE_AML_NO_RESOURCE_END_TAG) {
+   ...
+       }
+     }
+   }
+}
+
+-- 2nd-level context (summaries) --
+  AcpiUtValidateResource — source/components/utilities/utresrc.c:650 [gtags_unique]: ACPI_STATUS AcpiUtValidateResource ( ACPI_WALK_STATE         *WalkState, void                    *Aml, UINT8                   *ReturnIndex)
+    reads: Aml, ReturnIndex, WalkState; writes: ReturnIndex*
+  return_ACPI_STATUS — source/include/acoutput.h:510 [lsp]: #define return_ACPI_STATUS(s)           return(s)
+  AcpiUtGetDescriptorLength — source/components/utilities/utresrc.c:942 [gtags_unique]: UINT32 AcpiUtGetDescriptorLength ( void                    *Aml)
+    reads: Aml; writes: -

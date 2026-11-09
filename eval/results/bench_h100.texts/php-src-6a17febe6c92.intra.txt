@@ -1,0 +1,32 @@
+Context for merged statement of old file: Zend/zend_compile.c with new file: Zend/zend_compile.c:
+zend_result zend_compile_func_array_map(znode *result, zend_ast_list *args, zend_string *lcname, uint32_t lineno) {
+  zend_ast *callback = args->child[0];
+  zend_ast *args_ast;
+  switch ((callback->kind)) {
+  args_ast = zend_ast_call_get_args(callback);
+  }
+- if (callback->kind == ZEND_AST_CALL && zend_string_equals_literal_ci(zend_ast_get_str(callback->child[0]), "assert")) {
++ if (callback->kind == ZEND_AST_CALL && callback->child[0]->kind == ZEND_AST_ZVAL && Z_TYPE_P(zend_ast_get_zval(callback->child[0]))== IS_STRING && zend_string_equals_literal_ci(zend_ast_get_str(callback->child[0]), "assert")) {
+  return FAILURE;
+  }
++ zend_ast_list *callback_args = zend_ast_get_list(((zend_ast_fcc*)args_ast)->args);
+- if (child->kind == ZEND_AST_PLACEHOLDER_ARG) {
++ if (callback_args->children != 1 || callback_args->child[0]->attr != ZEND_PLACEHOLDER_VARIADIC) {
+- call_args = zend_ast_list_add(call_args, zend_ast_create_znode(&value));
++ return FAILURE;
+  }
+- else { ZEND_ASSERT(0 && "not implemented"); call_args = zend_ast_list_add(call_args, child); }
+  znode value;
+  value.op_type = IS_TMP_VAR;
+  value.u.op.var = get_temporary_variable();
+- zend_ast_list *callback_args = zend_ast_get_list(((zend_ast_fcc*)args_ast)->args);
+- zend_ast *call_args = zend_ast_create_list(0, ZEND_AST_ARG_LIST);
++ zend_ast *call_args = zend_ast_create_list(1, ZEND_AST_ARG_LIST, zend_ast_create_znode(&value));
+  for (uint32_t i = 0;; i < callback_args->children; i++) {
+  }
+  switch ((callback->kind)) {
+  zend_compile_expr(&call_result, zend_ast_create(ZEND_AST_CALL, callback->child[0], call_args));
+  zend_compile_expr(&call_result, zend_ast_create(ZEND_AST_STATIC_CALL, callback->child[0], callback->child[1], call_args));
+  }
+}
+

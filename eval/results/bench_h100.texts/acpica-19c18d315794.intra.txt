@@ -1,0 +1,324 @@
+Context for merged statement of old file: source/common/dmrestag.c with new file: source/common/dmrestag.c:
+char *
+AcpiGetTagPathname (
+    ACPI_PARSE_OBJECT       *IndexOp,
+    ACPI_NAMESPACE_NODE     *BufferNode,
+    ACPI_NAMESPACE_NODE     *ResourceNode,
+    UINT32                  BitIndex) {
+  UINT32 ResourceBitIndex;
+  UINT8 ResourceTableIndex;
+  ACPI_SIZE RequiredSize;
+  char *Pathname;
+  char *PathnameEnd;
+  AML_RESOURCE *Aml;
+  ACPI_PARSE_OBJECT *Op;
+  char *Tag;
+  Op = BufferNode->Op->Common.Value.Arg;
+  Op = Op->Common.Next;
+  Aml = ACPI_CAST_PTR(AML_RESOURCE, &Op->Named.Data[ResourceNode->Value]);
+  ResourceBitIndex = BitIndex - ACPI_MUL_8(ResourceNode->Value);
+  Tag = AcpiDmGetResourceTag(ResourceBitIndex, Aml, ResourceTableIndex);
+  RequiredSize = AcpiNsBuildNormalizedPath(BufferNode, NULL, 0, FALSE);
+  Pathname = ACPI_ALLOCATE_ZEROED(RequiredSize + ACPI_PATH_SEGMENT_LENGTH);
+  PathnameEnd = Pathname +(RequiredSize - ACPI_NAME_SIZE - 1);
+- ACPI_MOVE_NAME(PathnameEnd, ResourceNode->Name.Ascii);
++ ACPI_COPY_NAMESEG(PathnameEnd, ResourceNode->Name.Ascii);
+  PathnameEnd += ACPI_NAME_SIZE;
+  *PathnameEnd = '.';
+  PathnameEnd++;
+- ACPI_MOVE_NAME(PathnameEnd, Tag);
++ ACPI_COPY_NAMESEG(PathnameEnd, Tag);
+}
+
+Context for merged statement of old file: source/compiler/aslcodegen.c with new file: source/compiler/aslcodegen.c:
+void CgWriteTableHeader (
+    ACPI_PARSE_OBJECT       *Op) {
+  ACPI_PARSE_OBJECT *Child;
+  memset(&AslGbl_TableHeader, 0, sizeof(ACPI_TABLE_HEADER));
+  Child = Op->Asl.Child;
+  Child = Child->Asl.Next;
+  if (AcpiGbl_CaptureComments) {
+- ACPI_MOVE_NAME(AcpiGbl_TableSig, Child->Asl.Value.String);
++ ACPI_COPY_NAMESEG(AcpiGbl_TableSig, Child->Asl.Value.String);
+  Child->Asl.Value.String = ACPI_SIG_XXXX;
+  }
+- ACPI_MOVE_NAME(AslGbl_TableHeader.Signature, Child->Asl.Value.String);
++ ACPI_COPY_NAMESEG(AslGbl_TableHeader.Signature, Child->Asl.Value.String);
+- ACPI_MOVE_NAME(AslGbl_TableHeader.AslCompilerId, ASL_CREATOR_ID);
++ ACPI_COPY_NAMESEG(AslGbl_TableHeader.AslCompilerId, ASL_CREATOR_ID);
+}
+
+Context for merged statement of old file: source/compiler/aslutils.c with new file: source/compiler/aslutils.c:
+void UtAttachNameseg (
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *Name) {
+  char PaddedNameSeg[4];
+- ACPI_MOVE_NAME(Op->Asl.NameSeg, PaddedNameSeg);
++ ACPI_COPY_NAMESEG(Op->Asl.NameSeg, PaddedNameSeg);
+}
+
+Context for merged statement of old file: source/components/namespace/nsnames.c with new file: source/components/namespace/nsnames.c:
+ACPI_STATUS AcpiNsHandleToName (
+    ACPI_HANDLE             TargetHandle,
+    ACPI_BUFFER             *Buffer) {
+  ACPI_NAMESPACE_NODE *Node;
+  const char *NodeName;
+  Node = AcpiNsValidateHandle(TargetHandle);
+  NodeName = AcpiUtGetNodeName(Node);
+- ACPI_MOVE_NAME(Buffer->Pointer, NodeName);
++ ACPI_COPY_NAMESEG(Buffer->Pointer, NodeName);
+}
+
+Context for merged statement of old file: source/components/namespace/nsutils.c with new file: source/components/namespace/nsutils.c:
+ACPI_STATUS AcpiNsExternalizeName (
+    UINT32                  InternalNameLength,
+    const char              *InternalName,
+    UINT32                  *ConvertedNameLength,
+    char                    **ConvertedName) {
+  UINT32 NamesIndex = 0;
+  UINT32 NumSegments = 0;
+  UINT32 RequiredLength;
+  UINT32 PrefixLength = 0;
+  UINT32 i = 0;
+  UINT32 j = 0;
+  switch ((InternalName[0])) {
+  PrefixLength = 1;
+  for (i = 0; i < InternalNameLength; i++) {
+  if (ACPI_IS_PARENT_PREFIX(InternalName[i])) {
+  PrefixLength = i + 1;
+  }
+  }
+  if (i == InternalNameLength) {
+  PrefixLength = i;
+  }
+  }
+  if (PrefixLength < InternalNameLength) {
+  switch ((InternalName[PrefixLength])) {
+  NamesIndex = PrefixLength + 2;
+  NumSegments =(UINT8)InternalName[(ACPI_SIZE)PrefixLength + 1];
+  NamesIndex = PrefixLength + 1;
+  NumSegments = 2;
+  NamesIndex = 0;
+  NumSegments = 0;
+  NamesIndex = PrefixLength;
+  NumSegments = 1;
+  }
+  }
+  RequiredLength = PrefixLength +(4 * NumSegments)+((NumSegments > 0)?(NumSegments - 1): 0)+ 1;
+  *ConvertedName = ACPI_ALLOCATE_ZEROED(RequiredLength);
+  j = 0;
+  for (i = 0; i < PrefixLength; i++) {
+  (*ConvertedName)[j++] = InternalName[i];
+  }
+  if (NumSegments > 0) {
+  for (i = 0; i < NumSegments; i++) {
+  if (i > 0) {
+  (*ConvertedName)[j++] = '.';
+  }
+- ACPI_MOVE_NAME(&(*ConvertedName)[j], &InternalName[NamesIndex]);
++ ACPI_COPY_NAMESEG(&(*ConvertedName)[j], &InternalName[NamesIndex]);
+  }
+  }
+}
+
+Context for merged statement of old file: source/components/tables/tbfind.c with new file: source/components/tables/tbfind.c:
+ACPI_STATUS AcpiTbFindTable (
+    char                    *Signature,
+    char                    *OemId,
+    char                    *OemTableId,
+    UINT32                  *TableIndex) {
+  ACPI_TABLE_HEADER Header;
+  memset(&Header, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(Header.Signature, Signature);
++ ACPI_COPY_NAMESEG(Header.Signature, Signature);
+}
+
+Context for merged statement of old file: source/components/utilities/utstring.c with new file: source/components/utilities/utstring.c:
+void AcpiUtRepairName (
+    char                    *Name) {
+  UINT32 OriginalName;
+- ACPI_MOVE_NAME(&OriginalName, Name);
++ ACPI_COPY_NAMESEG(&OriginalName, Name);
+}
+
+Context for merged statement of old file: source/include/actypes.h with new file: source/include/actypes.h:
+#ifndef __ACTYPES_H__
+   #ifndef ACPI_MISALIGNMENT_NOT_SUPPORTED
+- #define ACPI_MOVE_NAME(dest, src)(*ACPI_CAST_PTR(UINT32, (dest))= *ACPI_CAST_PTR(UINT32, (src)))
++ #define ACPI_COPY_NAMESEG(dest, src)(*ACPI_CAST_PTR(UINT32, (dest))= *ACPI_CAST_PTR(UINT32, (src)))
+  #else
+- #define ACPI_MOVE_NAME(dest, src)(strncpy(ACPI_CAST_PTR(char, (dest)), ACPI_CAST_PTR(char, (src)), ACPI_NAME_SIZE))
++ #define ACPI_COPY_NAMESEG(dest, src)(strncpy(ACPI_CAST_PTR(char, (dest)), ACPI_CAST_PTR(char, (src)), ACPI_NAME_SIZE))
+  #endif
+  #endif
+
+Context for merged statement of old file: source/os_specific/efi/osefitbl.c with new file: source/os_specific/efi/osefitbl.c:
+ACPI_STATUS OslAddTableToList (
+    char                    *Signature,
+    UINT32                  Instance) {
+  OSL_TABLE_INFO *NewInfo;
+  NewInfo = ACPI_ALLOCATE_ZEROED(sizeof(OSL_TABLE_INFO));
+- ACPI_MOVE_NAME(NewInfo->Signature, Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Signature);
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/osbsdtbl.c with new file: source/os_specific/service_layers/osbsdtbl.c:
+ACPI_STATUS OslAddTablesToList(
+    void) {
+  ACPI_PHYSICAL_ADDRESS TableAddress;
+  OSL_TABLE_INFO *NewInfo;
+  ACPI_TABLE_HEADER *Table;
+  UINT8 NumberOfTables;
+  int i;
+  for (i = 0; i < 4; i++) {
+  NewInfo = calloc(1, sizeof(*NewInfo));
+  switch ((i)) {
+  Gbl_TableListHead = Info = NewInfo;
+  case 1:
+- ACPI_MOVE_NAME(NewInfo->Signature, Gbl_Revision ? ACPI_SIG_XSDT : ACPI_SIG_RSDT);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Gbl_Revision ? ACPI_SIG_XSDT : ACPI_SIG_RSDT);
+  case 2:
+- ACPI_MOVE_NAME(NewInfo->Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, ACPI_SIG_FACS);
+   default:
+- ACPI_MOVE_NAME(NewInfo->Signature, ACPI_SIG_DSDT);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, ACPI_SIG_DSDT);
+  }
+  Gbl_TableListHead->Instance++;
+  }
+  if (Gbl_Revision) {
+  NumberOfTables =(Gbl_Xsdt->Header.Length - sizeof(Gbl_Xsdt->Header))/ sizeof(Gbl_Xsdt->TableOffsetEntry[0]);
+  }
+  else {
+  NumberOfTables =(Gbl_Rsdt->Header.Length - sizeof(Gbl_Rsdt->Header))/ sizeof(Gbl_Rsdt->TableOffsetEntry[0]);
+  }
+  for (i = 0; i < NumberOfTables; i++) {
+  if (Gbl_Revision) {
+  TableAddress = Gbl_Xsdt->TableOffsetEntry[i];
+  }
+  else {
+  TableAddress = Gbl_Rsdt->TableOffsetEntry[i];
+  }
+  Table = AcpiOsMapMemory(TableAddress, sizeof(*Table));
+  NewInfo = Gbl_TableListHead;
+  while ((NewInfo->Next != NULL)) {
+  NewInfo = NewInfo->Next;
+  }
+  NewInfo = calloc(1, sizeof(*NewInfo));
+- ACPI_MOVE_NAME(NewInfo->Signature, Table->Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Table->Signature);
+  }
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oslinuxtbl.c with new file: source/os_specific/service_layers/oslinuxtbl.c:
+ACPI_STATUS OslAddTableToList (
+    char                    *Signature,
+    UINT32                  Instance) {
+  OSL_TABLE_INFO *NewInfo;
+  NewInfo = calloc(1, sizeof(OSL_TABLE_INFO));
+- ACPI_MOVE_NAME(NewInfo->Signature, Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Signature);
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oslinuxtbl.c with new file: source/os_specific/service_layers/oslinuxtbl.c:
+ACPI_STATUS OslTableNameFromFile (
+    char                    *Filename,
+    char                    *Signature,
+    UINT32                  *Instance) {
+- ACPI_MOVE_NAME(Signature, Filename);
++ ACPI_COPY_NAMESEG(Signature, Filename);
+}
+
+Context for merged statement of old file: source/tools/acpidump/apfiles.c with new file: source/tools/acpidump/apfiles.c:
+int ApWriteToBinaryFile (
+    ACPI_TABLE_HEADER       *Table,
+    UINT32                  Instance) {
+  char Filename[ACPI_NAME_SIZE + 16];
+  if (ACPI_VALIDATE_RSDP_SIG(Table->Signature)) {
+- ACPI_MOVE_NAME(Filename, ACPI_RSDP_NAME);
++ ACPI_COPY_NAMESEG(Filename, ACPI_RSDP_NAME);
+  }
+  else {
+- ACPI_MOVE_NAME(Filename, Table->Signature);
++ ACPI_COPY_NAMESEG(Filename, Table->Signature);
+  }
+}
+
+Context for merged statement of old file: source/tools/acpiexec/aetables.c with new file: source/tools/acpiexec/aetables.c:
+void AeInitializeTableHeader (
+    ACPI_TABLE_HEADER       *Header,
+    char                    *Signature,
+    UINT32                  Length) {
+- ACPI_MOVE_NAME(Header->Signature, Signature);
++ ACPI_COPY_NAMESEG(Header->Signature, Signature);
+- ACPI_MOVE_NAME(Header->AslCompilerId, "INTL");
++ ACPI_COPY_NAMESEG(Header->AslCompilerId, "INTL");
+}
+
+Context for merged statement of old file: source/tools/acpiexec/aetables.c with new file: source/tools/acpiexec/aetables.c:
+ACPI_STATUS AeBuildLocalTables (
+    ACPI_NEW_TABLE_DESC     *ListHead) {
+  memset(&LocalFACS, 0, sizeof(ACPI_TABLE_FACS));
+- ACPI_MOVE_NAME(LocalFACS.Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(LocalFACS.Signature, ACPI_SIG_FACS);
+  if (AcpiGbl_LoadTestTables) {
+  memset(&LocalTEST, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(LocalTEST.Signature, "TEST");
++ ACPI_COPY_NAMESEG(LocalTEST.Signature, "TEST");
+  memset(&LocalBADTABLE, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(LocalBADTABLE.Signature, "BAD!");
++ ACPI_COPY_NAMESEG(LocalBADTABLE.Signature, "BAD!");
+  }
+}
+
+Context for merged statement of old file: source/tools/acpinames/antables.c with new file: source/tools/acpinames/antables.c:
+void AnInitializeTableHeader (
+    ACPI_TABLE_HEADER       *Header,
+    char                    *Signature,
+    UINT32                  Length) {
+- ACPI_MOVE_NAME(Header->Signature, Signature);
++ ACPI_COPY_NAMESEG(Header->Signature, Signature);
+- ACPI_MOVE_NAME(Header->AslCompilerId, "INTL");
++ ACPI_COPY_NAMESEG(Header->AslCompilerId, "INTL");
+}
+
+Context for merged statement of old file: source/tools/acpinames/antables.c with new file: source/tools/acpinames/antables.c:
+ACPI_STATUS AnBuildLocalTables (
+    ACPI_NEW_TABLE_DESC     *TableList) {
+  memset(&LocalFACS, 0, sizeof(ACPI_TABLE_FACS));
+- ACPI_MOVE_NAME(LocalFACS.Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(LocalFACS.Signature, ACPI_SIG_FACS);
+}
+
+Context for merged statement of old file: source/tools/acpixtract/acpixtract.c with new file: source/tools/acpixtract/acpixtract.c:
+int AxExtractTables (
+    char                    *InputPathname,
+    char                    *Signature,
+    unsigned int            MinimumInstances) {
+  FILE *InputFile;
+  char ThisSignature[5];
+  InputFile = fopen(InputPathname, "r");
+  while ((fgets(Gbl_LineBuffer, AX_LINE_BUFFER_SIZE, InputFile))) {
+  switch ((State)) {
+  case AX_STATE_FIND_HEADER:
+- ACPI_MOVE_NAME(ThisSignature, Gbl_LineBuffer);
++ ACPI_COPY_NAMESEG(ThisSignature, Gbl_LineBuffer);
+  }
+  }
+}
+
+Context for merged statement of old file: source/tools/acpixtract/acpixtract.c with new file: source/tools/acpixtract/acpixtract.c:
+int AxExtractToMultiAmlFile (
+    char                    *InputPathname) {
+  FILE *InputFile;
+  char ThisSignature[4];
+  InputFile = fopen(InputPathname, "r");
+  while ((fgets(Gbl_LineBuffer, AX_LINE_BUFFER_SIZE, InputFile))) {
+  switch ((State)) {
+  case AX_STATE_FIND_HEADER:
+- ACPI_MOVE_NAME(ThisSignature, Gbl_LineBuffer);
++ ACPI_COPY_NAMESEG(ThisSignature, Gbl_LineBuffer);
+  }
+  }
+}
+

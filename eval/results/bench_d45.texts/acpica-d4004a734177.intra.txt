@@ -1,0 +1,45 @@
+Context for merged statement of old file: source/include/platform/acenv.h with new file: source/include/platform/acenv.h:
+#ifndef __ENVIRONMENT_H__
++ #define LOCAL_CLIB_FUNCTIONS 1
++ #ifndef LOCAL_CLIB_FUNCTIONS
++ #include <stdarg.h>
++ #include <stdlib.h>
++ #include <string.h>
++ #define STRLEN strlen
++ #define STRCPY strcpy
++ #define STRNCPY strncpy
++ #define STRNCMP strncmp
++ #define STRCMP strcmp
++ #define STRCAT strcat
++ #define STRNCAT strncat
++ #define STRTOUL strtoul
++ #define MEMCPY memcpy
++ #define MEMSET memset
+  #else
++ #ifndef _VALIST
++ #define _VALIST
++ typedef char *va_list;
+  #endif
++ #define _AUPBND(sizeof(int)- 1)
++ #define _ADNBND(sizeof(int)- 1)
++ #define _Bnd(X, bnd)(sizeof(X)+(bnd)& ~(bnd))
++ #define va_arg(ap, T)(*(T *)(((ap)+= _Bnd(T, _AUPBND))- _Bnd(T, _ADNBND)))
++ #define va_end(ap)(void)0
++ #define va_start(ap, A)(void)((ap)=(char *)&(A)+ _Bnd(A, _AUPBND))
++ #define STRLEN _strlen
++ #define STRCPY _strcpy
++ #define STRNCPY _strncpy
++ #define STRNCMP _strncmp
++ #define STRCMP _strcmp
++ #define STRCAT _strcat
++ #define STRNCAT _strncat
++ #define STRTOUL _strtoul
++ #define MEMCPY _memcpy
++ #define MEMSET _memset
+  #endif
+- #include <stdio.h>
+- #include <string.h>
+- #include <stdlib.h>
+- #include <stdarg.h>
+  #endif
+

@@ -1,0 +1,137 @@
+Context for merged statement of old file: source/common/dmtbdump2.c with new file: source/common/dmtbdump2.c:
+void AcpiDmDumpRhct (
+    ACPI_TABLE_HEADER       *Table) {
+  ACPI_RHCT_NODE_HEADER *Subtable;
+  ACPI_RHCT_ISA_STRING *RhctIsaString;
+  UINT32 Length = Table->Length;
+  UINT8 SubtableOffset, IsaPadOffset;
+  UINT32 Offset = sizeof(ACPI_TABLE_RHCT);
+  while ((Offset < Table->Length)) {
+  Subtable = ACPI_ADD_PTR(ACPI_RHCT_NODE_HEADER, Table, Offset);
+  Length = sizeof(ACPI_RHCT_NODE_HEADER);
+  SubtableOffset =(UINT8)Length;
+  switch ((Subtable->Type)) {
+  SubtableOffset += sizeof(ACPI_RHCT_HART_INFO);
+  for (i = 0; i < RhctHartInfo->NumOffsets; i++) {
+  SubtableOffset += 4;
+  }
+  case ACPI_RHCT_NODE_TYPE_ISA_STRING:
+  RhctIsaString = ACPI_ADD_PTR(ACPI_RHCT_ISA_STRING, Subtable, SubtableOffset);
+  IsaPadOffset =(UINT8)(SubtableOffset + 2 + RhctIsaString->IsaLength);
+  if (Subtable->Length > IsaPadOffset) {
+- Status = AcpiDmDumpTable(Table->Length, Offset + SubtableOffset, ACPI_ADD_PTR(UINT8, Subtable, IsaPadOffset), (Subtable->Length - IsaPadOffset), AcpiDmTableInfoRhctIsaPad);
++ Status = AcpiDmDumpTable(Table->Length, Offset + IsaPadOffset, ACPI_ADD_PTR(UINT8, Subtable, IsaPadOffset), (Subtable->Length - IsaPadOffset), AcpiDmTableInfoRhctIsaPad);
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: source/common/dmtbinfo2.c with new file: source/common/dmtbinfo2.c:
+- ACPI_DMTABLE_INFO AcpiDmTableInfoRhctNodeHdr[] = { {ACPI_DMT_RHCT, ACPI_RHCTH_OFFSET(Type), "Subtable Type", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Length), "Length", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Revision), "Revision", 0}, ACPI_DMT_TERMINATOR };
++ ACPI_DMTABLE_INFO AcpiDmTableInfoRhctNodeHdr[] = { {ACPI_DMT_RHCT, ACPI_RHCTH_OFFSET(Type), "Subtable Type", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Length), "Length", DT_LENGTH}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Revision), "Revision", 0}, ACPI_DMT_TERMINATOR };
+
+Context for merged statement of old file: source/compiler/dttable2.c with new file: source/compiler/dttable2.c:
+ACPI_STATUS DtCompileRhct (
+    void                    **List) {
+  ACPI_STATUS Status;
+  ACPI_RHCT_NODE_HEADER *RhctHeader;
+- ACPI_RHCT_HART_INFO *RhctHartInfo = NULL;
++ ACPI_RHCT_HART_INFO *RhctHartInfo;
+  DT_SUBTABLE *Subtable;
+  DT_SUBTABLE *ParentTable;
+  ACPI_DMTABLE_INFO *InfoTable;
+  DT_FIELD **PFieldList =(DT_FIELD **)List;
++ ACPI_TABLE_RHCT *Table;
++ BOOLEAN FirstNode = TRUE;
++ ParentTable = DtPeekSubtable();
+  Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhct, &Subtable);
++ DtInsertSubtable(ParentTable, Subtable);
++ Table = ACPI_CAST_PTR(ACPI_TABLE_RHCT, ParentTable->Buffer);
++ Table->NodeCount = 0;
++ Table->NodeOffset = sizeof(ACPI_TABLE_RHCT);
+- ParentTable = DtPeekSubtable();
+  while ((*PFieldList)) {
+  Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctNodeHdr, &Subtable);
+  DtInsertSubtable(ParentTable, Subtable);
+  RhctHeader = ACPI_CAST_PTR(ACPI_RHCT_NODE_HEADER, Subtable->Buffer);
++ DtPushSubtable(Subtable);
++ ParentTable = DtPeekSubtable();
+- RhctHeader->Length =(UINT16)(Subtable->Length);
++ Table->NodeCount++;
+  switch ((RhctHeader->Type)) {
+  InfoTable = AcpiDmTableInfoRhctIsa1;
+  InfoTable = AcpiDmTableInfoRhctHartInfo1;
+  InfoTable = AcpiDmTableInfoRhctCmo1;
+  InfoTable = AcpiDmTableInfoRhctMmu1;
+  }
+  Status = DtCompileTable(PFieldList, InfoTable, &Subtable);
+  DtInsertSubtable(ParentTable, Subtable);
++ if (FirstNode) {
+- RhctHeader->Length +=(UINT16)(Subtable->Length);
++ Table->NodeOffset = ACPI_PTR_DIFF(ParentTable->Buffer, Table);
++ FirstNode = FALSE;
+  }
+  switch ((RhctHeader->Type)) {
++ case ACPI_RHCT_NODE_TYPE_ISA_STRING:
++ Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctIsaPad, &Subtable);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
+- if (RhctHartInfo) {
++ if (Subtable) {
++ DtInsertSubtable(ParentTable, Subtable);
++ RhctHartInfo->NumOffsets = 0;
+  while ((*PFieldList)) {
++ Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctHartInfo2, &Subtable);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
++ if (!Subtable) {
++ break;
+  }
++ DtInsertSubtable(ParentTable, Subtable);
+- RhctHeader->Length +=(UINT16)(Subtable->Length);
++ RhctHartInfo->NumOffsets++;
+- RhctHartInfo->NumOffsets++;
+- DtInsertSubtable(ParentTable, Subtable);
+- if (!Subtable) {
+- break;
+  }
+- if (ACPI_FAILURE(Status)) {
+- return(Status);
+  }
+- Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctHartInfo2, &Subtable);
+  }
+  }
++ break;
+  case ACPI_RHCT_NODE_TYPE_HART_INFO:
+- RhctHartInfo = ACPI_SUB_PTR(ACPI_RHCT_HART_INFO, Subtable->Buffer, sizeof(ACPI_RHCT_NODE_HEADER));
++ RhctHartInfo = ACPI_CAST_PTR(ACPI_RHCT_HART_INFO, Subtable->Buffer);
+- default:
++ default:
+  }
++ DtPopSubtable();
++ ParentTable = DtPeekSubtable();
+  }
+- RhctHartInfo->NumOffsets = 0;
+- break;
+- return(Status);
+}
+
+Context for merged statement of old file: source/compiler/dttemplate.h with new file: source/compiler/dttemplate.h:
+#ifndef __DTTEMPLATE_H
+- const unsigned char TemplateRhct[] = { 0x52, 0x48, 0x43, 0x54, 0x96, 0x00, 0x00, 0x00, 0x01, 0x24, 0x4F, 0x45, 0x4D, 0x43, 0x41, 0x00, 0x54, 0x45, 0x4D, 0x50, 0x4C, 0x41, 0x54, 0x45, 0x01, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x54, 0x4C, 0x28, 0x09, 0x22, 0x20, 0x00, 0x00, 0x00, 0x00, 0x80, 0x96, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x01, 0x00, 0x2B, 0x00, 0x72, 0x76, 0x36, 0x34, 0x69, 0x6D, 0x61, 0x66, 0x64, 0x63, 0x68, 0x5F, 0x7A, 0x69, 0x63, 0x73, 0x72, 0x5F, 0x7A, 0x69, 0x66, 0x65, 0x6E, 0x63, 0x65, 0x69, 0x5F, 0x7A, 0x62, 0x61, 0x5F, 0x7A, 0x62, 0x62, 0x5F, 0x7A, 0x62, 0x63, 0x5F, 0x7A, 0x62, 0x73, 0x00, 0x00, 0xFF, 0xFF, 0x18, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x7c, 0x00, 0x00, 0x00, 0x8E, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x06, 0x06, 0x06, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x02 };
++ const unsigned char TemplateRhct[] = { 0x52, 0x48, 0x43, 0x54, 0x96, 0x00, 0x00, 0x00, 0x01, 0x6D, 0x4F, 0x45, 0x4D, 0x43, 0x41, 0x00, 0x54, 0x45, 0x4D, 0x50, 0x4C, 0x41, 0x54, 0x45, 0x01, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x54, 0x4C, 0x04, 0x04, 0x25, 0x20, 0x00, 0x00, 0x00, 0x00, 0x80, 0x96, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x01, 0x00, 0x2B, 0x00, 0x72, 0x76, 0x36, 0x34, 0x69, 0x6D, 0x61, 0x66, 0x64, 0x63, 0x68, 0x5F, 0x7A, 0x69, 0x63, 0x73, 0x72, 0x5F, 0x7A, 0x69, 0x66, 0x65, 0x6E, 0x63, 0x65, 0x69, 0x5F, 0x7A, 0x62, 0x61, 0x5F, 0x7A, 0x62, 0x62, 0x5F, 0x7A, 0x62, 0x63, 0x5F, 0x7A, 0x62, 0x73, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x06, 0x06, 0x06, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x02, 0xFF, 0xFF, 0x18, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3B, 0x00, 0x00, 0x00, 0x6C, 0x00, 0x00, 0x00, 0x76, 0x00, 0x00, 0x00 };
+  #endif
+
+Context for merged statement of old file: source/compiler/dtutils.c with new file: source/compiler/dtutils.c:
+UINT32 DtGetFieldLength (
+    DT_FIELD                *Field,
+    ACPI_DMTABLE_INFO       *Info) {
+  switch ((Info->Opcode)) {
++ case ACPI_DMT_PHAT:
+- case ACPI_DMT_PHAT:
++ case ACPI_DMT_RHCT:
+  }
+}
+

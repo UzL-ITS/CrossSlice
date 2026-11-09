@@ -1,0 +1,19 @@
+
+agent_fix_haiku-5-5_v3.jsonl  (model anthropic:claude-haiku-5-5, seeded=True, cases=15)
+arm       nbhd seen  located   prec   tok→80%  reach80 | fix seen fix prec   tok→all calls→all reach all |   tokens  calls
+self           0.35     0.43   0.30     2,608     1/15 |     0.36     0.12     2,608       1.0      1/15 |   54,542    5.7
+tool           0.90     0.89   0.51     5,972    13/15 |     0.93     0.17     5,972       1.0     13/15 |   54,614    5.0
+semantic       0.84     0.82   0.65     5,601    12/15 |     0.89     0.24     5,601       1.0     12/15 |   47,448    6.0
+  relevant set: neighborhood 15.1 items/case, fix-relevant 4.7 items/case
+  fix-relevant set fully seen — only tool: 12, only self: 0, both: 1, neither: 2; paired tool/self tokens→all: median 1.98
+  fix-relevant set fully seen — only semantic: 11, only self: 0, both: 1, neither: 3; paired semantic/self tokens→all: median 1.81
+
+agent_fix_sonnet-5-5_v3.jsonl  (model anthropic:claude-sonnet-5-5, seeded=True, cases=15)
+arm       nbhd seen  located   prec   tok→80%  reach80 | fix seen fix prec   tok→all calls→all reach all |   tokens  calls
+self           0.24     0.23   0.18     2,343     1/15 |     0.31     0.00     2,343       1.0      1/15 |   14,766    1.3
+tool           0.27     0.28   0.17     4,856     2/15 |     0.33     0.04     4,856       1.0      2/15 |   22,801    1.8
+semantic       0.27     0.27   0.30     4,187     2/15 |     0.33     0.02     4,187       1.0      2/15 |   16,114    1.5
+  relevant set: neighborhood 15.1 items/case, fix-relevant 4.7 items/case
+  fix-relevant set fully seen — only tool: 1, only self: 0, both: 1, neither: 13; paired tool/self tokens→all: median 2.07
+  fix-relevant set fully seen — only semantic: 1, only self: 0, both: 1, neither: 13; paired semantic/self tokens→all: median 1.79
+

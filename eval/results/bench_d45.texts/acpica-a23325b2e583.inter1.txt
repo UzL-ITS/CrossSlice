@@ -1,0 +1,204 @@
+Context for merged statement of old file: source/components/namespace/nsutils.c with new file: source/components/namespace/nsutils.c:
+void AcpiNsTerminate (
+    void) {
+- ACPI_FUNCTION_TRACE(NsTerminate);
+- ACPI_STATUS Status;
++ ACPI_STATUS Status;
+- #ifdef ACPI_EXEC_APP
+  #endif
++ ACPI_OPERAND_OBJECT *Prev;
++ ACPI_OPERAND_OBJECT *Next;
++ ACPI_FUNCTION_TRACE(NsTerminate);
++ Next = AcpiGbl_ModuleCodeList;
+  while ((Next)) {
++ Prev = Next;
++ Next = Next->Method.Mutex;
++ Prev->Method.Mutex = NULL;
++ AcpiUtRemoveReference(Prev);
+- AcpiUtRemoveReference(Prev);
+- Prev->Method.Mutex = NULL;
+- Next = Next->Method.Mutex;
+- Prev = Next;
+  }
++ AcpiNsDeleteNamespaceSubtree(AcpiGbl_RootNode);
++ Status = AcpiUtAcquireMutex(ACPI_MTX_NAMESPACE);
++ if (ACPI_FAILURE(Status)) {
++ return_VOID;
+  }
+  while ((Next)) {
+  }
+- Next = AcpiGbl_ModuleCodeList;
+- ACPI_OPERAND_OBJECT *Next;
+- ACPI_OPERAND_OBJECT *Prev;
++ AcpiNsDeleteNode(AcpiGbl_RootNode);
++ (void)AcpiUtReleaseMutex(ACPI_MTX_NAMESPACE);
++ ACPI_DEBUG_PRINT((ACPI_DB_INFO, "Namespace freed\n"));
++ return_VOID;
+- return_VOID;
+- ACPI_DEBUG_PRINT((ACPI_DB_INFO, "Namespace freed\n"));
+- (void)AcpiUtReleaseMutex(ACPI_MTX_NAMESPACE);
+- AcpiNsDeleteNode(AcpiGbl_RootNode);
+- if (ACPI_FAILURE(Status)) {
+- return_VOID;
+  }
+- Status = AcpiUtAcquireMutex(ACPI_MTX_NAMESPACE);
+- AcpiNsDeleteNamespaceSubtree(AcpiGbl_RootNode);
+}
+
+
+==== Cross-function context ====
+
+-- called function: AcpiUtRemoveReference — source/components/utilities/utdelete.c:847 [gtags_unique] --
+void AcpiUtRemoveReference ( ACPI_OPERAND_OBJECT     *Object) {
+   ...
+   if(!Object ||(ACPI_GET_DESCRIPTOR_TYPE(Object)== ACPI_DESC_TYPE_NAMED)) {
+   ...
+   }
+   if(!AcpiUtValidInternalObject(Object)) {
+   ...
+   }
+   ACPI_DEBUG_PRINT((ACPI_DB_ALLOCATIONS, "Obj %p Current Refs=%X [To Be Decremented]\n", Object, Object->Common.ReferenceCount));
+   (void)AcpiUtUpdateObjectReference(Object, REF_DECREMENT);
+   ...
+}
+   [reads: Object; writes: -]
+
+-- called macro: ACPI_FUNCTION_TRACE — source/include/acoutput.h:546 [lsp] --
+#define ACPI_FUNCTION_TRACE(a)
+
+-- called function: AcpiNsDeleteNamespaceSubtree — source/components/namespace/nsalloc.c:465 [gtags_unique] --
+void AcpiNsDeleteNamespaceSubtree ( ACPI_NAMESPACE_NODE     *ParentNode) {
+   ACPI_NAMESPACE_NODE *ChildNode = NULL;
+   ...
+   if(!ParentNode) {
+   ...
+   }
+   ...
+   while(Level > 0) {
+     ChildNode = AcpiNsGetNextNode(ParentNode, ChildNode);
+     if(ChildNode) {
+       AcpiNsDetachObject(ChildNode);
+       if(ChildNode->Child) {
+   ...
+         ParentNode = ChildNode;
+   ...
+       }
+     } else {
+   ...
+       AcpiNsDeleteChildren(ParentNode);
+       ChildNode = ParentNode;
+       ParentNode = ParentNode->Parent;
+   ...
+     }
+   }
+}
+   [reads: ParentNode; writes: -]
+
+-- called function: AcpiUtAcquireMutex — source/components/utilities/utmutex.c:327 [gtags_unique] --
+ACPI_STATUS AcpiUtAcquireMutex ( ACPI_MUTEX_HANDLE       MutexId) {
+   ACPI_STATUS Status;
+   ACPI_THREAD_ID ThisThreadId;
+   ...
+   if(MutexId > ACPI_MAX_MUTEX) {
+     return(AE_BAD_PARAMETER);
+   }
+   ThisThreadId = AcpiOsGetThreadId();
+   #ifdef ...
+     UINT32 i;
+     for(i = MutexId; i < ACPI_NUM_MUTEX; i++) {
+       if(AcpiGbl_MutexInfo[i].ThreadId == ThisThreadId) {
+         if(i == MutexId) {
+           ACPI_ERROR((AE_INFO, "Mutex [%s] already acquired by this thread [%u]", AcpiUtGetMutexName(MutexId), (UINT32)ThisThreadId));
+           return(AE_ALREADY_ACQUIRED);
+         }
+         ACPI_ERROR((AE_INFO, "Invalid acquire order: Thread %u owns [%s], wants [%s]", (UINT32)ThisThreadId, AcpiUtGetMutexName(i), AcpiUtGetMutexName(MutexId)));
+         return(AE_ACQUIRE_DEADLOCK);
+       }
+     }
+   #endif
+   ACPI_DEBUG_PRINT((ACPI_DB_MUTEX, "Thread %u attempting to acquire Mutex [%s]\n", (UINT32)ThisThreadId, AcpiUtGetMutexName(MutexId)));
+   Status = AcpiOsAcquireMutex(AcpiGbl_MutexInfo[MutexId].Mutex, ACPI_WAIT_FOREVER);
+   if(ACPI_SUCCESS(Status)) {
+     ACPI_DEBUG_PRINT((ACPI_DB_MUTEX, "Thread %u acquired Mutex [%s]\n", (UINT32)ThisThreadId, AcpiUtGetMutexName(MutexId)));
+     AcpiGbl_MutexInfo[MutexId].UseCount++;
+     AcpiGbl_MutexInfo[MutexId].ThreadId = ThisThreadId;
+   } else {
+     ACPI_EXCEPTION((AE_INFO, Status, "Thread %u could not acquire Mutex [0x%X]", (UINT32)ThisThreadId, MutexId));
+   }
+   return(Status);
+}
+   [reads: MutexId; writes: -]
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:167 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: AcpiNsDeleteNode — source/components/namespace/nsalloc.c:188 [gtags_unique] --
+void AcpiNsDeleteNode ( ACPI_NAMESPACE_NODE     *Node) {
+   ACPI_OPERAND_OBJECT *ObjDesc;
+   ...
+   AcpiNsDetachObject(Node);
+   ObjDesc = Node->Object;
+   while(ObjDesc &&(ObjDesc->Common.Type == ACPI_TYPE_LOCAL_DATA)) {
+     if(ObjDesc->Data.Handler) {
+       ObjDesc->Data.Handler(Node, ObjDesc->Data.Pointer);
+     }
+     NextDesc = ObjDesc->Common.NextObject;
+     AcpiUtRemoveReference(ObjDesc);
+     ObjDesc = NextDesc;
+   }
+   if(Node == AcpiGbl_RootNode) {
+   ...
+   }
+   (void)AcpiOsReleaseObject(AcpiGbl_NamespaceCache, Node);
+   ...
+   ACPI_DEBUG_PRINT((ACPI_DB_ALLOCATIONS, "Node %p, Remaining %X\n", Node, AcpiGbl_CurrentNodeCount));
+}
+   [reads: Node; writes: -]
+
+-- called function: AcpiUtReleaseMutex — source/components/utilities/utmutex.c:419 [gtags_unique] --
+ACPI_STATUS AcpiUtReleaseMutex ( ACPI_MUTEX_HANDLE       MutexId) {
+   ...
+   ACPI_DEBUG_PRINT((ACPI_DB_MUTEX, "Thread %u releasing Mutex [%s]\n", (UINT32)AcpiOsGetThreadId(), AcpiUtGetMutexName(MutexId)));
+   if(MutexId > ACPI_MAX_MUTEX) {
+     return(AE_BAD_PARAMETER);
+   }
+   if(AcpiGbl_MutexInfo[MutexId].ThreadId == ACPI_MUTEX_NOT_ACQUIRED) {
+     ACPI_ERROR((AE_INFO, "Mutex [0x%X] is not acquired, cannot release", MutexId));
+     return(AE_NOT_ACQUIRED);
+   }
+   #ifdef ...
+     UINT32 i;
+     for(i = MutexId; i < ACPI_NUM_MUTEX; i++) {
+       if(AcpiGbl_MutexInfo[i].ThreadId == AcpiOsGetThreadId()) {
+         if(i == MutexId) {
+   ...
+         }
+         ACPI_ERROR((AE_INFO, "Invalid release order: owns [%s], releasing [%s]", AcpiUtGetMutexName(i), AcpiUtGetMutexName(MutexId)));
+         return(AE_RELEASE_DEADLOCK);
+       }
+     }
+   #endif
+   AcpiGbl_MutexInfo[MutexId].ThreadId = ACPI_MUTEX_NOT_ACQUIRED;
+   AcpiOsReleaseMutex(AcpiGbl_MutexInfo[MutexId].Mutex);
+   return(AE_OK);
+}
+   [reads: MutexId; writes: -]
+
+-- called macro: ACPI_DEBUG_PRINT — source/include/acoutput.h:415 [priority_fallback, old version] --
+#define ACPI_DEBUG_PRINT(plist)         ACPI_ACTUAL_DEBUG plist
+
+-- called macro: ACPI_MTX_NAMESPACE — source/include/aclocal.h:157 [gtags_unique, old version] --
+#define ACPI_MTX_NAMESPACE              1   /* ACPI Namespace */
+
+-- called macro: ACPI_DB_INFO — source/include/acoutput.h:223 [gtags_unique, old version] --
+#define ACPI_DB_INFO                ACPI_DEBUG_LEVEL (ACPI_LV_INFO)
+
+-- called macro: ACPI_DEBUG_PRINT — source/include/acoutput.h:541 [lsp, new version] --
+#define ACPI_DEBUG_PRINT(pl)
+
+-- caller of AcpiNsTerminate: AcpiUtSubsystemShutdown — source/components/utilities/utinit.c:411 --
+void AcpiUtSubsystemShutdown ( void) {
+   ...
+>  AcpiNsTerminate();
+   ...
+}

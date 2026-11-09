@@ -1,0 +1,123 @@
+Context for merged statement of old file: ext/reflection/php_reflection.c with new file: ext/reflection/php_reflection.c:
+void reflection_method_invoke(INTERNAL_FUNCTION_PARAMETERS, int variadic) {
+  zval retval;
+  if (variadic) {
+- ZVAL_COPY_VALUE(return_value, &retval);
++ RETURN_COPY_VALUE(&retval);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: RETURN_THROWS — Zend/zend_API.h:1054 [gtags_unique] --
+#define RETURN_THROWS()					do { ZEND_ASSERT(EG(exception)); (void) return_value; return; } while (0)
+
+-- called macro: ZSTR_VAL — Zend/zend_string.h:68 [gtags_unique] --
+#define ZSTR_VAL(zstr)  (zstr)->val
+
+-- called function: zend_unwrap_reference — Zend/zend_operators.h:999 [gtags_unique] --
+static zend_always_inline void zend_unwrap_reference(zval *op) /* {
+   if(Z_REFCOUNT_P(op)== 1) {
+     ZVAL_UNREF(op);
+   } else {
+     Z_DELREF_P(op);
+     ZVAL_COPY(op, Z_REFVAL_P(op));
+   }
+}
+   [reads: op; writes: -]
+
+-- called macro: Z_ISREF — Zend/zend_types.h:977 [gtags_unique] --
+#define Z_ISREF(zval)				(Z_TYPE(zval) == IS_REFERENCE)
+
+-- called function: zend_call_known_function — Zend/zend_execute_API.c:1086 [gtags_unique] --
+ZEND_API void zend_call_known_function( zend_function *fn, zend_object *object, zend_class_entry *called_scope, zval *retval_ptr, uint32_t param_count, zval *params, HashTable *named_params) {
+   zval retval;
+   zend_fcall_info fci;
+   zend_fcall_info_cache fcic;
+   ZEND_ASSERT(fn && "zend_function must be passed!");
+   ...
+   fci.object = object;
+   fci.retval = retval_ptr ? retval_ptr : &retval;
+   fci.param_count = param_count;
+   fci.params = params;
+   fci.named_params = named_params;
+   ...
+   fcic.function_handler = fn;
+   fcic.object = object;
+   fcic.called_scope = called_scope;
+   zend_result result = zend_call_function(&fci, &fcic);
+   if(UNEXPECTED(result == FAILURE)) {
+     if(!EG(exception)) {
+       zend_error_noreturn(E_CORE_ERROR, "Couldn't execute method %s%s%s", fn->common.scope ? ZSTR_VAL(fn->common.scope->name): "", fn->common.scope ? "::" : "", ZSTR_VAL(fn->common.function_name));
+     }
+   }
+   if(!retval_ptr) {
+   ...
+   }
+}
+   [reads: called_scope, fn, named_params, object, param_count, params, retval_ptr; writes: -]
+
+-- called macro: Z_OBJ_P — Zend/zend_types.h:1014 [gtags_unique] --
+#define Z_OBJ_P(zval_p)				Z_OBJ(*(zval_p))
+
+-- called function: _copy_function — ext/reflection/php_reflection.c:201 [gtags_unique] --
+static zend_function *_copy_function(zend_function *fptr) /* {
+   if(fptr &&(fptr->internal_function.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE)) {
+     zend_function *copy_fptr;
+     copy_fptr = emalloc(sizeof(zend_function));
+     memcpy(copy_fptr, fptr, sizeof(zend_function));
+     copy_fptr->internal_function.function_name = zend_string_copy(fptr->internal_function.function_name);
+     return copy_fptr;
+   } else {
+     return fptr;
+   }
+}
+   [reads: fptr; writes: -]
+
+-- called macro: _DO_THROW — ext/reflection/php_reflection.c:110 [gtags_unique] --
+#define _DO_THROW(msg) \
+	zend_throw_exception(reflection_exception_ptr, msg, 0);
+
+-- called macro: efree — Zend/zend_alloc.h:155 [gtags_unique] --
+#define efree(ptr)							_efree((ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called macro: Z_OBJCE_P — Zend/zend_types.h:1026 [gtags_unique] --
+#define Z_OBJCE_P(zval_p)			Z_OBJCE(*(zval_p))
+
+-- called macro: ZVAL_COPY_VALUE — Zend/zend_types.h:1429 [gtags_unique, old version] --
+#define ZVAL_COPY_VALUE(z, v)							\
+	do {												\
+		zval *_z1 = (z);								\
+		const zval *_z2 = (v);							\
+		zend_refcounted *_gc = Z_COUNTED_P(_z2);		\
+		uint32_t _t = Z_TYPE_INFO_P(_z2);				\
+		ZVAL_COPY_VALUE_EX(_z1, _z2, _gc, _t);			\
+	} while (0)
+
+-- called macro: RETURN_COPY_VALUE — Zend/zend_API.h:1049 [gtags_unique, new version] --
+#define RETURN_COPY_VALUE(zv)			do { RETVAL_COPY_VALUE(zv); return; } while (0)
+
+-- caller of reflection_method_invoke: ZEND_METHOD(ReflectionMethod, invoke) — ext/reflection/php_reflection.c:3497 --
+ZEND_METHOD(ReflectionMethod, invoke) {
+>  reflection_method_invoke(INTERNAL_FUNCTION_PARAM_PASSTHRU, 1);
+}
+
+-- caller of reflection_method_invoke: ZEND_METHOD(ReflectionMethod, invokeArgs) — ext/reflection/php_reflection.c:3504 --
+ZEND_METHOD(ReflectionMethod, invokeArgs) {
+>  reflection_method_invoke(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0);
+}
+
+-- 2nd-level context (summaries) --
+  ZVAL_UNREF — Zend/zend_types.h:1513 [gtags_unique]: #define ZVAL_UNREF(z) do {								\
+  Z_DELREF_P — Zend/zend_types.h:1292 [gtags_unique]: #define Z_DELREF_P(pz)				zval_delref_p(pz)
+  ZVAL_COPY — Zend/zend_types.h:1438 [gtags_unique]: #define ZVAL_COPY(z, v)									\
+  Z_REFVAL_P — Zend/zend_types.h:1047 [gtags_unique]: #define Z_REFVAL_P(zval_p)			Z_REFVAL(*(zval_p))
+  ZEND_ASSERT — Zend/zend_portability.h:110 [lsp]: # define ZEND_ASSERT(c)	assert(c)
+  zend_call_function — Zend/zend_execute_API.c:813 [gtags_unique]: zend_result zend_call_function(zend_fcall_info *fci, zend_fcall_info_cache *fci_cache) /*
+    reads: fci, fci_cache; writes: fci*, fci_cache*
+  zend_error_noreturn — Zend/zend.c:1739 [gtags_unique]: void zend_error_noreturn(int type, const char *format, ...)
+    reads: format, type; writes: -
+  emalloc — Zend/zend_alloc.h:151 [gtags_unique]: #define emalloc(size)						_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+  zend_string_copy — Zend/zend_string.h:207 [gtags_unique]: static zend_always_inline zend_string *zend_string_copy(zend_string *s)
+    reads: s; writes: -

@@ -1,0 +1,94 @@
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+int XML_SetHashSalt(XML_Parser parser, unsigned long hash_salt) {
+  const XML_Parser rootParser = getRootParserOf(parser, NULL);
+  rootParser->m_hash_secret_salt_128.k[0] = 0;
+  rootParser->m_hash_secret_salt_128.k[1] = hash_salt;
+  if (hash_salt != 0) {
++ rootParser->m_hash_secret_salt_set = XML_TRUE;
++ if (sizeof(unsigned long)== 4) {
++ ENTROPY_DEBUG("explicit(4)", rootParser->m_hash_secret_salt_128);
+  }
++ else {
++ ENTROPY_DEBUG("explicit(8)", rootParser->m_hash_secret_salt_128);
++ }
+  }
+- rootParser->m_hash_secret_salt_set = XML_TRUE;
+}
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+XML_Bool XML_SetHashSalt16Bytes(XML_Parser parser, const uint8_t entropy[16]) {
+  const XML_Parser rootParser = getRootParserOf(parser, NULL);
++ ENTROPY_DEBUG("explicit(16)", rootParser->m_hash_secret_salt_128);
+}
+
+
+==== Cross-function context ====
+
+-- called function: getRootParserOf — expat/lib/xmlparse.c:8622 [gtags_unique, old version] --
+static XML_Parser getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
+   XML_Parser rootParser = parser;
+   ...
+   while(rootParser->m_parentParser) {
+     rootParser = rootParser->m_parentParser;
+   ...
+   }
+   assert(! rootParser->m_parentParser);
+   ...
+   return rootParser;
+}
+   [reads: outLevelDiff, parser; writes: outLevelDiff*]
+
+-- called macro: XML_TRUE — expat/lib/expat.h:60 [gtags_unique, old version] --
+#  define XML_TRUE ((XML_Bool)1)
+
+-- called function: getRootParserOf — expat/lib/xmlparse.c:8630 [gtags_unique, new version] --
+static XML_Parser getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
+   XML_Parser rootParser = parser;
+   ...
+   while(rootParser->m_parentParser) {
+     rootParser = rootParser->m_parentParser;
+   ...
+   }
+   assert(! rootParser->m_parentParser);
+   ...
+   return rootParser;
+}
+   [reads: outLevelDiff, parser; writes: outLevelDiff*]
+
+-- called function: ENTROPY_DEBUG — expat/lib/xmlparse.c:1072 [gtags_unique, new version] --
+static struct sipkey ENTROPY_DEBUG(const char *label, struct sipkey entropy_128) {
+   if(getDebugLevel("EXPAT_ENTROPY_DEBUG", 0)>= 1u) {
+     fprintf(stderr, "expat: Entropy: %s --> [0x" EXPAT_FMT_LLX("016")", 0x" EXPAT_FMT_LLX("016")"](16 bytes)\n", label, (unsigned long long)entropy_128.k[0], (unsigned long long)entropy_128.k[1]);
+   }
+   return entropy_128;
+}
+   [reads: entropy_128, label; writes: -]
+
+-- caller of XML_SetHashSalt: ParseOneInput — expat/fuzz/xml_parse_fuzzer.c:63 --
+static void ParseOneInput(XML_Parser p, const uint8_t *data, size_t size) {
+   struct sipkey *key = sip_keyof(hash_key);
+>  XML_SetHashSalt(p, (unsigned long)siphash24(data, size, key));
+   ...
+}
+
+-- caller of XML_SetHashSalt: ParseOneInput — expat/fuzz/xml_parsebuffer_fuzzer.c:64 --
+static void ParseOneInput(XML_Parser p, const uint8_t *data, size_t size) {
+   struct sipkey *key = sip_keyof(hash_key);
+>  XML_SetHashSalt(p, (unsigned long)siphash24(data, size, key));
+   ...
+}
+
+-- caller of XML_SetHashSalt: InitializeParser — expat/fuzz/xml_lpm_fuzzer.cpp:386 --
+void InitializeParser(XML_Parser parser) {
+   ...
+>  XML_SetHashSalt(parser, 0x41414141);
+   ...
+}
+
+-- caller of XML_SetHashSalt: START_TEST — expat/tests/basic_tests.c:200 --
+END_TEST START_TEST(test_hash_collision) {
+   #define ...
+   ...
+>  XML_SetHashSalt(g_parser, COLLIDING_HASH_SALT);
+   ...
+}

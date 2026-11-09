@@ -1,0 +1,94 @@
+Context for merged statement of old file: libavcodec/mace.c with new file: libavcodec/mace.c:
+int mace_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+                             int *got_frame_ptr, AVPacket *avpkt) {
+  int buf_size = avpkt->size;
+  int channels = avctx->ch_layout.nb_channels;
+  int is_mace3 =(avctx->codec_id == AV_CODEC_ID_MACE3);
+  if (buf_size %(channels << is_mace3)) {
+  buf_size -= buf_size %(channels << is_mace3);
+  }
++ int64_t nb_samples = 3 *((int64_t)buf_size <<(1 - is_mace3))/ channels;
++ if (nb_samples > INT_MAX) {
++ return AVERROR_INVALIDDATA;
+  }
+- frame->nb_samples = 3 *(buf_size <<(1 - is_mace3))/ channels;
++ frame->nb_samples = nb_samples;
+  if ((ret = ff_get_buffer(avctx, frame, 0))< 0) {
+  return ret;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: av_log — libavutil/log.c:443 [priority_fallback] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   va_list vl;
+   va_start(vl, fmt);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- called function: ff_get_buffer — libavcodec/decode.c:1771 [gtags_unique] --
+int ff_get_buffer(AVCodecContext *avctx, AVFrame *frame, int flags) {
+   const FFHWAccel *hwaccel = ffhwaccel(avctx->hwaccel);
+   int override_dimensions = 1;
+   int ret;
+   av_assert0(ff_codec_is_decoder(avctx->codec));
+   if(avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+     if((unsigned)avctx->width > INT_MAX - STRIDE_ALIGN ||(ret = av_image_check_size2(FFALIGN(avctx->width, STRIDE_ALIGN), avctx->height, avctx->max_pixels, AV_PIX_FMT_NONE, 0, avctx))< 0 || avctx->pix_fmt<0) {
+       av_log(avctx, AV_LOG_ERROR, "video_get_buffer: image parameters invalid\n");
+       ret = AVERROR(EINVAL);
+   ...
+     }
+     if(frame->width <= 0 || frame->height <= 0) {
+       frame->width = FFMAX(avctx->width, AV_CEIL_RSHIFT(avctx->coded_width, avctx->lowres));
+       frame->height = FFMAX(avctx->height, AV_CEIL_RSHIFT(avctx->coded_height, avctx->lowres));
+       override_dimensions = 0;
+     }
+     if(frame->data[0] || frame->data[1] || frame->data[2] || frame->data[3]) {
+       av_log(avctx, AV_LOG_ERROR, "pic->data[*]!=NULL in get_buffer_internal\n");
+       ret = AVERROR(EINVAL);
+   ...
+     }
+   } else if(avctx->codec_type == AVMEDIA_TYPE_AUDIO) {
+     if(frame->nb_samples *(int64_t)avctx->ch_layout.nb_channels > avctx->max_samples) {
+       av_log(avctx, AV_LOG_ERROR, "samples per frame %d, exceeds max_samples %"PRId64"\n", frame->nb_samples, avctx->max_samples);
+       ret = AVERROR(EINVAL);
+   ...
+     }
+   }
+   ret = ff_decode_frame_props(avctx, frame);
+   if(ret < 0)
+   ...
+   if(hwaccel) {
+     if(hwaccel->alloc_frame) {
+       ret = hwaccel->alloc_frame(avctx, frame);
+   ...
+     }
+   } else {
+     avctx->sw_pix_fmt = avctx->pix_fmt;
+   }
+   ret = avctx->get_buffer2(avctx, frame, flags);
+   if(ret < 0)
+   ...
+   validate_avframe_allocation(avctx, frame);
+   ret = ff_attach_decode_data(avctx, frame);
+   if(ret < 0)
+   ...
+   if(avctx->codec_type == AVMEDIA_TYPE_VIDEO && !override_dimensions && !(ffcodec(avctx->codec)->caps_internal & FF_CODEC_CAP_EXPORTS_CROPPING)) {
+     frame->width = avctx->width;
+     frame->height = avctx->height;
+   }
+   ...
+   if(ret < 0) {
+     av_log(avctx, AV_LOG_ERROR, "get_buffer()failed\n");
+     av_frame_unref(frame);
+   }
+   return ret;
+}
+   [reads: avctx, flags, frame; writes: avctx*, frame*]
+
+-- called macro: AVERROR_INVALIDDATA — libavutil/error.h:61 [gtags_unique, new version] --
+#define AVERROR_INVALIDDATA        FFERRTAG( 'I','N','D','A') ///< Invalid data found when processing input

@@ -1,0 +1,23 @@
+Context for merged statement of old file: ext/standard/user_filters.c with new file: ext/standard/user_filters.c:
+PHP_FUNCTION (stream_get_filters) {
++ zend_bool return_system = 0;
+- if (ZEND_NUM_ARGS()!= 0) {
++ if (zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "|b", &return_system)== FAILURE) {
+- WRONG_PARAM_COUNT;
++ RETURN_FALSE;
+  }
+- filters_hash = php_get_stream_filters_hash();
++ if (return_system) {
++ filters_hash = php_get_stream_filters_hash();
+  }
++ else {
++ filters_hash = BG(user_filter_map);
++ }
+  if (filters_hash) {
+  for (zend_hash_internal_pointer_reset(filters_hash); (key_flags = zend_hash_get_current_key_ex(filters_hash, &filter_name, &filter_name_len, NULL, 0, NULL))!= HASH_KEY_NON_EXISTANT; zend_hash_move_forward(filters_hash)) {
+  if (key_flags == HASH_KEY_IS_STRING) {
+  }
+  }
+  }
+}
+

@@ -1,0 +1,221 @@
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+- bool zend_is_indirectly_recursive(zend_op_array *root, zend_op_array *op_array, zend_bitset visited) {
++ bool zend_is_indirectly_recursive(const zend_op_array *root, const zend_op_array *op_array, zend_bitset visited) {
+- zend_func_info *func_info;
++ const zend_func_info *func_info;
+  if (zend_bitset_in(visited, func_info->num)) {
+  return false;
+  }
+  zend_bitset_incl(visited, func_info->num);
+  call_info = func_info->caller_info;
+  while ((call_info)) {
+  if (zend_is_indirectly_recursive(root, call_info->caller_op_array, visited)) {
+  call_info->recursive = true;
+  }
+  call_info = call_info->next_caller;
+  }
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+void zend_analyze_recursion(zend_call_graph *call_graph) {
+- zend_op_array *op_array;
++ const zend_op_array *op_array;
+  for (uint32_t i = 0;; i < call_graph->op_arrays_count; i++) {
+  for (; call_info; call_info = call_info->next_caller) {
+  if (call_info->caller_op_array == op_array) {
+  }
+  else {
+  if (zend_is_indirectly_recursive(op_array, call_info->caller_op_array, visited)) {
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+- ZEND_API **zend_build_call_map(zend_arena **arena, zend_func_info *info, const zend_op_array *op_array) {
++ ZEND_API **zend_build_call_map(zend_arena **arena, const zend_func_info *info, const zend_op_array *op_array) {
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.h with new file: Zend/Optimizer/zend_call_graph.h:
+#ifndef ZEND_CALL_GRAPH_H
+- ZEND_API zend_call_info **zend_build_call_map(zend_arena **arena, zend_func_info *info, const zend_op_array *op_array);
++ ZEND_API zend_call_info **zend_build_call_map(zend_arena **arena, const zend_func_info *info, const zend_op_array *op_array);
+  #endif
+
+
+==== Cross-function context ====
+
+-- called function: zend_bitset_in — Zend/zend_bitset.h:130 [gtags_unique] --
+static inline bool zend_bitset_in(zend_bitset set, uint32_t n) {
+   return ZEND_BIT_TEST(set, n);
+}
+   [reads: n, set; writes: -]
+
+-- called function: zend_bitset_incl — Zend/zend_bitset.h:135 [gtags_unique] --
+static inline void zend_bitset_incl(zend_bitset set, uint32_t n) {
+   set[ZEND_BITSET_ELM_NUM(n)] |= Z_UL(1)<< ZEND_BITSET_BIT_NUM(n);
+}
+   [reads: n, set; writes: -]
+
+-- called macro: END_EXTERN_C — Zend/zend_portability.h:26 [priority_fallback] --
+#define END_EXTERN_C() }
+
+-- called macro: BEGIN_EXTERN_C — Zend/zend_portability.h:25 [priority_fallback] --
+#define BEGIN_EXTERN_C() extern "C" {
+
+-- called macro: ZEND_CALL_GRAPH_H — Zend/Optimizer/zend_call_graph.h:20 [gtags_unique, new version] --
+#define ZEND_CALL_GRAPH_H
+
+-- caller of zend_is_indirectly_recursive: zend_analyze_recursion — Zend/Optimizer/zend_call_graph.c:222 --
+static void zend_analyze_recursion(zend_call_graph *call_graph) {
+   const zend_op_array *op_array;
+   zend_func_info *func_info;
+   zend_call_info *call_info;
+   uint32_t set_len = zend_bitset_len(call_graph->op_arrays_count);
+   zend_bitset visited;
+   ...
+   visited = ZEND_BITSET_ALLOCA(set_len, use_heap);
+   for(uint32_t i = 0;; i < call_graph->op_arrays_count; i++) {
+   uint32_t i = 0;
+     op_array = call_graph->op_arrays[i];
+     func_info = call_graph->func_infos + i;
+     call_info = func_info->caller_info;
+     for(; call_info; call_info = call_info->next_caller) {
+   ...
+       if(call_info->caller_op_array == op_array) {
+   ...
+       } else {
+         memset(visited, 0, sizeof(zend_ulong)* set_len);
+>        if(zend_is_indirectly_recursive(op_array, call_info->caller_op_array, visited)) {
+   ...
+         }
+       }
+     }
+   }
+}
+
+-- caller of zend_analyze_recursion: zend_analyze_call_graph — Zend/Optimizer/zend_call_graph.c:257 --
+ZEND_API void zend_analyze_call_graph(zend_arena **arena, zend_script *script, zend_call_graph *call_graph) /* {
+   ...
+>  zend_analyze_recursion(call_graph);
+   ...
+}
+
+-- caller of zend_build_call_map: zend_optimize_script — Zend/Optimizer/zend_optimizer.c:1625 --
+ZEND_API void zend_optimize_script(zend_script *script, zend_long optimization_level, zend_long debug_level) {
+   ...
+   zend_optimizer_ctx ctx;
+   ...
+   ctx.arena = zend_arena_create(64 * 1024);
+   ...
+   if((ZEND_OPTIMIZER_PASS_6 & optimization_level)&&(ZEND_OPTIMIZER_PASS_7 & optimization_level)) {
+     zend_call_graph call_graph;
+   ...
+     uint32_t i;
+     zend_func_info *func_info;
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+   ...
+     }
+   ...
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+       func_info = ZEND_FUNC_INFO(call_graph.op_arrays[i]);
+       if(func_info) {
+>        func_info->call_map = zend_build_call_map(&ctx.arena, func_info, call_graph.op_arrays[i]);
+   ...
+       }
+     }
+   ...
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+   ...
+       if(func_info) {
+         zend_dfa_optimize_op_array(call_graph.op_arrays[i], &ctx, &func_info->ssa, func_info->call_map);
+   ...
+       }
+     }
+   }
+}
+
+-- caller of zend_build_call_map: zend_real_jit_func — ext/opcache/jit/zend_jit.c:3050 --
+static int zend_real_jit_func(zend_op_array *op_array, zend_script *script, const zend_op *rt_opline, uint8_t trigger) {
+   ...
+   zend_func_info *func_info;
+   ...
+   if(op_array->fn_flags & ZEND_ACC_CLOSURE) {
+     if(trigger == ZEND_JIT_ON_FIRST_EXEC) {
+       zend_jit_op_array_extension *jit_extension =(zend_jit_op_array_extension*)ZEND_FUNC_INFO(op_array);
+       op_array =(zend_op_array*)jit_extension->op_array;
+     } else if(trigger == ZEND_JIT_ON_HOT_COUNTERS) {
+       zend_jit_op_array_hot_extension *jit_extension =(zend_jit_op_array_hot_extension*)ZEND_FUNC_INFO(op_array);
+       op_array =(zend_op_array*)jit_extension->op_array;
+   ...
+     } else {
+     }
+   }
+   ...
+   if(JIT_G(opt_level)>= ZEND_JIT_LEVEL_OPT_FUNCS) {
+   ...
+     func_info = ZEND_FUNC_INFO(op_array);
+>    func_info->call_map = zend_build_call_map(&CG(arena), func_info, op_array);
+   ...
+   }
+}
+
+-- caller of zend_build_call_map: zend_jit_script — ext/opcache/jit/zend_jit.c:3428 --
+int zend_jit_script(zend_script *script) {
+   ...
+   zend_call_graph call_graph;
+   zend_func_info *info;
+   int i;
+   ...
+   call_graph.op_arrays_count = 0;
+   ...
+   if(JIT_G(trigger)== ZEND_JIT_ON_FIRST_EXEC || JIT_G(trigger)== ZEND_JIT_ON_PROF_REQUEST || JIT_G(trigger)== ZEND_JIT_ON_HOT_COUNTERS || JIT_G(trigger)== ZEND_JIT_ON_HOT_TRACE) {
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+   ...
+     }
+   } else if(JIT_G(trigger)== ZEND_JIT_ON_SCRIPT_LOAD) {
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+       info = ZEND_FUNC_INFO(call_graph.op_arrays[i]);
+       if(info) {
+   ...
+         info->ssa.cfg.flags |= info->flags;
+         info->flags = info->ssa.cfg.flags;
+       }
+     }
+     for(i = 0; i < call_graph.op_arrays_count; i++) {
+       info = ZEND_FUNC_INFO(call_graph.op_arrays[i]);
+       if(info) {
+>        info->call_map = zend_build_call_map(&CG(arena), info, call_graph.op_arrays[i]);
+   ...
+       }
+     }
+   }
+}
+
+-- caller of zend_build_call_map: zend_jit_trace_build_ssa — ext/opcache/jit/zend_jit_trace.c:559 --
+static zend_ssa *zend_jit_trace_build_ssa(const zend_op_array *op_array, zend_script *script) {
+   zend_jit_op_array_trace_extension *jit_extension;
+   ...
+   jit_extension =(zend_jit_op_array_trace_extension*)ZEND_FUNC_INFO(op_array);
+   jit_extension->func_info.num = 0;
+   jit_extension->func_info.flags &= ZEND_FUNC_JIT_ON_FIRST_EXEC | ZEND_FUNC_JIT_ON_PROF_REQUEST | ZEND_FUNC_JIT_ON_HOT_COUNTERS | ZEND_FUNC_JIT_ON_HOT_TRACE;
+   memset(&jit_extension->func_info.ssa, 0, sizeof(zend_func_info)- offsetof(zend_func_info, ssa));
+   ...
+   if(JIT_G(opt_level)>= ZEND_JIT_LEVEL_OPT_FUNC) {
+     do {
+   ...
+       if(JIT_G(opt_level)>= ZEND_JIT_LEVEL_OPT_FUNCS) {
+   ...
+>        jit_extension->func_info.call_map = zend_build_call_map(&CG(arena), &jit_extension->func_info, op_array);
+   ...
+       }
+     } while(0);
+   }
+}
+
+-- 2nd-level context (summaries) --
+  ZEND_BIT_TEST — Zend/zend_portability.h:481 [gtags_unique]: #define ZEND_BIT_TEST(bits, bit) \
+  ZEND_BITSET_BIT_NUM — Zend/zend_bitset.h:38 [lsp]: # define ZEND_BITSET_BIT_NUM(n)		((zend_ulong)(n) & Z_UL(0x3f))
+  Z_UL — Zend/zend_long.h:39 [lsp]: # define Z_UL(i) UINT64_C(i)
+  ZEND_BITSET_ELM_NUM — Zend/zend_bitset.h:37 [lsp]: # define ZEND_BITSET_ELM_NUM(n)		((n) >> 6)

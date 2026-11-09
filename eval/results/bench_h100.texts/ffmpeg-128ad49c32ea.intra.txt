@@ -1,0 +1,19 @@
+Context for merged statement of old file: libavcodec/ffv1dec.c with new file: libavcodec/ffv1dec.c:
+int read_header(FFV1Context *f, RangeCoder *c) {
+- if (f->configured_pix_fmt != f->pix_fmt || f->configured_width != f->avctx->width || f->configured_height != f->avctx->height || f->configured_ac != f->ac) {
++ if (f->configured_pix_fmt != f->pix_fmt || f->configured_width != f->width || f->configured_height != f->height || f->configured_ac != f->ac) {
+- f->configured_width = f->avctx->width;
++ f->configured_width = f->width;
+- f->configured_height = f->avctx->height;
++ f->configured_height = f->height;
+  }
+}
+
+Context for merged statement of old file: libavcodec/ffv1dec.c with new file: libavcodec/ffv1dec.c:
+int update_thread_context(AVCodecContext *dst, const AVCodecContext *src) {
+  FFV1Context *fsrc = src->priv_data;
+  FFV1Context *fdst = dst->priv_data;
++ fdst->configured_width = fsrc->configured_width;
++ fdst->configured_height = fsrc->configured_height;
+}
+

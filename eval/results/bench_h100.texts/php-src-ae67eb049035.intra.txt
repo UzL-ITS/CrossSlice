@@ -1,0 +1,1063 @@
+Context for merged statement of old file: ext/opcache/jit/ir/ir_gcm.c with new file: ext/opcache/jit/ir/ir_gcm.c:
+bool ir_split_partially_dead_node(ir_ctx *ctx, ir_ref ref, uint32_t b) {
+  ir_use_list *use_list;
+  ir_insn *insn;
+  ir_ref n, *p, use;
+  uint32_t i;
+  ir_gcm_split_data *data = ctx->data;
+  use_list = &ctx->use_lists[ref];
+  n = use_list->count;
+  for (p = &ctx->use_edges[use_list->refs]; n > 0; p++, n--) {
+  use = *p;
+  insn = &ctx->ir_base[use];
+  if (insn->op == IR_PHI) {
+  ir_ref *p = insn->ops + 2;
+  ir_ref *q = ctx->ir_base[insn->op1].ops + 1;
+  ir_ref n = insn->inputs_count - 1;
+  for (; n > 0; p++, q++, n--) {
+  if (*p == ref) {
+  i = ctx->cfg_map[*q];
+  }
+  }
+  }
+  else {
+  i = ctx->cfg_map[use];
+  }
+  }
+  while ((ir_list_len(&data->worklist))) {
+  i = ir_list_pop(&data->worklist);
+  }
+  use_list = &ctx->use_lists[ref];
+  ir_hashtab hash;
+  uint32_t j, clone, clones_count = 0, uses_count = 0;
+  struct { ir_ref ref; uint32_t block; uint32_t use_count; uint32_t use; } *clones = ir_mem_malloc(sizeof(*clones)* use_list->count);
+  struct { ir_ref ref; uint32_t block; uint32_t next; } *uses = ir_mem_malloc(sizeof(*uses)* use_list->count);
+  n = use_list->count;
+  for (p = &ctx->use_edges[use_list->refs]; n > 0; p++, n--) {
+  use = *p;
+  insn = &ctx->ir_base[use];
+  if (insn->op == IR_PHI) {
+  ir_ref *p = insn->ops + 2;
+  ir_ref *q = ctx->ir_base[insn->op1].ops + 1;
+  ir_ref n = insn->inputs_count - 1;
+  for (; n > 0; p++, q++, n--) {
+  if (*p == ref) {
+  j = i = ctx->cfg_map[*q];
+  while ((ir_sparse_set_in(&data->totally_useful, ctx->cfg_blocks[j].idom))) {
+  j = ctx->cfg_blocks[j].idom;
+  }
+  clone = ir_hashtab_find(&hash, j);
+  if (clone == IR_INVALID_VAL) {
+  clone = clones_count++;
+  clones[clone].block = j;
+  clones[clone].use_count = 0;
+  clones[clone].use =(uint32_t)-1;
+  }
+  uses[uses_count].block = i;
+  clones[clone].use_count++;
+  clones[clone].use = uses_count++;
+  }
+  }
+  }
+  else {
+  j = i = ctx->cfg_map[use];
+  if (i) {
+  while ((ir_sparse_set_in(&data->totally_useful, ctx->cfg_blocks[j].idom))) {
+  j = ctx->cfg_blocks[j].idom;
+  }
+  }
+  clone = ir_hashtab_find(&hash, j);
+  if (clone == IR_INVALID_VAL) {
+  clone = clones_count++;
+  clones[clone].block = j;
+  clones[clone].use_count = 0;
+  clones[clone].use = -1;
+  }
+  uses[uses_count].block = i;
+  clones[clone].use_count++;
+  clones[clone].use = uses_count++;
+  }
+  }
+   #ifdef IR_DEBUG
+  if (ctx->flags & IR_DEBUG_GCM_SPLIT) {
+  for (i = 0; i < clones_count; i++) {
+  }
+  }
+  #endif
+  for (i = 1; i < clones_count; i++) {
+  }
+  for (i = 0; i < clones_count; i++) {
+- if (clones[i].use_count == 1) {
++ if (clones[i].use_count == 1 && ctx->cfg_blocks[clones[i].block].loop_depth >= ctx->cfg_blocks[uses[clones[i].use].block].loop_depth) {
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+IR_NEVER_INLINE ir_sccp_analyze(ir_ctx *ctx, ir_insn *_values, ir_bitqueue *worklist, ir_bitqueue *iter_worklist) {
+  ir_ref i, j, n, *p, use;
+  ir_insn *insn, *use_insn;
+  worklist->pos = 0;
+  for (; (i = ir_bitqueue_pop(worklist))>= 0; ir_sccp_trace_end(ctx, _values, i)) {
+  insn = &ctx->ir_base[i];
+  if (flags & IR_OP_FLAG_DATA) {
+  if (ctx->use_lists[i].count == 0) {
+  }
+  else {
+  if (insn->op == IR_PHI) {
+  }
+  else {
+  if (EXPECTED(IR_IS_FOLDABLE_OP(insn->op))) {
+  if (!may_benefit) {
+- if (insn->op == IR_FP2FP || insn->op == IR_FP2INT || insn->op == IR_TRUNC || insn->op == IR_ZEXT || insn->op == IR_SEXT || insn->op == IR_EQ || insn->op == IR_NE) {
++ if (insn->op == IR_FP2FP || insn->op == IR_FP2INT || insn->op == IR_TRUNC) {
+  }
+  }
+  else {
+  if (!ir_sccp_fold(ctx, _values, worklist, i, insn)) {
+  }
+  else {
+  if (_values[i].op == IR_BOTTOM) {
+  insn = &ctx->ir_base[i];
+- if (insn->op == IR_FP2FP || insn->op == IR_FP2INT || insn->op == IR_TRUNC || insn->op == IR_ZEXT || insn->op == IR_SEXT || insn->op == IR_EQ || insn->op == IR_NE) {
++ if (insn->op == IR_FP2FP || insn->op == IR_FP2INT || insn->op == IR_TRUNC) {
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  else {
+  if (flags & IR_OP_FLAG_BB_START) {
+- if (insn->op == IR_MERGE || insn->op == IR_BEGIN) {
++ if (insn->op == IR_MERGE || insn->op == IR_LOOP_BEGIN || insn->op == IR_BEGIN) {
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+- void ir_sccp_remove_unfeasible_merge_inputs(ir_ctx *ctx, ir_insn *_values, ir_ref ref, ir_ref unfeasible_inputs) {
++ bool ir_sccp_remove_unfeasible_merge_inputs(ir_ctx *ctx, ir_ref ref, ir_insn *insn, ir_bitqueue *worklist) {
+- ir_ref i, j, n, k, *p, use;
++ ir_ref old_merge_inputs, new_merge_inputs, i, *p;
+  ir_use_list *use_list;
+  ir_bitset life_inputs;
+  for (j = 1; j <= n; j++) {
+- if (input && IR_IS_REACHABLE(input)) {
+- ir_insn *input_insn = &ctx->ir_base[input];
+- IR_ASSERT(input_insn->op == IR_END || input_insn->op == IR_LOOP_END|| input_insn->op == IR_IJMP || input_insn->op == IR_UNREACHABLE);
+- if (input_insn->op == IR_END || input_insn->op == IR_LOOP_END) {
+- ir_ref prev, next = IR_UNUSED;
+- ir_insn *next_insn = NULL;
+- prev = input_insn->op1;
+- use_list = &ctx->use_lists[ref];
+- if (use_list->count == 1) {
+- next = ctx->use_edges[use_list->refs];
+- next_insn = &ctx->ir_base[next];
+  }
+- else { k = 0; p = &ctx->use_edges[use_list->refs]; while(k < use_list->count){ use = *p; use_insn = &ctx->ir_base[use]; #if IR_COMBO_COPY_PROPAGATION IR_ASSERT((use_insn->op != IR_PHI)&& "PHI must be already removed"); #else if(use_insn->op == IR_PHI){ /* Convert PHI into COPY */ ir_ref i, n = use_insn->inputs_count; for(i = 2; i <= n; i++){ if(i != j + 1){ ir_ref from = ir_insn_op(use_insn, i); if(from > 0){ ir_use_list_remove_one(ctx, from, use); } ir_insn_set_op(use_insn, i, IR_UNUSED); } } use_insn->optx = IR_OPTX(IR_COPY, use_insn->type, 1); use_insn->op1 = ir_insn_op(use_insn, j + 1); ir_insn_set_op(use_insn, j + 1, IR_UNUSED); ir_use_list_remove_one(ctx, ref, use); p = &ctx->use_edges[use_list->refs + k]; continue; } #endif if(ir_op_flags[use_insn->op] & IR_OP_FLAG_CONTROL){ IR_ASSERT(!next); next = use; next_insn = use_insn; } else if(use_insn->op != IR_NOP){ IR_ASSERT(use_insn->op1 == ref); IR_ASSERT(use_insn->op == IR_VAR); ir_ref region = prev; while(!IR_IS_BB_START(ctx->ir_base[region].op)){ region = ctx->ir_base[region].op1; } use_insn->op1 = region; ir_use_list_add(ctx, region, use); p = &ctx->use_edges[use_list->refs + k]; } k++; p++; } }
+- p = &ctx->use_edges[use_list->refs];
+- while ((k < use_list->count)) {
+- use = *p;
+- use_insn = &ctx->ir_base[use];
+- #if IR_COMBO_COPY_PROPAGATION
++ IR_ASSERT((use_insn->op != IR_PHI)&& "PHI must be already removed");
+  #else
+- ir_ref i, n = use_insn->inputs_count;
+  for (i = 2; i <= n; i++) {
+- if (i != j + 1) {
++ ir_ref from = ir_insn_op(use_insn, i);
+- if (from > 0) {
+- ir_use_list_remove_one(ctx, from, use);
++ new_merge_inputs++;
+  }
+- ir_insn_set_op(use_insn, i, IR_UNUSED);
+  }
+  }
++ ir_insn_set_op(use_insn, j + 1, IR_UNUSED);
++ ir_use_list_remove_one(ctx, ref, use);
+- p = &ctx->use_edges[use_list->refs + k];
+  #endif
+- if (ir_op_flags[use_insn->op] & IR_OP_FLAG_CONTROL) {
+- IR_ASSERT(!next);
+- next = use;
+- next_insn = use_insn;
+  }
+- else if(use_insn->op != IR_NOP){ IR_ASSERT(use_insn->op1 == ref); IR_ASSERT(use_insn->op == IR_VAR); ir_ref region = prev; while(!IR_IS_BB_START(ctx->ir_base[region].op)){ region = ctx->ir_base[region].op1; } use_insn->op1 = region; ir_use_list_add(ctx, region, use); p = &ctx->use_edges[use_list->refs + k]; }
++ if (use_insn->op != IR_NOP) {
+- use_insn->op1 = region;
++ use_insn->op1 = use_insn->op2;
+- IR_ASSERT(use_insn->op1 == ref);
+- IR_ASSERT(use_insn->op == IR_VAR);
+- ir_ref region = prev;
+- while ((!IR_IS_BB_START(ctx->ir_base[region].op))) {
+- region = ctx->ir_base[region].op1;
+  }
++ ir_use_list_add(ctx, region, use);
+- p = &ctx->use_edges[use_list->refs + k];
+  }
+  }
+- k = 0;
++ new_merge_inputs = 0;
+- p++;
++ return 0;
++ if (new_merge_inputs == 1 && insn->op == IR_LOOP_BEGIN && insn->op1 > ref) {
+- insn->op = IR_BEGIN;
++ ir_use_list_remove_one(ctx, insn->op1, ref);
+- insn->op1 = input;
++ insn->op1 = IR_UNUSED;
+- life_inputs = ir_bitset_malloc(n + 1);
++ new_merge_inputs = 0;
+  }
+  if (use_insn->op == IR_PHI) {
+- i = 2;
++ ir_ref j, k;
+- for (j = 2; j <= n; j++) {
++ for (j = k = 1; j <= old_merge_inputs; j++) {
+- ir_ref input = ir_insn_op(use_insn, j);
++ ir_ref input = ir_insn_op(use_insn, j + 1);
+- if (ir_bitset_in(life_inputs, j - 1)) {
++ if (ir_bitset_in(life_inputs, j)) {
++ IR_ASSERT(input);
+- if (i != j) {
++ if (k != j) {
+- ir_insn_set_op(use_insn, i, input);
++ ir_insn_set_op(use_insn, k + 1, input);
+  }
++ k++;
+- i++;
+  }
+  else {
+- IR_ASSERT(input);
+- if (!IR_IS_CONST_REF(input)) {
++ if (input > 0) {
++ ir_use_list_remove_one(ctx, input, use);
+  }
+- ir_use_list_remove_one(ctx, input, use);
+  }
+  }
+- while ((i <= n)) {
++ while ((k <= old_merge_inputs)) {
++ k++;
+- ir_insn_set_op(use_insn, i, IR_UNUSED);
++ ir_insn_set_op(use_insn, k, IR_UNUSED);
+  }
++ if (new_merge_inputs == 0) {
++ #if 0
+- use_insn->op1 = ir_insn_op(use_insn, j + 1);
++ use_insn->op1 = IR_UNUSED;
+- i++;
++ ir_iter_remove_insn(ctx, use, worklist);
+  #else
++ IR_ASSERT(0);
+  #endif
++ continue;
+  }
++ else {
++ use_insn->optx = IR_OPTX(IR_COPY, use_insn->type, 1);
++ use_insn->op2 = IR_UNUSED;
++ ir_bitqueue_add(worklist, use);
++ continue;
+- use_insn->inputs_count = insn->inputs_count + 1;
++ use_insn->inputs_count = new_merge_inputs + 1;
++ }
+  }
+- IR_ASSERT(prev && next);
+- if (prev < next) {
+- next_insn->op1 = prev;
+- ir_use_list_replace_one(ctx, prev, input, next);
+- ir_sccp_make_nop(ctx, ref);
+- ir_sccp_make_nop(ctx, input);
+  }
+- else { for(i = 2; i <= n; i++){ ir_insn_set_op(insn, i, IR_UNUSED); } insn->op = IR_BEGIN; insn->op1 = input; input_insn->op = IR_END; }
+- ir_insn_set_op(insn, i, IR_UNUSED);
+- insn->op1 = input;
+- input_insn->op = IR_END;
+- break;
+- for (i = 2; i <= n; i++) {
++ for (i = use_count; i < use_list->count; q++, i++) {
++ *q = IR_UNUSED;
+  }
+  }
+- else { for(i = 2; i <= n; i++){ ir_insn_set_op(insn, i, IR_UNUSED); } insn->op = IR_BEGIN; insn->op1 = input; }
+- for (i = 2; i <= n; i++) {
++ for (i = new_merge_inputs + 1; i <= old_merge_inputs; i++) {
++ ir_insn_set_op(insn, i, IR_UNUSED);
+  }
+  }
+- ir_ref input = ir_insn_op(insn, j);
++ ir_bitset_base_t holder = 0;
+  }
+- insn = &ctx->ir_base[ref];
+- n = insn->inputs_count;
++ old_merge_inputs = insn->inputs_count;
+- life_inputs =(old_merge_inputs - IR_BITSET_BITS)? &holder : ir_bitset_malloc(old_merge_inputs + 1);
+  for (i = 1; i <= old_merge_inputs; i++) {
+- ir_ref input = ir_insn_op(insn, i);
+  if (input) {
++ if (new_merge_inputs != i) {
+- ir_insn_set_op(insn, new_merge_inputs, input);
+  }
+- ir_bitset_incl(life_inputs, i);
+- i++;
+- if (i != j) {
+- ir_insn_set_op(insn, i, input);
++ insn->optx = IR_OPTX(IR_BEGIN, IR_VOID, 1);
+  }
+- ir_bitset_incl(life_inputs, j);
++ ir_bitqueue_add(worklist, ref);
+  }
+  }
++ if (new_merge_inputs == old_merge_inputs) {
+- if (life_inputs != &holder) {
+- ir_mem_free(life_inputs);
+  }
+  }
+- j = i;
+- ir_insn_set_op(insn, j, IR_UNUSED);
+- j++;
+- i--;
+- insn->inputs_count = i;
+- n++;
+- if (j <= n) {
++ if (new_merge_inputs <= 1) {
++ #if 0
+  #endif
+  }
++ else {
+- n = insn->inputs_count;
++ insn->inputs_count = new_merge_inputs;
++ }
+- i = 1;
+  for (j = 1; j <= n; j++) {
+- ir_ref input = ir_insn_op(insn, j);
+  }
++ use_list = &ctx->use_lists[ref];
+- use_list = &ctx->use_lists[ref];
+  if (use_list->count > 1) {
++ ir_ref use_count = 0;
++ ir_ref *q;
+- for (k = use_list->count, p = &ctx->use_edges[use_list->refs]; k > 0; p++, k--) {
++ for (i = 0, p = q = &ctx->use_edges[use_list->refs]; i < use_list->count; p++, i++) {
+- use = *p;
++ ir_ref use = *p;
+- ir_insn *insn, *use_insn;
++ ir_insn *use_insn = &ctx->ir_base[use];
+- use_insn = &ctx->ir_base[use];
+- if (use_insn->op == IR_PHI) {
+  }
++ if (p != q) {
++ *q = use;
+  }
++ q++;
++ use_count++;
+  }
++ use_list->count = use_count;
+  }
+- if (n - unfeasible_inputs == 1) {
++ if (life_inputs != &holder) {
+  ir_mem_free(life_inputs);
+  }
+- else { n = insn->inputs_count; i = 1; life_inputs = ir_bitset_malloc(n + 1); for(j = 1; j <= n; j++){ ir_ref input = ir_insn_op(insn, j); if(input){ if(i != j){ ir_insn_set_op(insn, i, input); } ir_bitset_incl(life_inputs, j); i++; } } j = i; while(j <= n){ ir_insn_set_op(insn, j, IR_UNUSED); j++; } i--; insn->inputs_count = i; n++; use_list = &ctx->use_lists[ref]; if(use_list->count > 1){ for(k = use_list->count, p = &ctx->use_edges[use_list->refs]; k > 0; p++, k--){ use = *p; use_insn = &ctx->ir_base[use]; if(use_insn->op == IR_PHI){ i = 2; for(j = 2; j <= n; j++){ ir_ref input = ir_insn_op(use_insn, j); if(ir_bitset_in(life_inputs, j - 1)){ IR_ASSERT(input); if(i != j){ ir_insn_set_op(use_insn, i, input); } i++; } else if(!IR_IS_CONST_REF(input)){ ir_use_list_remove_one(ctx, input, use); } } while(i <= n){ ir_insn_set_op(use_insn, i, IR_UNUSED); i++; } use_insn->inputs_count = insn->inputs_count + 1; } } } ir_mem_free(life_inputs); }
++ return 1;
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+IR_NEVER_INLINE ir_sccp_transform(ir_ctx *ctx, ir_insn *_values, ir_bitqueue *worklist, ir_bitqueue *iter_worklist) {
+  ir_ref i, j;
+  ir_insn *value;
+  for (i = 1, value = _values + i; i < ctx->insns_count; value++, i++) {
+  if (value->op == IR_BOTTOM) {
+  }
+  else {
+  if (IR_IS_CONST_OP(value->op)) {
+  }
+  else {
+  if (IR_IS_SYM_CONST(value->op)) {
+  }
+  else {
+  if (value->op == IR_COPY) {
+  }
+  else {
+  if (value->op == IR_TOP) {
+  ir_insn *insn = &ctx->ir_base[i];
+  if (insn->op == IR_NOP) {
+  }
+  else {
+  if (ir_op_flags[insn->op] &(IR_OP_FLAG_DATA|IR_OP_FLAG_MEM)) {
+- if (insn->op != IR_PARAM &&(insn->op != IR_VAR || _values[insn->op1].op == IR_TOP)) {
++ if (insn->op != IR_PARAM) {
+  }
+  }
+  else {
+  if (ir_op_flags[insn->op] & IR_OP_FLAG_TERMINATOR) {
+  ir_ref prev = ctx->ir_base[1].op1;
+  if (prev == i) {
+  ctx->ir_base[1].op1 = insn->op3;
+  }
+  else {
+  while ((prev)) {
+  if (ctx->ir_base[prev].op3 == i) {
+  ctx->ir_base[prev].op3 = insn->op3;
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  }
+  while (((i = ir_bitqueue_pop(worklist))>= 0)) {
+- ir_sccp_remove_unfeasible_merge_inputs(ctx, _values, i, _values[i].op1);
++ ir_sccp_remove_unfeasible_merge_inputs(ctx, i, &ctx->ir_base[i], iter_worklist);
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+void ir_iter_replace_insn(ir_ctx *ctx, ir_ref ref, ir_ref new_ref, ir_bitqueue *worklist) {
+  ir_ref j, n, *p;
+  ir_insn *insn;
+  insn = &ctx->ir_base[ref];
+  n = insn->inputs_count;
+  for (j = 1, p = insn->ops + 1; j <= n; j++, p++) {
+  ir_ref input = *p;
+  if (input > 0) {
+  if (ir_is_dead(ctx, input)) {
+  }
+  else {
+  if (ctx->ir_base[input].op == IR_PHI && ctx->use_lists[input].count == 1) {
+- ir_bitqueue_add(worklist, input);
++ ir_bitqueue_add(worklist, ctx->ir_base[input].op1);
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+- bool ir_may_promote_i2i(ir_ctx *ctx, ir_type type, ir_ref ref) {
++ bool ir_may_promote_trunc(ir_ctx *ctx, ir_type type, ir_ref ref) {
+  ir_insn *insn = &ctx->ir_base[ref];
++ ir_ref *p, n, input;
+  if (IR_IS_CONST_REF(ref)) {
+  return !IR_IS_SYM_CONST(insn->op);
+  }
+  else {
+  switch ((insn->op)) {
++ case IR_SEXT:
+- case IR_SEXT:
++ case IR_TRUNC:
+- return ctx->ir_base[insn->op1].type == type;
++ return ctx->ir_base[insn->op1].type == type || ctx->use_lists[ref].count == 1;
+  case IR_NOT:
+- return ctx->use_lists[ref].count == 1 && ir_may_promote_i2i(ctx, type, insn->op1);
++ return ctx->use_lists[ref].count == 1 && ir_may_promote_trunc(ctx, type, insn->op1);
+  case IR_SHL:
+- return ctx->use_lists[ref].count == 1 && ir_may_promote_i2i(ctx, type, insn->op1)&& ir_may_promote_i2i(ctx, type, insn->op2);
++ return ctx->use_lists[ref].count == 1 && ir_may_promote_trunc(ctx, type, insn->op1)&& ir_may_promote_trunc(ctx, type, insn->op2);
++ case IR_COND:
++ return ctx->use_lists[ref].count == 1 && ir_may_promote_trunc(ctx, type, insn->op2)&& ir_may_promote_trunc(ctx, type, insn->op3);
++ case IR_PHI:
++ if (ctx->use_lists[ref].count != 1) {
++ ir_use_list *use_list = &ctx->use_lists[ref];
++ ir_ref count = 0;
+  for (p = &ctx->use_edges[use_list->refs], n = use_list->count; n > 0; p++, n--) {
++ if (*p != ref) {
++ if (count) {
++ return 0;
+  }
++ count = 1;
+  }
+  }
+  }
+  for (p = insn->ops + 1, n = insn->inputs_count - 1; n > 0; p++, n--) {
++ input = *p;
++ if (input != ref) {
++ if (!ir_may_promote_trunc(ctx, type, input)) {
++ return 0;
+  }
+  }
+  }
++ return 1;
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+ir_ref ir_promote_i2i(ir_ctx *ctx, ir_type type, ir_ref ref, ir_ref use) {
+  ir_insn *insn = &ctx->ir_base[ref];
++ ir_ref *p, n, input;
+  if (IR_IS_CONST_REF(ref)) {
+  return ir_const(ctx, insn->val, type);
+  }
+  else {
+  switch ((insn->op)) {
++ case IR_SEXT:
+- case IR_SEXT:
++ case IR_TRUNC:
++ if (ctx->ir_base[insn->op1].type != type) {
++ ir_type src_type = ctx->ir_base[insn->op1].type;
++ if (ir_type_size[src_type] == ir_type_size[type]) {
++ insn->op = IR_BITCAST;
+  }
++ else {
++ if (ir_type_size[src_type] > ir_type_size[type]) {
++ insn->op = IR_TRUNC;
+  }
++ else {
++ if (insn->op != IR_SEXT && insn->op != IR_ZEXT) {
++ insn->op = IR_IS_TYPE_SIGNED(type)? IR_SEXT : IR_ZEXT;
+  }
++ }
++ }
++ insn->type = type;
++ return ref;
+  }
+  if (ctx->use_lists[ref].count == 0) {
+  ref = insn->op1;
+  MAKE_NOP(insn);
+  }
+  insn->op1 = ir_promote_i2i(ctx, type, insn->op1, ref);
+  if (insn->op1 == insn->op2) {
+  insn->op2 = insn->op1 = ir_promote_i2i(ctx, type, insn->op1, ref);
+  }
+  else {
+  insn->op2 = ir_promote_i2i(ctx, type, insn->op2, ref);
+  }
++ case IR_COND:
++ if (insn->op2 == insn->op3) {
++ insn->op3 = insn->op2 = ir_promote_i2i(ctx, type, insn->op2, ref);
+  }
++ else {
++ insn->op2 = ir_promote_i2i(ctx, type, insn->op2, ref);
++ insn->op3 = ir_promote_i2i(ctx, type, insn->op3, ref);
++ }
++ insn->type = type;
++ return ref;
++ case IR_PHI:
+  for (p = insn->ops + 1, n = insn->inputs_count - 1; n > 0; p++, n--) {
++ input = *p;
++ if (input != ref) {
++ *p = ir_promote_i2i(ctx, type, input, ref);
+  }
+  }
++ insn->type = type;
++ return ref;
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+bool ir_try_promote_ext(ir_ctx *ctx, ir_ref ext_ref, ir_insn *insn, ir_bitqueue *worklist) {
+- ir_type type = insn->type;
+- ir_op op = insn->op;
+- ir_insn *phi_insn = &ctx->ir_base[ref];
+- ir_use_list *use_list;
+- ir_ref n, *p, use, op_ref;
+  ir_ref ref = insn->op1;
+- ir_iter_replace_insn(ctx, ext_ref, ref, worklist);
+- if (IR_IS_CONST_REF(phi_insn->op2)&& !IR_IS_SYM_CONST(ctx->ir_base[phi_insn->op2].op)) {
+  }
+- else { ctx->ir_base[ref].op2 = ir_ext_ref(ctx, ref, phi_insn->op2, op, type, worklist); }
+- return 1;
+- phi_insn = &ctx->ir_base[ref];
++ insn = &ctx->ir_base[ref];
+- if (phi_insn->op != IR_PHI || phi_insn->inputs_count != 3 /*(2 values)*/ || ctx->ir_base[phi_insn->op1].op != IR_LOOP_BEGIN) {
++ if (insn->op == IR_PHI && insn->inputs_count == 3 /*(2 values)*/ && ctx->ir_base[insn->op1].op == IR_LOOP_BEGIN) {
+- op_ref = phi_insn->op3;
++ ir_ref op_ref = insn->op3;
+- ir_insn *op_insn;
++ ir_insn *op_insn = &ctx->ir_base[op_ref];
++ if (op_insn->op == IR_ADD || op_insn->op == IR_SUB || op_insn->op == IR_MUL) {
+- if (use == op_ref || use == ext_ref) {
++ if (op_insn->op1 == ref) {
+- use = *p;
++ return ir_try_promote_induction_var_ext(ctx, ext_ref, ref, op_ref, worklist);
+  }
+  else {
+- if ((op_insn->op != IR_ADD && op_insn->op != IR_SUB && op_insn->op != IR_MUL)||(op_insn->op1 != ref && op_insn->op2 != ref)|| ctx->use_lists[op_ref].count != 1) {
++ if (op_insn->op2 == ref) {
+- return 0;
+- if (use_insn->op == IR_IF) {
++ if (ir_is_loop_invariant(ctx, op_insn->op1, insn->op1)) {
+- use = ctx->use_edges[ctx->use_lists[ref].refs + n];
++ return ir_try_promote_induction_var_ext(ctx, ext_ref, ref, op_ref, worklist);
+  }
+- else { return 0; }
+  }
+  }
+  }
++ return 0;
+  }
++ else {
+- return 0;
+- if (use_insn->op1 != ref) {
++ if (insn->op == IR_ADD || insn->op == IR_SUB || insn->op == IR_MUL) {
+- if (IR_IS_CONST_REF(use_insn->op1)&& !IR_IS_SYM_CONST(ctx->ir_base[use_insn->op1].op)) {
++ if (!IR_IS_CONST_REF(insn->op1)&& ctx->ir_base[insn->op1].op == IR_PHI && ctx->ir_base[insn->op1].inputs_count == 3 /*(2 values)*/ && ctx->ir_base[insn->op1].op3 == ref && ctx->ir_base[ctx->ir_base[insn->op1].op1].op == IR_LOOP_BEGIN && ir_is_loop_invariant(ctx, insn->op2, ctx->ir_base[insn->op1].op1)) {
+  }
+  else {
+- if (use_insn->op2 != ref) {
++ if (!IR_IS_CONST_REF(insn->op2)&& ctx->ir_base[insn->op2].op == IR_PHI && ctx->ir_base[insn->op2].inputs_count == 3 /*(2 values)*/ && ctx->ir_base[insn->op2].op3 == ref && ctx->ir_base[ctx->ir_base[insn->op2].op1].op == IR_LOOP_BEGIN && ir_is_loop_invariant(ctx, insn->op1, ctx->ir_base[insn->op2].op1)) {
+  }
+  }
+  }
++ }
+- op_insn = &ctx->ir_base[op_ref];
+- use_list = &ctx->use_lists[ref];
+- n = use_list->count;
+  for (p = &ctx->use_edges[use_list->refs]; n > 0; p++, n--) {
+  }
+- phi_insn->type = insn->type;
+- op_insn->type = insn->type;
+  for (n = 0; n < ctx->use_lists[ref].count; n++) {
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+- void ir_merge_blocks(ir_ctx *ctx, ir_ref end, ir_ref begin, ir_bitqueue *worklist2) {
++ void ir_merge_blocks(ir_ctx *ctx, ir_ref end, ir_ref begin, ir_bitqueue *worklist) {
+  ir_ref prev, next;
+  ir_use_list *use_list;
++ if (ctx->use_lists[begin].count > 1) {
++ ir_ref *p, n, i, use;
++ ir_insn *use_insn;
++ ir_ref region = end;
++ ir_ref next = IR_UNUSED;
++ while ((!IR_IS_BB_START(ctx->ir_base[region].op))) {
++ region = ctx->ir_base[region].op1;
+  }
++ use_list = &ctx->use_lists[begin];
++ n = use_list->count;
+  for (p = &ctx->use_edges[use_list->refs], i = 0; i < n; p++, i++) {
++ use = *p;
++ use_insn = &ctx->ir_base[use];
++ if (ir_op_flags[use_insn->op] & IR_OP_FLAG_CONTROL) {
++ IR_ASSERT(!next);
++ next = use;
+  }
++ else {
++ IR_ASSERT(use_insn->op == IR_VAR);
++ IR_ASSERT(use_insn->op1 == begin);
++ use_insn->op1 = region;
++ if (ir_use_list_add(ctx, region, use)) {
++ use_list = &ctx->use_lists[begin];
++ n = use_list->count;
++ p = &ctx->use_edges[use_list->refs + i];
+  }
++ }
+  }
++ IR_ASSERT(next);
++ ctx->use_edges[use_list->refs] = next;
++ use_list->count = 1;
+  }
+  prev = ctx->ir_base[end].op1;
+  IR_ASSERT(use_list->count == 1);
+  next = ctx->use_edges[use_list->refs];
+  ctx->ir_base[next].op1 = prev;
+  ir_use_list_replace_one(ctx, prev, end, next);
+  if (ctx->ir_base[prev].op == IR_BEGIN || ctx->ir_base[prev].op == IR_MERGE) {
+- ir_bitqueue_add(worklist2, prev);
++ ir_bitqueue_add(worklist, prev);
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+void ir_iter_optimize_if(ir_ctx *ctx, ir_ref ref, ir_insn *insn, ir_bitqueue *worklist) {
+  if (IR_IS_CONST_REF(condition)) {
+  if (!IR_IS_CONST_REF(insn->op2)) {
++ ir_bitqueue_add(worklist, insn->op2);
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
+void ir_iter_opt(ir_ctx *ctx, ir_bitqueue *worklist) {
+  ir_ref i, val;
+  ir_insn *insn;
+  while (((i = ir_bitqueue_pop(worklist))>= 0)) {
+  insn = &ctx->ir_base[i];
+  if (IR_IS_FOLDABLE_OP(insn->op)) {
+  if (ctx->use_lists[i].count == 0) {
+  }
+  else {
+  insn = &ctx->ir_base[i];
+  switch ((insn->op)) {
+  if (insn->type == IR_FLOAT) {
+  if (ir_may_promote_d2f(ctx, insn->op1)) {
+  ir_ref ref = ir_promote_d2f(ctx, insn->op1, i);
+  insn->op1 = ref;
+  }
+  }
+  else {
+  if (ir_may_promote_f2d(ctx, insn->op1)) {
+  ir_ref ref = ir_promote_f2d(ctx, insn->op1, i);
+  insn->op1 = ref;
+  }
+  }
+  if (ctx->ir_base[insn->op1].type == IR_DOUBLE) {
+  if (ir_may_promote_d2f(ctx, insn->op1)) {
+  insn->op1 = ir_promote_d2f(ctx, insn->op1, i);
+  }
+  }
+  else {
+  if (ir_may_promote_f2d(ctx, insn->op1)) {
+  insn->op1 = ir_promote_f2d(ctx, insn->op1, i);
+  }
+  }
+  case IR_TRUNC:
+- if (ir_may_promote_i2i(ctx, insn->type, insn->op1)) {
++ if (ir_may_promote_trunc(ctx, insn->type, insn->op1)) {
+  ir_ref ref = ir_promote_i2i(ctx, insn->type, insn->op1, i);
+  insn->op1 = ref;
+  }
+  }
+  }
+  }
+  else {
+  if (ir_op_flags[insn->op] & IR_OP_FLAG_BB_START) {
+  if (!(ctx->flags & IR_OPT_CFG)) {
+  }
+  else {
+  if (insn->op == IR_BEGIN) {
+- if (ctx->ir_base[insn->op1].op == IR_END && ctx->use_lists[i].count == 1) {
++ if (insn->op1 && ctx->ir_base[insn->op1].op == IR_END) {
+  }
+  }
+  else {
+  if (insn->op == IR_MERGE) {
+  }
++ else {
++ if (insn->op == IR_LOOP_BEGIN) {
++ ir_iter_optimize_loop(ctx, i, insn, worklist);
+  }
++ }
+  }
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ uint32_t _ir_estimated_control(ir_ctx *ctx, ir_ref val) {
++ ir_insn *insn;
++ ir_ref n, *p, input, result, ctrl;
++ if (IR_IS_CONST_REF(val)) {
++ return 1;
+  }
++ insn = &ctx->ir_base[val];
++ if (ir_op_flags[insn->op] &(IR_OP_FLAG_CONTROL|IR_OP_FLAG_MEM)) {
++ return val;
+  }
++ IR_ASSERT(ir_op_flags[insn->op] & IR_OP_FLAG_DATA);
++ if (IR_OPND_KIND(ir_op_flags[insn->op], 1)& IR_OPND_CONTROL_DEP) {
++ return insn->op1;
+  }
++ n = insn->inputs_count;
++ p = insn->ops + 1;
++ result = 1;
+  for (; n > 0; p++, n--) {
++ input = *p;
++ ctrl = _ir_estimated_control(ctx, input);
++ if (ctrl > result) {
++ result = ctrl;
+  }
+  }
++ return result;
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ bool ir_is_loop_invariant(ir_ctx *ctx, ir_ref ref, ir_ref loop) {
++ ref = _ir_estimated_control(ctx, ref);
++ return ref < loop;
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ bool ir_is_cheaper_ext(ir_ctx *ctx, ir_ref ref, ir_ref loop, ir_ref ext_ref, ir_op op) {
++ if (IR_IS_CONST_REF(ref)) {
++ return 1;
+  }
++ else {
++ ir_insn *insn = &ctx->ir_base[ref];
++ if (insn->op == IR_LOAD) {
++ if (ir_is_loop_invariant(ctx, ref, loop)) {
++ return 1;
+  }
++ else {
++ if (ctx->use_lists[ref].count == 2) {
++ return 1;
+  }
++ else {
++ if (ctx->use_lists[ref].count == 3) {
++ ir_use_list *use_list = &ctx->use_lists[ref];
++ ir_ref *p, n, use;
+  for (p = &ctx->use_edges[use_list->refs], n = use_list->count; n > 0; p++, n--) {
++ use = *p;
++ if (use != ext_ref) {
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op != op &&(!(ir_op_flags[use_insn->op] &(IR_OP_FLAG_CONTROL|IR_OP_FLAG_MEM))|| use_insn->op1 != ref)) {
++ return 0;
+  }
+  }
+  }
++ return 1;
+  }
++ }
++ }
++ return 0;
+  }
++ else {
++ return ir_is_loop_invariant(ctx, ref, loop);
++ }
++ }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ bool ir_try_promote_induction_var_ext(ir_ctx *ctx, ir_ref ext_ref, ir_ref phi_ref, ir_ref op_ref, ir_bitqueue *worklist) {
++ ir_op op = ctx->ir_base[ext_ref].op;
++ ir_type type = ctx->ir_base[ext_ref].type;
++ ir_insn *phi_insn;
++ ir_use_list *use_list;
++ ir_ref n, *p, use, ext_ref_2 = IR_UNUSED;
++ use_list = &ctx->use_lists[phi_ref];
++ n = use_list->count;
++ if (n > 1) {
+  for (p = &ctx->use_edges[use_list->refs]; n > 0; p++, n--) {
++ use = *p;
++ if (use == op_ref || use == ext_ref) {
++ continue;
+  }
++ else {
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op >= IR_EQ && use_insn->op <= IR_UGT) {
++ if (use_insn->op1 == phi_ref) {
++ if (ir_is_cheaper_ext(ctx, use_insn->op2, ctx->ir_base[phi_ref].op1, ext_ref, op)) {
++ continue;
+  }
+  }
++ else {
++ if (use_insn->op2 == phi_ref) {
++ if (ir_is_cheaper_ext(ctx, use_insn->op1, ctx->ir_base[phi_ref].op1, ext_ref, op)) {
++ continue;
+  }
+  }
++ }
++ return 0;
+  }
++ else {
++ if (use_insn->op == IR_IF) {
++ continue;
+  }
++ else {
++ if (!ext_ref_2 && use_insn->op == op && use_insn->type == type) {
++ ext_ref_2 = use;
++ continue;
+  }
++ else {
++ return 0;
++ }
++ }
++ }
++ }
+  }
+  }
++ use_list = &ctx->use_lists[op_ref];
++ n = use_list->count;
++ if (n > 1) {
+  for (p = &ctx->use_edges[use_list->refs]; n > 0; p++, n--) {
++ use = *p;
++ if (use == phi_ref || use == ext_ref) {
++ continue;
+  }
++ else {
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op >= IR_EQ && use_insn->op <= IR_UGT) {
++ if (use_insn->op1 == phi_ref) {
++ if (ir_is_cheaper_ext(ctx, use_insn->op2, ctx->ir_base[phi_ref].op1, ext_ref, op)) {
++ continue;
+  }
+  }
++ else {
++ if (use_insn->op2 == phi_ref) {
++ if (ir_is_cheaper_ext(ctx, use_insn->op1, ctx->ir_base[phi_ref].op1, ext_ref, op)) {
++ continue;
+  }
+  }
++ }
++ return 0;
+  }
++ else {
++ if (use_insn->op == IR_IF) {
++ continue;
+  }
++ else {
++ if (!ext_ref_2 && use_insn->op == op && use_insn->type == type) {
++ ext_ref_2 = use;
++ continue;
+  }
++ else {
++ return 0;
++ }
++ }
++ }
++ }
+  }
+  }
+  for (n = 0; n < ctx->use_lists[phi_ref].count; n++) {
++ use = ctx->use_edges[ctx->use_lists[phi_ref].refs + n];
++ if (use == ext_ref) {
++ continue;
+  }
++ else {
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op == IR_IF) {
++ continue;
+  }
++ else {
++ if (use_insn->op == op) {
++ IR_ASSERT(ext_ref_2 == use);
++ continue;
+  }
++ }
++ IR_ASSERT(((use_insn->op >= IR_EQ && use_insn->op <= IR_UGT)|| use_insn->op == IR_ADD || use_insn->op == IR_SUB || use_insn->op == IR_MUL)&&(use_insn->op1 == phi_ref || use_insn->op2 == phi_ref));
++ if (use_insn->op1 != phi_ref) {
++ if (IR_IS_CONST_REF(use_insn->op1)&& !IR_IS_SYM_CONST(ctx->ir_base[use_insn->op1].op)) {
++ ctx->ir_base[use].op1 = ir_ext_const(ctx, &ctx->ir_base[use_insn->op1], op, type);
+  }
++ else {
++ ctx->ir_base[use].op1 = ir_ext_ref(ctx, use, use_insn->op1, op, type, worklist);
++ }
++ ir_bitqueue_add(worklist, use);
+  }
++ if (use_insn->op2 != phi_ref) {
++ if (IR_IS_CONST_REF(use_insn->op2)&& !IR_IS_SYM_CONST(ctx->ir_base[use_insn->op2].op)) {
++ ctx->ir_base[use].op2 = ir_ext_const(ctx, &ctx->ir_base[use_insn->op2], op, type);
+  }
++ else {
++ ctx->ir_base[use].op2 = ir_ext_ref(ctx, use, use_insn->op2, op, type, worklist);
++ }
++ ir_bitqueue_add(worklist, use);
+  }
++ }
+  }
++ if (ctx->use_lists[op_ref].count > 1) {
+  for (n = 0; n < ctx->use_lists[op_ref].count; n++) {
++ use = ctx->use_edges[ctx->use_lists[op_ref].refs + n];
++ if (use == ext_ref || use == phi_ref) {
++ continue;
+  }
++ else {
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op == IR_IF) {
++ continue;
+  }
++ else {
++ if (use_insn->op == op) {
++ IR_ASSERT(ext_ref_2 == use);
++ continue;
+  }
++ }
++ IR_ASSERT(use_insn->op >= IR_EQ && use_insn->op <= IR_UGT);
++ if (use_insn->op1 != op_ref) {
++ if (IR_IS_CONST_REF(use_insn->op1)&& !IR_IS_SYM_CONST(ctx->ir_base[use_insn->op1].op)) {
++ ctx->ir_base[use].op1 = ir_ext_const(ctx, &ctx->ir_base[use_insn->op1], op, type);
+  }
++ else {
++ ctx->ir_base[use].op1 = ir_ext_ref(ctx, use, use_insn->op1, op, type, worklist);
++ }
++ ir_bitqueue_add(worklist, use);
+  }
++ if (use_insn->op2 != op_ref) {
++ if (IR_IS_CONST_REF(use_insn->op2)&& !IR_IS_SYM_CONST(ctx->ir_base[use_insn->op2].op)) {
++ ctx->ir_base[use].op2 = ir_ext_const(ctx, &ctx->ir_base[use_insn->op2], op, type);
+  }
++ else {
++ ctx->ir_base[use].op2 = ir_ext_ref(ctx, use, use_insn->op2, op, type, worklist);
++ }
++ ir_bitqueue_add(worklist, use);
+  }
++ }
+  }
+  }
++ ir_iter_replace_insn(ctx, ext_ref, ctx->ir_base[ext_ref].op1, worklist);
++ if (ext_ref_2) {
++ ir_iter_replace_insn(ctx, ext_ref_2, ctx->ir_base[ext_ref_2].op1, worklist);
+  }
++ ctx->ir_base[op_ref].type = type;
++ phi_insn = &ctx->ir_base[phi_ref];
++ phi_insn->type = type;
++ if (IR_IS_CONST_REF(phi_insn->op2)&& !IR_IS_SYM_CONST(ctx->ir_base[phi_insn->op2].op)) {
++ ctx->ir_base[phi_ref].op2 = ir_ext_const(ctx, &ctx->ir_base[phi_insn->op2], op, type);
+  }
++ else {
++ ctx->ir_base[phi_ref].op2 = ir_ext_ref(ctx, phi_ref, phi_insn->op2, op, type, worklist);
++ }
++ return 1;
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ ir_ref ir_find_ext_use(ir_ctx *ctx, ir_ref ref) {
++ ir_use_list *use_list = &ctx->use_lists[ref];
++ ir_ref *p, n, use;
++ ir_insn *use_insn;
+  for (p = &ctx->use_edges[use_list->refs], n = use_list->count; n > 0; p++, n--) {
++ use = *p;
++ use_insn = &ctx->ir_base[use];
++ if (use_insn->op == IR_SEXT || use_insn->op == IR_ZEXT) {
++ return use;
+  }
+  }
++ return IR_UNUSED;
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ void ir_iter_optimize_induction_var(ir_ctx *ctx, ir_ref phi_ref, ir_ref op_ref, ir_bitqueue *worklist) {
++ ir_ref ext_ref;
++ ext_ref = ir_find_ext_use(ctx, phi_ref);
++ if (!ext_ref) {
++ ext_ref = ir_find_ext_use(ctx, op_ref);
+  }
++ if (ext_ref) {
++ ir_try_promote_induction_var_ext(ctx, ext_ref, phi_ref, op_ref, worklist);
+  }
+}
+
+Context for merged statement of old file: ext/opcache/jit/ir/ir_sccp.c with new file: ext/opcache/jit/ir/ir_sccp.c:
++ void ir_iter_optimize_loop(ir_ctx *ctx, ir_ref loop_ref, ir_insn *loop, ir_bitqueue *worklist) {
++ ir_ref n;
++ if (loop->inputs_count != 2 || ctx->use_lists[loop_ref].count <= 1) {
++ return;
+  }
+  for (n = 0; n < ctx->use_lists[loop_ref].count; n++) {
++ ir_ref use = ctx->use_edges[ctx->use_lists[loop_ref].refs + n];
++ ir_insn *use_insn = &ctx->ir_base[use];
++ if (use_insn->op == IR_PHI) {
++ ir_ref op_ref = use_insn->op3;
++ ir_insn *op_insn = &ctx->ir_base[op_ref];
++ if (op_insn->op == IR_ADD || op_insn->op == IR_SUB || op_insn->op == IR_MUL) {
++ if (op_insn->op1 == use) {
++ if (ir_is_loop_invariant(ctx, op_insn->op2, loop_ref)) {
++ ir_iter_optimize_induction_var(ctx, use, op_ref, worklist);
+  }
+  }
++ else {
++ if (op_insn->op2 == use) {
++ if (ir_is_loop_invariant(ctx, op_insn->op1, loop_ref)) {
++ ir_iter_optimize_induction_var(ctx, use, op_ref, worklist);
+  }
+  }
++ }
+  }
+  }
+  }
+}
+

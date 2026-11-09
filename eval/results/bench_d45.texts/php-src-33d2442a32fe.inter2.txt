@@ -1,0 +1,23 @@
+Context for merged statement of old file: ext/filter/filter.c with new file: ext/filter/filter.c:
+- static unsigned int php_sapi_filter(int arg, char *var, char **val, unsigned int val_len, unsigned int *new_val_len TSRMLS_DC);
++ static unsigned int php_sapi_filter(int arg, char *var, char **val, php_size_t val_len, php_size_t *new_val_len TSRMLS_DC);
+- unsigned int
+- unsigned int
+
+Context for merged statement of old file: ext/filter/filter.c with new file: ext/filter/filter.c:
+- unsigned int php_sapi_filter(int arg, char *var, char **val, unsigned int val_len, unsigned int *new_val_len TSRMLS_DC) {
++ unsigned int php_sapi_filter(int arg, char *var, char **val, php_size_t val_len, php_size_t *new_val_len TSRMLS_DC) {
+}
+
+
+==== Cross-function context ====
+
+-- called macro: TSRMLS_DC — TSRM/TSRM.h:166 [priority_fallback, new version] --
+#define TSRMLS_DC	, TSRMLS_D
+
+-- caller of php_sapi_filter: PHP_MINIT_FUNCTION(filter) — ext/filter/filter.c:281 --
+PHP_MINIT_FUNCTION(filter) {
+   ...
+>  sapi_register_input_filter(php_sapi_filter, php_sapi_filter_init TSRMLS_CC);
+   ...
+}

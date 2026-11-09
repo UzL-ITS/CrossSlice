@@ -1,0 +1,154 @@
+Context for merged statement of old file: ext/xml/xml.c with new file: ext/xml/xml.c:
+void xml_characterDataHandler(void *userData, const XML_Char *s, int len) {
+  xml_parser *parser =(xml_parser *)userData;
+  zend_string *decoded_value;
+  decoded_value = xml_utf8_decode(s, len, parser->target_encoding);
+  if (parser->lastwasopen) {
+  zval *ctag = xml_get_ctag(parser);
+  zval *myval;
+  if ((myval = zend_hash_find(Z_ARRVAL_P(ctag), ZSTR_KNOWN(ZEND_STR_VALUE)))&& Z_TYPE_P(myval)== IS_STRING) {
+- size_t newlen = Z_STRLEN_P(myval)+ ZSTR_LEN(decoded_value);
+- Z_STR_P(myval)= zend_string_extend(Z_STR_P(myval), newlen, 0);
++ Z_STR_P(myval)= zend_string_safe_realloc(Z_STR_P(myval), 1, Z_STRLEN_P(myval), ZSTR_LEN(decoded_value), false);
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  else {
+  if (doprint ||(! parser->skipwhite)) {
+  }
+  else {
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+  else {
+  zval *curtag, *mytype, *myval;
+  if (EXPECTED(Z_TYPE_P(curtag)== IS_ARRAY)&&(mytype = zend_hash_str_find(Z_ARRVAL_P(curtag), "type", sizeof("type")- 1))) {
+  if (EXPECTED(Z_TYPE_P(mytype)== IS_STRING)&& zend_string_equals_literal(Z_STR_P(mytype), "cdata")) {
+  if ((myval = zend_hash_find(Z_ARRVAL_P(curtag), ZSTR_KNOWN(ZEND_STR_VALUE)))) {
+- size_t newlen = Z_STRLEN_P(myval)+ ZSTR_LEN(decoded_value);
+- Z_STR_P(myval)= zend_string_extend(Z_STR_P(myval), newlen, 0);
++ Z_STR_P(myval)= zend_string_safe_realloc(Z_STR_P(myval), 1, Z_STRLEN_P(myval), ZSTR_LEN(decoded_value), false);
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+  if (parser->level <= XML_MAXLEVEL && parser->level > 0 &&(doprint ||(! parser->skipwhite))) {
+  }
+  else {
+  if (parser->level ==(XML_MAXLEVEL + 1)) {
+  }
+  else {
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ZSTR_LEN — Zend/zend_string.h:69 [gtags_unique] --
+#define ZSTR_LEN(zstr)  (zstr)->len
+
+-- called macro: Z_STR_P — Zend/zend_types.h:984 [gtags_unique] --
+#define Z_STR_P(zval_p)				Z_STR(*(zval_p))
+
+-- called function: zend_string_release_ex — Zend/zend_string.h:353 [gtags_unique] --
+static zend_always_inline void zend_string_release_ex(zend_string *s, bool persistent) {
+   if(!ZSTR_IS_INTERNED(s)) {
+     if(GC_DELREF(s)== 0) {
+       if(persistent) {
+         ZEND_ASSERT(GC_FLAGS(s)& IS_STR_PERSISTENT);
+         free(s);
+       } else {
+         ZEND_ASSERT(!(GC_FLAGS(s)& IS_STR_PERSISTENT));
+         efree(s);
+       }
+     }
+   }
+}
+   [reads: persistent, s; writes: -]
+
+-- called macro: Z_STRLEN_P — Zend/zend_types.h:990 [gtags_unique] --
+#define Z_STRLEN_P(zval_p)			Z_STRLEN(*(zval_p))
+
+-- called macro: Z_ARRVAL_P — Zend/zend_types.h:999 [gtags_unique] --
+#define Z_ARRVAL_P(zval_p)			Z_ARRVAL(*(zval_p))
+
+-- called macro: Z_TYPE_P — Zend/zend_types.h:660 [gtags_unique] --
+#define Z_TYPE_P(zval_p)			Z_TYPE(*(zval_p))
+
+-- called macro: ZSTR_VAL — Zend/zend_string.h:68 [gtags_unique] --
+#define ZSTR_VAL(zstr)  (zstr)->val
+
+-- called macro: Z_STRVAL_P — Zend/zend_types.h:987 [gtags_unique] --
+#define Z_STRVAL_P(zval_p)			Z_STRVAL(*(zval_p))
+
+-- called function: zend_hash_find — Zend/zend_hash.c:2678 [gtags_unique] --
+ZEND_API zval* ZEND_FASTCALL zend_hash_find(const HashTable *ht, zend_string *key) {
+   Bucket *p;
+   IS_CONSISTENT(ht);
+   (void)zend_string_hash_val(key);
+   p = zend_hash_find_bucket(ht, key);
+   return p ? &p->val : NULL;
+}
+   [reads: ht, key; writes: -]
+
+-- called macro: ZSTR_KNOWN — Zend/zend_string.h:110 [gtags_unique] --
+#define ZSTR_KNOWN(idx) zend_known_strings[idx]
+
+-- called function: zend_string_extend — Zend/zend_string.h:266 [gtags_unique, old version] --
+static zend_always_inline zend_string *zend_string_extend(zend_string *s, size_t len, bool persistent) {
+   zend_string *ret;
+   ZEND_ASSERT(len >= ZSTR_LEN(s));
+   if(!ZSTR_IS_INTERNED(s)) {
+     if(EXPECTED(GC_REFCOUNT(s)== 1)) {
+       ret =(zend_string *)perealloc(s, ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(len)), persistent);
+       ZSTR_LEN(ret)= len;
+       zend_string_forget_hash_val(ret);
+       return ret;
+     }
+   }
+   ret = zend_string_alloc(len, persistent);
+   memcpy(ZSTR_VAL(ret), ZSTR_VAL(s), ZSTR_LEN(s)+ 1);
+   if(!ZSTR_IS_INTERNED(s)) {
+     GC_DELREF(s);
+   }
+   return ret;
+}
+   [reads: len, persistent, s; writes: -]
+
+-- called function: zend_string_safe_realloc — Zend/zend_string.h:308 [gtags_unique, new version] --
+static zend_always_inline zend_string *zend_string_safe_realloc(zend_string *s, size_t n, size_t m, size_t l, bool persistent) {
+   zend_string *ret;
+   if(!ZSTR_IS_INTERNED(s)) {
+     if(GC_REFCOUNT(s)== 1) {
+       ret =(zend_string *)safe_perealloc(s, n, m, ZEND_MM_ALIGNED_SIZE(_ZSTR_STRUCT_SIZE(l)), persistent);
+       ZSTR_LEN(ret)=(n * m)+ l;
+       zend_string_forget_hash_val(ret);
+       return ret;
+     }
+   }
+   ret = zend_string_safe_alloc(n, m, l, persistent);
+   memcpy(ZSTR_VAL(ret), ZSTR_VAL(s), MIN((n * m)+ l, ZSTR_LEN(s))+ 1);
+   if(!ZSTR_IS_INTERNED(s)) {
+     GC_DELREF(s);
+   }
+   return ret;
+}
+   [reads: l, m, n, persistent, s; writes: -]
+
+-- caller of xml_characterDataHandler: PHP_FUNCTION(xml_parse_into_struct) — ext/xml/xml.c:1453 --
+PHP_FUNCTION(xml_parse_into_struct) {
+   xml_parser *parser;
+   zval *pind, *xdata, *info = NULL;
+   ...
+   parser = Z_XMLPARSER_P(pind);
+   ...
+>  XML_SetCharacterDataHandler(parser->parser, xml_characterDataHandler);
+   ...
+}

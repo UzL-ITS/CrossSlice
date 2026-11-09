@@ -1,0 +1,26 @@
+Context for merged statement of old file: source/components/utilities/utmath.c with new file: source/components/utilities/utmath.c:
+ACPI_STATUS AcpiUtShortShiftLeft (
+    UINT64                  Operand,
+    UINT32                  Count,
+    UINT64                  *OutResult) {
+  UINT64_OVERLAY OperandOvl;
+  if ((Count & 63)>= 32) {
+- OperandOvl.Part.Lo ^= OperandOvl.Part.Lo;
++ OperandOvl.Part.Lo = 0;
+  }
+  ACPI_SHIFT_LEFT_64_BY_32(OperandOvl.Part.Hi, OperandOvl.Part.Lo, Count);
+}
+
+Context for merged statement of old file: source/components/utilities/utmath.c with new file: source/components/utilities/utmath.c:
+ACPI_STATUS AcpiUtShortShiftRight (
+    UINT64                  Operand,
+    UINT32                  Count,
+    UINT64                  *OutResult) {
+  UINT64_OVERLAY OperandOvl;
+  if ((Count & 63)>= 32) {
+- OperandOvl.Part.Hi ^= OperandOvl.Part.Hi;
++ OperandOvl.Part.Hi = 0;
+  }
+  ACPI_SHIFT_RIGHT_64_BY_32(OperandOvl.Part.Hi, OperandOvl.Part.Lo, Count);
+}
+

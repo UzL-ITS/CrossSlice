@@ -1,0 +1,73 @@
+Context for merged statement of old file: Zend/Optimizer/zend_cfg.c with new file: Zend/Optimizer/zend_cfg.c:
+void zend_mark_reachable_blocks(const zend_op_array *op_array, zend_cfg *cfg, int start) {
+  zend_basic_block *blocks = cfg->blocks;
+  if (op_array->last_try_catch) {
+  zend_basic_block *b;
+  int j, changed;
+  uint32_t *block_map = cfg->map;
+  do {
+  for (j = 0; j < op_array->last_try_catch; j++) {
+  b = blocks + block_map[op_array->try_catch_array[j].try_op];
+  if (!(b->flags & ZEND_BB_REACHABLE)) {
+  if (op_array->try_catch_array[j].catch_op) {
+  while ((b != end)) {
+  if (b->flags & ZEND_BB_REACHABLE) {
+  op_array->try_catch_array[j].try_op = b->start;
+  }
+  b++;
+  }
+  }
+  b = blocks + block_map[op_array->try_catch_array[j].try_op];
+  if (!(b->flags & ZEND_BB_REACHABLE)) {
+  if (op_array->try_catch_array[j].finally_op) {
+  while ((b != end)) {
+  if (b->flags & ZEND_BB_REACHABLE) {
+- op_array->try_catch_array[j].try_op = op_array->try_catch_array[j].catch_op;
++ op_array->try_catch_array[j].try_op = op_array->try_catch_array[j].catch_op ? op_array->try_catch_array[j].catch_op : b->start;
+  zend_mark_reachable(op_array->opcodes, cfg, blocks + block_map[op_array->try_catch_array[j].try_op]);
+  }
+  }
+  }
+  }
+  }
+  b = blocks + block_map[op_array->try_catch_array[j].try_op];
+  if (b->flags & ZEND_BB_REACHABLE) {
+  b->flags |= ZEND_BB_TRY;
+  if (op_array->try_catch_array[j].catch_op) {
+  b->flags |= ZEND_BB_CATCH;
+  if (!(b->flags & ZEND_BB_REACHABLE)) {
+  zend_mark_reachable(op_array->opcodes, cfg, b);
+  }
+  }
+  if (op_array->try_catch_array[j].finally_op) {
+  b->flags |= ZEND_BB_FINALLY;
+  if (!(b->flags & ZEND_BB_REACHABLE)) {
+  zend_mark_reachable(op_array->opcodes, cfg, b);
+  }
+  }
+  if (op_array->try_catch_array[j].finally_end) {
+  b->flags |= ZEND_BB_FINALLY_END;
+  if (!(b->flags & ZEND_BB_REACHABLE)) {
+  zend_mark_reachable(op_array->opcodes, cfg, b);
+  }
+  }
+  }
+  }
+  } while ((changed));
+  }
+  if (cfg->flags & ZEND_FUNC_FREE_LOOP_VAR) {
+  for (b = blocks; b < blocks + cfg->blocks_count; b++) {
+  for (j = b->start; j < b->start + b->len; j++) {
+  if (zend_optimizer_is_loop_var_free(opline)) {
+  zend_op *def_opline = zend_optimizer_get_loop_var_def(op_array, opline);
+  if (def_opline) {
+  uint32_t def_block = block_map[def_opline - op_array->opcodes];
+  if (blocks[def_block].flags & ZEND_BB_REACHABLE) {
+  }
+  }
+  }
+  }
+  }
+  }
+}
+

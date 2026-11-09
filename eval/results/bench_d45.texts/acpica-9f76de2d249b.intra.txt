@@ -1,0 +1,23 @@
+Context for merged statement of old file: source/components/utilities/utresrc.c with new file: source/components/utilities/utresrc.c:
+ACPI_STATUS AcpiUtWalkAmlResources (
+    ACPI_WALK_STATE         *WalkState,
+    UINT8                   *Aml,
+    ACPI_SIZE               AmlLength,
+    ACPI_WALK_AML_CALLBACK  UserFunction,
+    void                    **Context) {
+  UINT32 Length;
++ ACPI_SIZE ThisAmlLength = 0;
+- if (AmlLength < sizeof(AML_RESOURCE_END_TAG)) {
++ if (AmlLength <= sizeof(AML_RESOURCE_END_TAG)) {
+  }
+  while ((Aml < EndAml)) {
+  Length = AcpiUtGetDescriptorLength(Aml);
+  if (AcpiUtGetResourceType(Aml)== ACPI_RESOURCE_NAME_END_TAG) {
++ if (AmlLength > ThisAmlLength) {
++ return_ACPI_STATUS(AE_AML_NO_RESOURCE_END_TAG);
+  }
+  }
++ ThisAmlLength += Length;
+  }
+}
+

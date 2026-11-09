@@ -1,0 +1,12 @@
+Context for merged statement of old file: ext/xml/compat.c with new file: ext/xml/compat.c:
+- PHP_XML_API *XML_ExpatVersion(void) {
+- return(const XML_Char *)"1.0";
+}
+
+Context for merged statement of old file: ext/xml/expat_compat.h with new file: ext/xml/expat_compat.h:
+#ifndef PHP_EXPAT_COMPAT_H
+   #if !defined(HAVE_LIBEXPAT)&& defined(HAVE_LIBXML)
+- PHP_XML_API const XML_Char *XML_ExpatVersion(void);
+  #endif
+  #endif
+

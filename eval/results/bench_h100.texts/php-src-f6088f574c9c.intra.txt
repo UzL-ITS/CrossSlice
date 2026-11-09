@@ -1,0 +1,19 @@
+Context for merged statement of old file: ext/session/php_session.h with new file: ext/session/php_session.h:
+#ifndef PHP_SESSION_H
+- PHPAPI void session_adapt_url(const char *url, size_t url_len, char **new_url, size_t *new_len);
+- extern PHPAPI zend_class_entry *php_session_class_entry;
++ extern PHPAPI zend_class_entry *php_session_class_entry;
++ extern PHPAPI zend_class_entry *php_session_iface_entry;
+- extern PHPAPI zend_class_entry *php_session_iface_entry;
++ extern PHPAPI zend_class_entry *php_session_id_iface_entry;
+- extern PHPAPI zend_class_entry *php_session_id_iface_entry;
++ extern PHPAPI zend_class_entry *php_session_update_timestamp_iface_entry;
+  #endif
+
+Context for merged statement of old file: ext/session/session.c with new file: ext/session/session.c:
+- PHPAPI session_adapt_url(const char *url, size_t url_len, char **new_url, size_t *new_len) {
+- if (APPLY_TRANS_SID &&(PS(session_status)== php_session_active)) {
+- *new_url = php_url_scanner_adapt_single_url(url, url_len, ZSTR_VAL(PS(session_name)), ZSTR_VAL(PS(id)), new_len, true);
+  }
+}
+

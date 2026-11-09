@@ -1,0 +1,64 @@
+Context for merged statement of old file: ext/sqlite3/php_sqlite3_structs.h with new file: ext/sqlite3/php_sqlite3_structs.h:
+#ifndef PHP_SQLITE_STRUCTS_H
+- typedef struct _php_sqlite3_db_object { int initialised; sqlite3 *db; php_sqlite3_func *funcs; php_sqlite3_collation *collations; zend_fcall_info_cache authorizer_fcc; bool exception; zend_llist free_list; zend_object zo; } php_sqlite3_db_object;
++ typedef struct _php_sqlite3_db_object { bool initialised; sqlite3 *db; php_sqlite3_func *funcs; php_sqlite3_collation *collations; zend_fcall_info_cache authorizer_fcc; bool exception; zend_llist free_list; zend_object zo; } php_sqlite3_db_object;
+- struct _php_sqlite3_db_object {
++ struct _php_sqlite3_db_object {
+- int initialised;
++ bool initialised;
+  }
+- struct _php_sqlite3_stmt_object {
++ struct _php_sqlite3_stmt_object {
+- int initialised;
++ bool initialised;
+  }
+  #endif
+
+Context for merged statement of old file: ext/sqlite3/sqlite3.c with new file: ext/sqlite3/sqlite3.c:
+void php_sqlite3_free_list_dtor(void **item) {
+  php_sqlite3_stmt *stmt_obj = *item;
+  if (stmt_obj && stmt_obj->initialised) {
+- stmt_obj->initialised = 0;
++ stmt_obj->initialised = false;
+  }
+}
+
+Context for merged statement of old file: ext/sqlite3/sqlite3.c with new file: ext/sqlite3/sqlite3.c:
+void php_sqlite3_object_free_storage(zend_object *object) {
+  php_sqlite3_db_object *intern = php_sqlite3_db_from_obj(object);
+  if (intern->initialised && intern->db) {
+- intern->initialised = 0;
++ intern->initialised = false;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: php_sqlite3_db_from_obj — ext/sqlite3/php_sqlite3_structs.h:77 [gtags_unique] --
+static inline php_sqlite3_db_object *php_sqlite3_db_from_obj(zend_object *obj) {
+   return(php_sqlite3_db_object*)((char*)(obj)- XtOffsetOf(php_sqlite3_db_object, zo));
+}
+   [reads: obj; writes: -]
+
+-- called macro: PHP_SQLITE_STRUCTS_H — ext/sqlite3/php_sqlite3_structs.h:18 [gtags_unique, new version] --
+#define PHP_SQLITE_STRUCTS_H
+
+-- caller of php_sqlite3_free_list_dtor: php_sqlite3_object_new — ext/sqlite3/sqlite3.c:2299 --
+static zend_object *php_sqlite3_object_new(zend_class_entry *class_type) /* {
+   php_sqlite3_db_object *intern;
+   intern = zend_object_alloc(sizeof(php_sqlite3_db_object), class_type);
+>  zend_llist_init(&(intern->free_list), sizeof(php_sqlite3_stmt *), (llist_dtor_func_t)php_sqlite3_free_list_dtor, 0);
+   ...
+}
+
+-- caller of php_sqlite3_object_free_storage: PHP_MINIT_FUNCTION(sqlite3) — ext/sqlite3/sqlite3.c:2373 --
+PHP_MINIT_FUNCTION(sqlite3) {
+   ...
+   memcpy(&sqlite3_object_handlers, &std_object_handlers, sizeof(zend_object_handlers));
+   ...
+>  sqlite3_object_handlers.free_obj = php_sqlite3_object_free_storage;
+   ...
+   php_sqlite3_sc_entry->default_object_handlers = &sqlite3_object_handlers;
+   ...
+}

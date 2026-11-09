@@ -1,0 +1,623 @@
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+#ifndef XML_TOK_IMPL_C
++ #define HAS_CHARS(enc, ptr, end, count)\(end - ptr >= count * MINBPC(enc))
++ #define HAS_CHAR(enc, ptr, end)\ HAS_CHARS(enc, ptr, end, 1)
++ #define REQUIRE_CHARS(enc, ptr, end, count)\ { \ if(! HAS_CHARS(enc, ptr, end, count)){ \ return XML_TOK_PARTIAL; \ } \ }
++ #define REQUIRE_CHAR(enc, ptr, end)\ REQUIRE_CHARS(enc, ptr, end, 1)
++ static int PTRFASTCALL
+  #endif
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
++ int PREFIX(scanComment)(const ENCODING *enc, const char *ptr,
+                    const char *end, const char **nextTokPtr) {
++ if (HAS_CHAR(enc, ptr, end)) {
++ if (!CHAR_MATCHES(enc, ptr, ASCII_MINUS)) {
++ *nextTokPtr = ptr;
++ return XML_TOK_INVALID;
+  }
++ ptr += MINBPC(enc);
++ while ((HAS_CHAR(enc, ptr, end))) {
++ switch ((BYTE_TYPE(enc, ptr))) {
++ case BT_MINUS:
++ ptr += MINBPC(enc);
++ REQUIRE_CHAR(enc, ptr, end);
++ if (CHAR_MATCHES(enc, ptr, ASCII_MINUS)) {
++ ptr += MINBPC(enc);
++ REQUIRE_CHAR(enc, ptr, end);
++ if (!CHAR_MATCHES(enc, ptr, ASCII_GT)) {
++ *nextTokPtr = ptr;
++ return XML_TOK_INVALID;
+  }
++ *nextTokPtr = ptr + MINBPC(enc);
++ return XML_TOK_COMMENT;
+  }
++ break;
++ default:
++ ptr += MINBPC(enc);
++ break;
+  }
++ INVALID_CASES(ptr, nextTokPtr)
+  }
+  }
++ return XML_TOK_PARTIAL;
+- int PREFIX(scanComment)(const ENCODING *enc, const char *ptr,
+                    const char *end, const char **nextTokPtr) {
+- if (end - ptr >= MINBPC(enc)) {
+  }
+- return XML_TOK_PARTIAL;
+}
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
++ int PREFIX(scanDecl)(const ENCODING *enc, const char *ptr,
+                 const char *end, const char **nextTokPtr) {
++ REQUIRE_CHAR(enc, ptr, end);
++ switch ((BYTE_TYPE(enc, ptr))) {
++ case BT_MINUS:
++ return PREFIX(scanComment)(enc, ptr + MINBPC(enc), end, nextTokPtr);
++ case BT_LSQB:
++ *nextTokPtr = ptr + MINBPC(enc);
++ return XML_TOK_COND_SECT_OPEN;
++ case BT_NMSTRT:
++ case BT_HEX:
++ ptr += MINBPC(enc);
++ break;
++ default:
++ *nextTokPtr = ptr;
++ return XML_TOK_INVALID;
+  }
++ while ((HAS_CHAR(enc, ptr, end))) {
++ switch ((BYTE_TYPE(enc, ptr))) {
++ case BT_PERCNT:
++ REQUIRE_CHARS(enc, ptr, end, 2);
++ switch ((BYTE_TYPE(enc, ptr + MINBPC(enc)))) {
++ case BT_S:
++ case BT_CR:
++ case BT_LF:
++ case BT_PERCNT:
++ *nextTokPtr = ptr;
++ return XML_TOK_INVALID;
+  }
++ case BT_S:
++ case BT_CR:
++ case BT_LF:
++ *nextTokPtr = ptr;
++ return XML_TOK_DECL_OPEN;
++ case BT_NMSTRT:
++ case BT_HEX:
++ ptr += MINBPC(enc);
++ break;
++ default:
++ *nextTokPtr = ptr;
++ return XML_TOK_INVALID;
+  }
+  }
++ return XML_TOK_PARTIAL;
+- int PREFIX(scanDecl)(const ENCODING *enc, const char *ptr,
+                 const char *end, const char **nextTokPtr) {
+- if (end - ptr < MINBPC(enc)) {
+  }
+- switch ((BYTE_TYPE(enc, ptr))) {
+  }
+- while ((end - ptr >= MINBPC(enc))) {
+  }
+- return XML_TOK_PARTIAL;
+}
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanPi)(const ENCODING *enc, const char *ptr,
+               const char *end, const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LF:
+  ptr += MINBPC(enc);
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_QUEST:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  ptr += MINBPC(enc);
+  }
+  }
+  case BT_QUEST:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanCdataSection)(const ENCODING *UNUSED_P(enc), const char *ptr,
+                         const char *end, const char **nextTokPtr) {
+- if(end - ptr < 6 * MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHARS(enc, ptr, end, 6);
+- return XML_TOK_PARTIAL;
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr,
+                        const char *end, const char **nextTokPtr) {
+  if (MINBPC(enc)> 1) {
+  size_t n = end - ptr;
+  if (n &(MINBPC(enc)- 1)) {
+  n &= ~(MINBPC(enc)- 1);
+  end = ptr + n;
+  }
+  }
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_RSQB:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  if (!CHAR_MATCHES(enc, ptr, ASCII_GT)) {
+  ptr -= MINBPC(enc);
+  }
+- return XML_TOK_PARTIAL;
+- return XML_TOK_PARTIAL;
+  case BT_CR:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  if (BYTE_TYPE(enc, ptr)== BT_LF) {
+  ptr += MINBPC(enc);
+  }
+- return XML_TOK_PARTIAL;
+  ptr += MINBPC(enc);
+  }
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanEndTag)(const ENCODING *enc, const char *ptr,
+                   const char *end, const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LF:
+- for (ptr += MINBPC(enc); end - ptr >= MINBPC(enc); ptr += MINBPC(enc)) {
++ for (ptr += MINBPC(enc); HAS_CHAR(enc, ptr, end); ptr += MINBPC(enc)) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  *nextTokPtr = ptr + MINBPC(enc);
+  *nextTokPtr = ptr;
+  }
+  }
+  *nextTokPtr = ptr + MINBPC(enc);
+  *nextTokPtr = ptr;
+  }
+   #ifdef XML_NS
+  ptr += MINBPC(enc);
+  #endif
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanHexCharRef)(const ENCODING *enc, const char *ptr,
+                       const char *end, const char **nextTokPtr) {
+- if (end - ptr >= MINBPC(enc)) {
++ if (HAS_CHAR(enc, ptr, end)) {
+- for (ptr += MINBPC(enc); end - ptr >= MINBPC(enc); ptr += MINBPC(enc)) {
++ for (ptr += MINBPC(enc); HAS_CHAR(enc, ptr, end); ptr += MINBPC(enc)) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  *nextTokPtr = ptr + MINBPC(enc);
+  *nextTokPtr = ptr;
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanCharRef)(const ENCODING *enc, const char *ptr,
+                    const char *end, const char **nextTokPtr) {
+- if (end - ptr >= MINBPC(enc)) {
++ if (HAS_CHAR(enc, ptr, end)) {
+- for (ptr += MINBPC(enc); end - ptr >= MINBPC(enc); ptr += MINBPC(enc)) {
++ for (ptr += MINBPC(enc); HAS_CHAR(enc, ptr, end); ptr += MINBPC(enc)) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  *nextTokPtr = ptr + MINBPC(enc);
+  *nextTokPtr = ptr;
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanRef)(const ENCODING *enc, const char *ptr, const char *end,
+                const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanAtts)(const ENCODING *enc, const char *ptr, const char *end,
+                 const char **nextTokPtr) {
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LF:
+  for (; ; ) {
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+  case BT_EQUALS:
+  for (; ; ) {
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+  ptr += MINBPC(enc);
+  for (; ; ) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  switch ((t)) {
+  ptr += MINBPC(enc);
+  }
+  }
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  for (; ; ) {
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_SOL:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+  }
+- return XML_TOK_PARTIAL;
+  }
+   #ifdef XML_NS
+  case BT_COLON:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  #endif
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanLt)(const ENCODING *enc, const char *ptr, const char *end,
+               const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_EXCL:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LF:
+  ptr += MINBPC(enc);
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  ptr += MINBPC(enc);
+  }
+  }
+  case BT_SOL:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+   #ifdef XML_NS
+  case BT_COLON:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  #endif
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(contentTok)(const ENCODING *enc, const char *ptr, const char *end,
+                   const char **nextTokPtr) {
+  if (MINBPC(enc)> 1) {
+  size_t n = end - ptr;
+  if (n &(MINBPC(enc)- 1)) {
+  n &= ~(MINBPC(enc)- 1);
+  end = ptr + n;
+  }
+  }
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_CR:
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return XML_TOK_TRAILING_CR;
+  }
+  if (BYTE_TYPE(enc, ptr)== BT_LF) {
+  ptr += MINBPC(enc);
+  }
+  case BT_RSQB:
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return XML_TOK_TRAILING_RSQB;
+  }
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return XML_TOK_TRAILING_RSQB;
+  }
+  if (!CHAR_MATCHES(enc, ptr, ASCII_GT)) {
+  ptr -= MINBPC(enc);
+  }
+  ptr += MINBPC(enc);
+  }
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_RSQB:
+- if (end - ptr >= 2*MINBPC(enc)) {
++ if (HAS_CHARS(enc, ptr, end, 2)) {
+  if (!CHAR_MATCHES(enc, ptr + MINBPC(enc), ASCII_RSQB)) {
+  ptr += MINBPC(enc);
+  }
+- if (end - ptr >= 3*MINBPC(enc)) {
++ if (HAS_CHARS(enc, ptr, end, 3)) {
+  return XML_TOK_INVALID;
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanPercent)(const ENCODING *enc, const char *ptr, const char *end,
+                    const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanPoundName)(const ENCODING *enc, const char *ptr, const char *end,
+                      const char **nextTokPtr) {
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(scanLit)(int open, const ENCODING *enc,
+                const char *ptr, const char *end,
+                const char **nextTokPtr) {
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((t)) {
+  case BT_APOS:
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return -XML_TOK_LITERAL;
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(prologTok)(const ENCODING *enc, const char *ptr, const char *end,
+                  const char **nextTokPtr) {
+  if (MINBPC(enc)> 1) {
+  size_t n = end - ptr;
+  if (n &(MINBPC(enc)- 1)) {
+  n &= ~(MINBPC(enc)- 1);
+  end = ptr + n;
+  }
+  }
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LT:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  case BT_LF:
+  for (; ; ) {
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  }
+  }
+  case BT_RSQB:
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return -XML_TOK_CLOSE_BRACKET;
+  }
+  if (CHAR_MATCHES(enc, ptr, ASCII_RSQB)) {
+- if(end - ptr < 2*MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHARS(enc, ptr, end, 2);
+- return XML_TOK_PARTIAL;
+  }
+  case BT_RPAR:
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return -XML_TOK_CLOSE_PAREN;
+  }
+  ptr += MINBPC(enc);
+  if (IS_NMSTRT_CHAR_MINBPC(enc, ptr)) {
+  ptr += MINBPC(enc);
+  }
+  if (IS_NAME_CHAR_MINBPC(enc, ptr)) {
+  ptr += MINBPC(enc);
+  }
+  }
+  ptr += MINBPC(enc);
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  }
+   #ifdef XML_NS
+  case BT_COLON:
+  ptr += MINBPC(enc);
+  switch ((tok)) {
+  case XML_TOK_NAME:
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+  #endif
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(attributeValueTok)(const ENCODING *enc, const char *ptr,
+                          const char *end, const char **nextTokPtr) {
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_CR:
+  if (ptr == start) {
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return XML_TOK_TRAILING_CR;
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(entityValueTok)(const ENCODING *enc, const char *ptr,
+                       const char *end, const char **nextTokPtr) {
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_CR:
+  if (ptr == start) {
+  ptr += MINBPC(enc);
+- if (end - ptr < MINBPC(enc)) {
++ if (! HAS_CHAR(enc, ptr, end)) {
+  return XML_TOK_TRAILING_CR;
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(ignoreSectionTok)(const ENCODING *enc, const char *ptr,
+                         const char *end, const char **nextTokPtr) {
+  if (MINBPC(enc)> 1) {
+  size_t n = end - ptr;
+  if (n &(MINBPC(enc)- 1)) {
+  n &= ~(MINBPC(enc)- 1);
+  end = ptr + n;
+  }
+  }
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  case BT_LT:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  if (CHAR_MATCHES(enc, ptr, ASCII_EXCL)) {
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  if (CHAR_MATCHES(enc, ptr, ASCII_LSQB)) {
+  ptr += MINBPC(enc);
+  }
+  }
+- return XML_TOK_PARTIAL;
+  case BT_RSQB:
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+  if (CHAR_MATCHES(enc, ptr, ASCII_RSQB)) {
+  ptr += MINBPC(enc);
+- if(end - ptr < MINBPC(enc))return XML_TOK_PARTIAL;
++ REQUIRE_CHAR(enc, ptr, end);
+- return XML_TOK_PARTIAL;
+  }
+- return XML_TOK_PARTIAL;
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+int PREFIX(isPublicId)(const ENCODING *enc, const char *ptr, const char *end,
+                   const char **badPtr) {
+  ptr += MINBPC(enc);
+  end -= MINBPC(enc);
+- for (; end - ptr >= MINBPC(enc); ptr += MINBPC(enc)) {
++ for (; HAS_CHAR(enc, ptr, end); ptr += MINBPC(enc)) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  if (CHAR_MATCHES(enc, ptr, ASCII_TAB)) {
+  *badPtr = ptr;
+  }
+  if (!(BYTE_TO_ASCII(enc, ptr)& ~0x7f)) {
+  }
+  switch ((BYTE_TO_ASCII(enc, ptr))) {
+  *badPtr = ptr;
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: expat/lib/xmltok_impl.c with new file: expat/lib/xmltok_impl.c:
+void PREFIX(updatePosition)(const ENCODING *enc,
+                       const char *ptr,
+                       const char *end,
+                       POSITION *pos) {
+- while ((end - ptr >= MINBPC(enc))) {
++ while ((HAS_CHAR(enc, ptr, end))) {
+  switch ((BYTE_TYPE(enc, ptr))) {
+  ptr += MINBPC(enc);
+  case BT_CR:
+  ptr += MINBPC(enc);
+- if (end - ptr >= MINBPC(enc)&& BYTE_TYPE(enc, ptr)== BT_LF) {
++ if (HAS_CHAR(enc, ptr, end)&& BYTE_TYPE(enc, ptr)== BT_LF) {
+  }
+  }
+  }
+}
+

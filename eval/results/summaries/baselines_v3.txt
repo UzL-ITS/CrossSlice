@@ -1,0 +1,35 @@
+Callers of F at the parent revision, 18 cases, 102 distinct caller names, 135 call sites (truth: eval/cases_impact_all_v2.jsonl)
+
+function level (distinct names, alias-aware; the E10 metric):
+tool                       n   prec recall     F1   exact  t_setup  t_query
+CrossSlice get_callers    18   1.00   1.00   1.00  18/18       0.8     0.04
+Joern (cpg.call)          18   1.00   0.98   0.99  16/18     319.2     8.29
+GNU Global (-rx + -f)     18   0.83   0.82   0.82   8/18       1.8     0.02
+cscope (-L -3)            18   0.85   0.87   0.85   7/18       2.1     0.02
+
+call-site level (file, line of every call the commit had to edit):
+tool                       n   prec recall     F1   exact  sites found
+CrossSlice get_callers    18   1.00   1.00   1.00  18/18    135/135   
+Joern (cpg.call)          18   1.00   0.98   0.99  16/18    133/135   
+GNU Global (-rx + -f)     18   0.97   1.00   0.99  15/18    135/135   
+cscope (-L -3)            18   0.93   1.00   0.96  10/18    135/135   
+
+misses and extras per tool (function level):
+  CrossSlice get_callers: missed 0 []
+                          extra  0 []
+  Joern (cpg.call): missed 2 ['print_ops', 'vulkan_map_from_drm_frame_sync']
+                    extra  0 []
+  GNU Global (-rx + -f): missed 23 ['init_denoise_pipeline', 'nlmeans_vulkan_filter_frame', 'init_denoise_pipeline', 'init_weights_pipeline', 'PHP_METHOD(Phar, loadPhar)', 'PHP_METHOD(Phar, unlinkArchive)', 'PHP_METHOD(PharFileInfo, __construct)', 'PHP_FUNCTION(phar_is_file)', 'PHP_FUNCTION(phar_is_link)', 'PHP_METHOD(Phar, webPhar)', 'phar_zip_flush', 'phar_flush_ex']
+                         extra  17 ['ff_sws_uop_cmp_v', 'ff_fmt_vshift', 'insert_weights_pass', 'insert_weights_pass', 'insert_weights_pass', 'ff_vk_unmap_buffer', 'PHP_METHOD', 'PHP_FUNCTION', 'PharFileFunction', 'PHP_METHOD', 'ZEND_ATTRIBUTE_NONNULL_ARGS', 'ZEND_ATTRIBUTE_NONNULL_ARGS']
+  cscope (-L -3): missed 19 ['init_denoise_pipeline', 'nlmeans_vulkan_filter_frame', 'init_denoise_pipeline', 'init_weights_pipeline', 'PHP_METHOD(Phar, loadPhar)', 'PHP_METHOD(Phar, unlinkArchive)', 'PHP_METHOD(PharFileInfo, __construct)', 'PHP_FUNCTION(phar_is_file)', 'PHP_FUNCTION(phar_is_link)', 'PHP_METHOD(Phar, webPhar)', 'PHP_FUNCTION(phar_is_file)', 'PHP_FUNCTION(phar_is_link)']
+                  extra  16 ['insert_weights_pass', 'insert_weights_pass', 'insert_weights_pass', 'BEGIN_EXTERN_C', 'PHP_METHOD', 'PHP_FUNCTION', 'ZEND_ATTRIBUTE_NONNULL_ARGS', 'PHP_METHOD', 'ZEND_ATTRIBUTE_NONNULL_ARGS', 'ZEND_ATTRIBUTE_NONNULL_ARGS', 'PHP_FUNCTION', 'ZEND_ATTRIBUTE_NONNULL_ARGS']
+
+Joern import per revision vs CrossSlice per commit (seconds; CrossSlice covers both versions of a commit):
+repo       .c/.h   kLOC   import  peak MB   query  CS median cold  CS median warm   n
+zlib          69     42     11.4     3164     5.5             2.7             2.3  19
+libexpat      44     29      8.0     1313     5.5             5.1             5.2  20
+acpica       350    242     20.6     3173     5.7             5.3             4.7  20
+ffmpeg      4656   1812    362.0    30431     8.5             8.6             5.1  20
+php-src     2118   1862    234.9    31074     7.3            11.2             7.0  19
+  query = one `joern --script` run: JVM start + CPG load + cpg.call query; peak = max over runs;
+  CS = CrossSlice full enrichment of one commit (E1 H100, per-repository median over n commits)

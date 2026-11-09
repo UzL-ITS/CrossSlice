@@ -1,0 +1,50 @@
+Context for merged statement of old file: ext/standard/string.c with new file: ext/standard/string.c:
+PHP_FUNCTION (str_pad) {
+  zend_string *input;
+  zend_long pad_length;
+  size_t num_pad_chars;
+  char *pad_str = " ";
+  size_t pad_str_len = 1;
+- size_t i, left_pad=0, right_pad=0;
++ size_t left_pad=0, right_pad=0;
+  zend_string *result = NULL;
+  num_pad_chars = pad_length - ZSTR_LEN(input);
+  result = zend_string_safe_alloc(1, ZSTR_LEN(input), num_pad_chars, 0);
+  switch ((pad_type_val)) {
+  left_pad = 0;
+  right_pad = num_pad_chars;
+  left_pad = num_pad_chars;
+  right_pad = 0;
+  left_pad = num_pad_chars / 2;
+  right_pad = num_pad_chars - left_pad;
+  }
+- if i < left_pad {
++ if (left_pad > 0) {
+- ZSTR_VAL(result)[ZSTR_LEN(result)++] = pad_str[i % pad_str_len];
++ php_str_pad_fill(result, left_pad, pad_str, pad_str_len);
+  }
+- if i < right_pad {
++ if (right_pad > 0) {
+- ZSTR_VAL(result)[ZSTR_LEN(result)++] = pad_str[i % pad_str_len];
++ php_str_pad_fill(result, right_pad, pad_str, pad_str_len);
+  }
+}
+
+Context for merged statement of old file: ext/standard/string.c with new file: ext/standard/string.c:
++ void php_str_pad_fill(zend_string *result, size_t pad_chars, const char *pad_str, size_t pad_str_len) {
++ char *p = ZSTR_VAL(result)+ ZSTR_LEN(result);
++ if (pad_str_len == 1) {
++ memset(p, pad_str[0], pad_chars);
++ ZSTR_LEN(result)+= pad_chars;
++ return;
+  }
++ const char *end = p + pad_chars;
++ while ((p + pad_str_len <= end)) {
++ p = zend_mempcpy(p, pad_str, pad_str_len);
+  }
++ if (p < end) {
++ memcpy(p, pad_str, end - p);
+  }
++ ZSTR_LEN(result)+= pad_chars;
+}
+

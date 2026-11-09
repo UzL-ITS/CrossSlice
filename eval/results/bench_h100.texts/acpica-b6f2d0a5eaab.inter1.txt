@@ -1,0 +1,538 @@
+Context for merged statement of old file: source/common/dmtbdump2.c with new file: source/common/dmtbdump2.c:
++ void AcpiDmDumpIovt (
+    ACPI_TABLE_HEADER       *Table) {
++ ACPI_STATUS Status;
++ UINT32 Offset;
++ UINT32 EntryOffset;
++ UINT32 EntryLength;
++ UINT32 EntryType;
++ ACPI_IOVT_DEVICE_ENTRY *DeviceEntry;
++ ACPI_IOVT_HEADER *SubtableHeader;
++ ACPI_IOVT_IOMMU *Subtable;
++ ACPI_DMTABLE_INFO *InfoTable;
++ ACPI_TABLE_IOVT *Iovt;
++ Status = AcpiDmDumpTable(Table->Length, 0, Table, 0, AcpiDmTableInfoIovt);
++ if (ACPI_FAILURE(Status)) {
++ return;
+  }
++ Iovt = ACPI_CAST_PTR(ACPI_TABLE_IOVT, Table);
++ Offset = Iovt->IommuOffset;
++ SubtableHeader = ACPI_ADD_PTR(ACPI_IOVT_HEADER, Table, Offset);
++ while ((Offset < Table->Length)) {
++ switch ((SubtableHeader->Type)) {
++ case ACPI_IOVT_IOMMU_V1:
++ AcpiOsPrintf("\n");
++ InfoTable = AcpiDmTableInfoIovt0;
++ break;
++ default:
++ AcpiOsPrintf("\n**** Unknown IOVT subtable type 0x%X\n", SubtableHeader->Type);
++ if (!SubtableHeader->Length) {
++ AcpiOsPrintf("Invalid zero length subtable\n");
++ return;
+  }
++ goto NextSubtable;
+  }
++ Status = AcpiDmDumpTable(Table->Length, Offset, SubtableHeader, SubtableHeader->Length, InfoTable);
++ if (ACPI_FAILURE(Status)) {
++ return;
+  }
++ if (SubtableHeader->Type == ACPI_IOVT_IOMMU_V1) {
++ Subtable = ACPI_ADD_PTR(ACPI_IOVT_IOMMU, Table, Offset);
++ EntryOffset = Offset + Subtable->DeviceEntryOffset;
+  do {
++ AcpiOsPrintf("\n");
++ DeviceEntry = ACPI_ADD_PTR(ACPI_IOVT_DEVICE_ENTRY, Table, EntryOffset);
++ EntryType = DeviceEntry->Type;
++ EntryLength = DeviceEntry->Length;
++ switch ((EntryType)) {
++ case ACPI_IOVT_DEVICE_ENTRY_SINGLE:
++ case ACPI_IOVT_DEVICE_ENTRY_START:
++ case ACPI_IOVT_DEVICE_ENTRY_END:
++ InfoTable = AcpiDmTableInfoIovtdev;
++ break;
++ default:
++ InfoTable = AcpiDmTableInfoIovtdev;
++ AcpiOsPrintf("\n**** Unknown IOVT device entry type/length: " "0x%.2X/0x%X at offset 0x%.4X:(header below)\n", EntryType, EntryLength, EntryOffset);
++ break;
+  }
++ Status = AcpiDmDumpTable(Table->Length, EntryOffset, DeviceEntry, EntryLength, InfoTable);
++ if (ACPI_FAILURE(Status)) {
++ return;
+  }
++ EntryOffset += EntryLength;
++ } while ((EntryOffset <(Offset + Subtable->Header.Length)));
+  }
++ NextSubtable: Offset += SubtableHeader->Length;
++ Offset += SubtableHeader->Length;
++ SubtableHeader = ACPI_ADD_PTR(ACPI_IOVT_HEADER, SubtableHeader, SubtableHeader->Length);
+  }
+}
+
+Context for merged statement of old file: source/include/acdisasm.h with new file: source/include/acdisasm.h:
+#ifndef __ACDISASM_H__
++ void AcpiDmDumpIovt(ACPI_TABLE_HEADER *Table);
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_ADD_PTR — source/include/actypes.h:654 [gtags_unique, new version] --
+#define ACPI_ADD_PTR(t, a, b)           ACPI_CAST_PTR (t, (ACPI_CAST_PTR (UINT8, (a)) + (ACPI_SIZE)(b)))
+
+-- called function: AcpiDmDumpTable — source/common/dmtable.c:1053 [gtags_unique, new version] --
+ACPI_STATUS AcpiDmDumpTable ( UINT32                  TableLength, UINT32                  TableOffset, void                    *Table, UINT32                  SubtableLength, ACPI_DMTABLE_INFO {
+   UINT8 *Target;
+   UINT32 CurrentOffset;
+   UINT32 ByteLength;
+   UINT8 Temp8;
+   ...
+   UINT64 Value;
+   ...
+   ACPI_STATUS Status;
+   ...
+   if(!Info) {
+   ...
+     return(AE_NOT_IMPLEMENTED);
+   }
+   for(; Info->Name; Info++) {
+     Target = ACPI_ADD_PTR(UINT8, Table, Info->Offset);
+     CurrentOffset = TableOffset + Info->Offset;
+     if(SubtableLength &&(Info->Offset > SubtableLength)) {
+       AcpiOsPrintf("/**** ACPI subtable terminates early(Len %u)- " "may be older version(dump table)*/\n", SubtableLength);
+       return(AE_OK);
+     }
+     if(CurrentOffset >= TableLength) {
+       AcpiOsPrintf("/**** ACPI table terminates " "in the middle of a data structure!(dump table)\n" "CurrentOffset: %X, TableLength: %X ***/", CurrentOffset, TableLength);
+       return(AE_BAD_DATA);
+     }
+     switch(Info->Opcode) {
+   ...
+       ByteLength = 1;
+   ...
+       ByteLength = 2;
+   ...
+       ByteLength = 3;
+   ...
+       ByteLength = 4;
+   ...
+       ByteLength = 5;
+   ...
+       ByteLength = 6;
+   ...
+       ByteLength = 7;
+   ...
+       ByteLength = 8;
+   ...
+       ByteLength = 10;
+   ...
+       ByteLength = 11;
+   ...
+       ByteLength = 12;
+   ...
+       ByteLength = 16;
+   ...
+       ByteLength = 18;
+   ...
+       ByteLength = 24;
+   ...
+       ByteLength = 26;
+   ...
+       ByteLength = 32;
+   ...
+       ByteLength = 112;
+   ...
+       ByteLength = 128;
+   ...
+       ByteLength = SubtableLength;
+       CurrentOffset = sizeof(ACPI_TABLE_WPBT);
+   ...
+       ByteLength = SubtableLength;
+   ...
+       ByteLength =((ACPI_CAST_PTR(char, Table)+(ACPI_CAST_PTR(ACPI_PMTT_HEADER, Table)->Length))- ACPI_CAST_PTR(char, Target));
+   ...
+       ByteLength = strlen(ACPI_CAST_PTR(char, Target))+ 1;
+   ...
+       ByteLength =((ACPI_CAST_PTR(ACPI_IVRS_DEVICE_HID, Target)-1)->UidLength);
+   ...
+       ByteLength = sizeof(ACPI_GENERIC_ADDRESS);
+   ...
+       ByteLength = sizeof(ACPI_HEST_NOTIFY);
+   ...
+       ByteLength = sizeof(ACPI_IORT_MEMORY_ACCESS);
+   ...
+       ByteLength = 0;
+   ...
+     }
+     if(CurrentOffset + ByteLength > TableLength) {
+       if(SubtableLength) {
+   ...
+         return(AE_OK);
+       }
+   ...
+       return(AE_BAD_DATA);
+     }
+     if(Info->Opcode == ACPI_DMT_EXTRA_TEXT) {
+       AcpiOsPrintf("%s", Info->Name);
+   ...
+     }
+     AcpiDmLineHeader(CurrentOffset, ByteLength, Info->Name);
+     switch(Info->Opcode) {
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> Info->Opcode)& 0x01);
+   ...
+       AcpiOsPrintf("%1.1X\n", *Target & 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 1)& 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 2)& 0x03);
+   ...
+       AcpiOsPrintf("%2.2X\n", (*Target >> 2)& 0xFF);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 4)& 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 4)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 8)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 12)& 0x0F);
+   ...
+       AcpiOsPrintf("%4.4X\n", (*(UINT32 *)Target >> 16)& 0xFFFF);
+   ...
+       Value = 0;
+       for(Temp8 =(UINT8)ByteLength; Temp8 > 0; Temp8--) {
+         AcpiOsPrintf("%2.2X", Target[Temp8 - 1]);
+         Value |= Target[Temp8 - 1];
+         Value <<= 8;
+       }
+       if(!Value &&(Info->Flags & DT_DESCRIBES_OPTIONAL)) {
+   ...
+       }
+   ...
+       for(Temp16 = 0; Temp16 < ByteLength; Temp16++) {
+         AcpiOsPrintf("%2.2X", Target[Temp16]);
+         if((UINT32)(Temp16 + 1)< ByteLength) {
+           if((Temp16 > 0)&&(!((Temp16+1)% 16))) {
+   ...
+           } else {
+           }
+         }
+       }
+   ...
+       (void)AcpiUtConvertUuidToString((char *)Target, AslGbl_MsgBuffer);
+   ...
+       AcpiOsPrintf("\"%s\"\n", ACPI_CAST_PTR(char, Target));
+   ...
+       AcpiOsPrintf("\"%.*s\"\n", ByteLength, ACPI_CAST_PTR(char, Target));
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 4);
+   ...
+       TableData = AcpiAhGetTableInfo(ACPI_CAST_PTR(char, Target));
+       if(TableData) {
+         AcpiOsPrintf(STRING_FORMAT, TableData->Description);
+       } else {
+       }
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 4);
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 6);
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 8);
+   ...
+       AcpiOsPrintf("%2.2X", *Target);
+       Temp8 = AcpiUtGenerateChecksum(Table, ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Length, ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Checksum);
+       if(Temp8 != ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Checksum) {
+         AcpiOsPrintf(" /* Incorrect checksum, should be %2.2X */", Temp8);
+       }
+   ...
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiUtGetRegionName(*Target));
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_GAS_WIDTH_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmGasAccessWidth[Temp8]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_GENERIC_ADDRESS), AcpiDmTableInfoGas);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_NODE_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestSubnames[Temp8]);
+   ...
+       Temp32 = *Target;
+       if(Temp32 > ACPI_AEST_CACHE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, *Target, AcpiDmAestCacheNames[Temp32]);
+   ...
+       Temp32 = *Target;
+       if(Temp32 > ACPI_AEST_GIC_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, *Target, AcpiDmAestGicNames[Temp32]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_RESOURCE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestResourceNames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_XFACE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestXfaceNames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_XRUPT_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestXruptNames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_ASPT_TYPE_UNKNOWN) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, Temp16, AcpiDmAsptSubnames[Temp16]);
+   ...
+       Temp16 =(UINT16)((*Target)& 0x7F);
+       if(Temp16 > ACPI_ASF_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAsfSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_CDAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmCdatSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_CEDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmCedtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_DMAR_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmDmarSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_DMAR_SCOPE_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmDmarScope[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_EINJ_ACTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmEinjActions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_EINJ_INSTRUCTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmEinjInstructions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_ERST_ACTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErstActions[Temp8]);
+   ...
+       Temp16 = *Target;
+       if(Temp16 > ACPI_ERDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErdtSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_ERST_INSTRUCTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErstInstructions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_GTDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmGtdtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_HEST_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmHestSubnames[Temp16]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_HEST_NOTIFY), AcpiDmTableInfoHestNotify);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_HEST_NOTIFY_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmHestNotifySubnames[Temp8]);
+   ...
+       Temp16 = *Target;
+       if(Temp16 > ACPI_HMAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, *Target, AcpiDmHmatSubnames[Temp16]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_IORT_MEMORY_ACCESS), AcpiDmTableInfoIortAcc);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if((Temp8 >= ACPI_MADT_TYPE_RESERVED)&&(Temp8 < ACPI_MADT_TYPE_OEM_RESERVED)) {
+   ...
+       } else if(Temp8 >= ACPI_MADT_TYPE_OEM_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmMadtSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_MPAM_LOCATION_TYPE_INTERCONNECT) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmMpamSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_NFIT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmNfitSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_PCCT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPcctSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_PHAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmPhatSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 == ACPI_PMTT_TYPE_VENDOR) {
+   ...
+       } else if(Temp8 > ACPI_PMTT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPmttSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_PPTT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPpttSubnames[Temp8]);
+   ...
+       if(ByteLength == 0) {
+   ...
+       }
+       AcpiDmDumpUnicode(Table, 0, ByteLength);
+   ...
+       if(ByteLength == 0) {
+   ...
+       }
+       AcpiDmDumpBuffer(Target, 0, ByteLength, CurrentOffset, NULL);
+   ...
+       Temp8 = *Target;
+       if(Temp8 >= ACPI_RGRT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmRgrtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 == ACPI_RHCT_NODE_TYPE_HART_INFO) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmRhctSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_SDEV_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmSdevSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_SRAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmSratSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_TPM2_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmTpm2Subnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_FADT_PM_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmFadtProfiles[Temp8]);
+   ...
+       Temp8 = *Target;
+       switch(Temp8) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, Name);
+   ...
+       Temp8 = *Target;
+       switch(Temp8) {
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8];
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8 - 61];
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8 - 228];
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, Name);
+   ...
+       Temp32 = ACPI_GET32(Target);
+       if(Temp32 > ACPI_LPIT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, ACPI_GET32(Target), AcpiDmLpitSubnames[Temp32]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_VIOT_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmViotSubnames[Temp8]);
+   ...
+       return(AE_OK);
+   ...
+       ACPI_ERROR((AE_INFO, "**** Invalid table opcode [0x%X] ****\n", Info->Opcode));
+       return(AE_SUPPORT);
+     }
+   }
+   if(TableOffset && !SubtableLength) {
+   ...
+     return(AE_BAD_DATA);
+   }
+   return(AE_OK);
+}
+   [reads: Info, SubtableLength, Table, TableLength, TableOffset; writes: -]
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:203 [gtags_unique, new version] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called macro: ACPI_CAST_PTR — source/include/actypes.h:652 [gtags_unique, new version] --
+#define ACPI_CAST_PTR(t, p)             ((t *) (ACPI_UINTPTR_T) (p))

@@ -1,0 +1,8 @@
+Context for merged statement of old file: Zend/zend_lazy_objects.c with new file: Zend/zend_lazy_objects.c:
+zend_object *zend_lazy_object_clone(zend_object *old_obj) {
+  zend_class_entry *ce = old_obj->ce;
+  zend_object *new_proxy = zend_objects_new(ce);
+- OBJ_EXTRA_FLAGS(new_proxy)= OBJ_EXTRA_FLAGS(old_obj);
++ OBJ_EXTRA_FLAGS(new_proxy)= OBJ_EXTRA_FLAGS(old_obj);
+}
+

@@ -1,0 +1,28 @@
+Context for merged statement of old file: libavformat/oggparsecelt.c with new file: libavformat/oggparsecelt.c:
+int celt_header(AVFormatContext *s, int idx) {
+  struct ogg *ogg = s->priv_data;
+  struct ogg_stream *os = ogg->streams + idx;
+  struct oggcelt_private *priv = os->private;
+  uint8_t *p = os->buf + os->pstart;
+  if (os->psize == 60 && !memcmp(p, ff_celt_codec.magic, ff_celt_codec.magicsize)) {
+  priv = av_malloc(sizeof(struct oggcelt_private));
+  extra_headers = AV_RL32(p + 56);
++ if (os->private) {
++ av_free(priv);
+- av_free(os->private);
++ priv = os->private;
+  }
+  os->private = priv;
++ priv->extra_headers_left = 1 + extra_headers;
+  }
+  else {
+- priv->extra_headers_left = 1 + extra_headers;
+  if (priv && priv->extra_headers_left) {
+  priv->extra_headers_left--;
+  }
+  else {
+  return 0;
+  }
+  }
+}
+

@@ -1,0 +1,15 @@
+Context for merged statement of old file: zconf.h with new file: zconf.h:
+#ifndef ZCONF_H
+   #ifndef STDC
+   #ifdef Z_SOLO
+- typedef unsigned long z_size_t;
++ #ifdef _WIN64
++ typedef unsigned long long z_size_t;
++ unsigned long long
+  #else
++ typedef unsigned long z_size_t;
+  #endif
+  #endif
+  #endif
+  #endif
+

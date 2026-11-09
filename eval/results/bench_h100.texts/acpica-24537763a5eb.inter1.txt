@@ -1,0 +1,56 @@
+Context for merged statement of old file: source/components/disassembler/dmbuffer.c with new file: source/components/disassembler/dmbuffer.c:
+BOOLEAN AcpiDmIsUnicodeBuffer (
+    ACPI_PARSE_OBJECT       *Op) {
+  UINT8 *ByteData;
+  UINT32 ByteCount;
+  ACPI_PARSE_OBJECT *SizeOp;
+  ACPI_PARSE_OBJECT *NextOp;
+  UINT32 i;
+  SizeOp = Op->Common.Value.Arg;
+  NextOp = SizeOp->Common.Next;
+  ByteData = NextOp->Named.Data;
+  ByteCount =(UINT32)NextOp->Common.Value.Integer;
+  for (i = 0; i <(ByteCount - 2); i += 2) {
+- if ((ByteData[i] > 0x7F)||(ByteData[(ACPI_SIZE)i + 1] != 0)) {
++ if ((ByteData[i] == 0)||(ByteData[i] > 0x7F)||(ByteData[(ACPI_SIZE)i + 1] != 0)) {
+  return(FALSE);
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- caller of AcpiDmIsUnicodeBuffer: AcpiDmDisassembleOneOp — source/components/disassembler/dmopcode.c:905 --
+void AcpiDmDisassembleOneOp ( ACPI_WALK_STATE         *WalkState, ACPI_OP_WALK_INFO       *Info, ACPI_PARSE_OBJECT       *Op) {
+   ...
+   switch(Op->Common.DisasmOpcode) {
+   ...
+     Op->Common.DisasmOpcode = 0;
+     Op->Common.DisasmFlags |= ACPI_PARSEOP_IGNORE;
+   ...
+   }
+   ...
+   switch(Op->Common.AmlOpcode) {
+   ...
+     if((Child->Common.AmlOpcode == AML_LEQUAL_OP)||(Child->Common.AmlOpcode == AML_LGREATER_OP)||(Child->Common.AmlOpcode == AML_LLESS_OP)) {
+   ...
+       Op->Common.DisasmOpcode = ACPI_DASM_LNOT_PREFIX;
+     } else {
+     }
+   ...
+     if(!AcpiGbl_NoResourceDisassembly) {
+   ...
+       if(ACPI_SUCCESS(Status)) {
+         Op->Common.DisasmOpcode = ACPI_DASM_RESOURCE;
+   ...
+       } else
+     }
+     if(AcpiDmIsUuidBuffer(Op)) {
+       Op->Common.DisasmOpcode = ACPI_DASM_UUID;
+   ...
+>    } else if(AcpiDmIsUnicodeBuffer(Op)) {
+   ...
+     }
+   }
+}

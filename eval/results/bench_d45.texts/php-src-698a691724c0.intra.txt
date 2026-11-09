@@ -1,0 +1,21 @@
+Context for merged statement of old file: ext/wddx/wddx.c with new file: ext/wddx/wddx.c:
+void php_wddx_pop_element(void *user_data, const XML_Char *name) {
+  st_entry *ent1, *ent2;
+  if (!strcmp(name, EL_STRING)|| !strcmp(name, EL_NUMBER)|| !strcmp(name, EL_BOOLEAN)|| !strcmp(name, EL_NULL)|| !strcmp(name, EL_ARRAY)|| !strcmp(name, EL_STRUCT)|| !strcmp(name, EL_RECORDSET)|| !strcmp(name, EL_BINARY)|| !strcmp(name, EL_DATETIME)) {
+  if (!strcmp(name, EL_BINARY)) {
+  int new_len=0;
+  unsigned char *new_str;
+  new_str = php_base64_decode(Z_STRVAL_P(ent1->data), Z_STRLEN_P(ent1->data), &new_len);
++ if (new_str) {
++ Z_STRVAL_P(ent1->data)= new_str;
++ Z_STRLEN_P(ent1->data)= new_len;
+  }
++ else {
++ ZVAL_EMPTY_STRING(ent1->data);
++ }
+  }
+  }
+- Z_STRLEN_P(ent1->data)= new_len;
+- Z_STRVAL_P(ent1->data)= new_str;
+}
+

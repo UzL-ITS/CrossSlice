@@ -1,0 +1,1734 @@
+{
+ "21643e69a4c06f7ef155fbc70e3fba13fba4a756": {
+  "functions": [
+   {
+    "name": "gntalloc_ioctl_alloc",
+    "kind": "function",
+    "file": "drivers/xen/gntalloc.c",
+    "start": 269,
+    "end": 330
+   }
+  ],
+  "callees": [
+   {
+    "name": "copy_from_user",
+    "kind": "function",
+    "file": "arch/alpha/include/asm/uaccess.h",
+    "start": 403,
+    "end": 407
+   },
+   {
+    "name": "kzalloc",
+    "kind": "function",
+    "file": "include/linux/slab.h",
+    "start": 338,
+    "end": 341
+   },
+   {
+    "name": "spin_lock",
+    "kind": "function",
+    "file": "include/linux/spinlock.h",
+    "start": 283,
+    "end": 286
+   },
+   {
+    "name": "do_cleanup",
+    "kind": "function",
+    "file": "drivers/xen/gntalloc.c",
+    "start": 104,
+    "end": 111
+   },
+   {
+    "name": "spin_unlock",
+    "kind": "function",
+    "file": "include/linux/spinlock.h",
+    "start": 323,
+    "end": 326
+   },
+   {
+    "name": "add_grefs",
+    "kind": "function",
+    "file": "drivers/xen/gntalloc.c",
+    "start": 113,
+    "end": 172
+   },
+   {
+    "name": "copy_to_user",
+    "kind": "function",
+    "file": "arch/alpha/include/asm/uaccess.h",
+    "start": 397,
+    "end": 401
+   },
+   {
+    "name": "kfree",
+    "kind": "function",
+    "file": "mm/slab.c",
+    "start": 3867,
+    "end": 3883
+   },
+   {
+    "name": "pr_debug",
+    "kind": "macro",
+    "file": "tools/perf/util/include/linux/kernel.h",
+    "start": 103,
+    "end": 105
+   }
+  ],
+  "callers": [
+   {
+    "name": "gntalloc_ioctl",
+    "kind": "function",
+    "file": "drivers/xen/gntalloc.c",
+    "start": 408,
+    "end": 428
+   }
+  ],
+  "types": [
+   {
+    "name": "gntalloc_file_private_data",
+    "kind": "struct_specifier",
+    "file": "drivers/xen/gntalloc.c",
+    "start": 97,
+    "end": 100
+   },
+   {
+    "name": "ioctl_gntalloc_alloc_gref",
+    "kind": "struct_specifier",
+    "file": "include/xen/gntalloc.h",
+    "start": 19,
+    "end": 33
+   }
+  ]
+ },
+ "3fd61b209977db8a9fe6c44d5a5a7aee7a255f64": {
+  "functions": [
+   {
+    "name": "nvme_trans_inquiry",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 2247,
+    "end": 2313
+   }
+  ],
+  "callees": [
+   {
+    "name": "kmalloc",
+    "kind": "function",
+    "file": "include/linux/slab.h",
+    "start": 418,
+    "end": 436
+   },
+   {
+    "name": "nvme_trans_completion",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 452,
+    "end": 484
+   },
+   {
+    "name": "nvme_trans_bdev_char_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 964,
+    "end": 990
+   },
+   {
+    "name": "nvme_trans_bdev_limits_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 944,
+    "end": 962
+   },
+   {
+    "name": "nvme_trans_ext_inq_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 860,
+    "end": 942
+   },
+   {
+    "name": "nvme_trans_device_id_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 779,
+    "end": 858
+   },
+   {
+    "name": "nvme_trans_unit_serial_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 760,
+    "end": 777
+   },
+   {
+    "name": "nvme_trans_supported_vpd_pages",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 737,
+    "end": 758
+   },
+   {
+    "name": "nvme_trans_standard_inquiry_page",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 671,
+    "end": 735
+   },
+   {
+    "name": "kfree",
+    "kind": "function",
+    "file": "mm/slab.c",
+    "start": 3570,
+    "end": 3587
+   },
+   {
+    "name": "GET_INQ_EVPD_BIT",
+    "kind": "macro",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 315,
+    "end": 318
+   },
+   {
+    "name": "GET_INQ_PAGE_CODE",
+    "kind": "macro",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 319,
+    "end": 321
+   },
+   {
+    "name": "GET_INQ_ALLOC_LENGTH",
+    "kind": "macro",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 322,
+    "end": 324
+   }
+  ],
+  "callers": [
+   {
+    "name": "nvme_scsi_translate",
+    "kind": "function",
+    "file": "drivers/block/nvme-scsi.c",
+    "start": 2946,
+    "end": 3039
+   }
+  ],
+  "types": [
+   {
+    "name": "nvme_ns",
+    "kind": "struct_specifier",
+    "file": "include/linux/nvme.h",
+    "start": 111,
+    "end": 125
+   },
+   {
+    "name": "sg_io_hdr",
+    "kind": "type_definition",
+    "file": "include/scsi/sg.h",
+    "start": 43,
+    "end": 68
+   }
+  ]
+ },
+ "128c66429247add5128c03dc1e144ca56f05a4e2": {
+  "functions": [
+   {
+    "name": "ccp_run_sha_cmd",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 1469,
+    "end": 1812
+   }
+  ],
+  "callees": [
+   {
+    "name": "scatterwalk_map_and_copy",
+    "kind": "function",
+    "file": "crypto/scatterwalk.c",
+    "start": 55,
+    "end": 69
+   },
+   {
+    "name": "ccp_init_dm_workarea",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 136,
+    "end": 174
+   },
+   {
+    "name": "ccp_set_dm_area",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 176,
+    "end": 188
+   },
+   {
+    "name": "ccp_copy_to_sb",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 442,
+    "end": 447
+   },
+   {
+    "name": "ccp_process_data",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 396,
+    "end": 408
+   },
+   {
+    "name": "ccp_prepare_data",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 323,
+    "end": 394
+   },
+   {
+    "name": "ccp_init_data",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 252,
+    "end": 276
+   },
+   {
+    "name": "ccp_copy_from_sb",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 449,
+    "end": 454
+   },
+   {
+    "name": "ccp_get_dm_area",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 190,
+    "end": 198
+   },
+   {
+    "name": "kfree",
+    "kind": "function",
+    "file": "mm/slab.c",
+    "start": 3737,
+    "end": 3758
+   },
+   {
+    "name": "sg_init_one",
+    "kind": "function",
+    "file": "lib/scatterlist.c",
+    "start": 138,
+    "end": 142
+   },
+   {
+    "name": "kmalloc",
+    "kind": "function",
+    "file": "include/linux/slab.h",
+    "start": 538,
+    "end": 558
+   },
+   {
+    "name": "ccp_free_data",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 246,
+    "end": 250
+   },
+   {
+    "name": "ccp_dm_free",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 119,
+    "end": 134
+   },
+   {
+    "name": "CCP_VERSION",
+    "kind": "macro",
+    "file": "include/linux/ccp.h",
+    "start": 34,
+    "end": 36
+   },
+   {
+    "name": "CCP_NEW_JOBID",
+    "kind": "macro",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 55,
+    "end": 57
+   }
+  ],
+  "callers": [
+   {
+    "name": "ccp_run_cmd",
+    "kind": "function",
+    "file": "drivers/crypto/ccp/ccp-ops.c",
+    "start": 2447,
+    "end": 2496
+   }
+  ],
+  "types": [
+   {
+    "name": "ccp_cmd_queue",
+    "kind": "declaration",
+    "file": "drivers/crypto/ccp/ccp-dev.h",
+    "start": 260,
+    "end": 337
+   },
+   {
+    "name": "ccp_cmd",
+    "kind": "struct_specifier",
+    "file": "include/linux/ccp.h",
+    "start": 636,
+    "end": 664
+   },
+   {
+    "name": "ccp_sha_engine",
+    "kind": "struct_specifier",
+    "file": "include/linux/ccp.h",
+    "start": 284,
+    "end": 300
+   },
+   {
+    "name": "ccp_dm_workarea",
+    "kind": "struct_specifier",
+    "file": "drivers/crypto/ccp/ccp-dev.h",
+    "start": 457,
+    "end": 464
+   },
+   {
+    "name": "ccp_data",
+    "kind": "struct_specifier",
+    "file": "drivers/crypto/ccp/ccp-dev.h",
+    "start": 479,
+    "end": 482
+   },
+   {
+    "name": "ccp_op",
+    "kind": "struct_specifier",
+    "file": "drivers/crypto/ccp/ccp-dev.h",
+    "start": 530,
+    "end": 554
+   }
+  ]
+ },
+ "29eb31542787e1019208a2e1047bb7c76c069536": {
+  "functions": [
+   {
+    "name": "yam_siocdevprivate",
+    "kind": "function",
+    "file": "drivers/net/hamradio/yam.c",
+    "start": 923,
+    "end": 1057
+   }
+  ],
+  "callees": [
+   {
+    "name": "netdev_priv",
+    "kind": "function",
+    "file": "include/linux/netdevice.h",
+    "start": 2461,
+    "end": 2464
+   },
+   {
+    "name": "copy_from_user",
+    "kind": "function",
+    "file": "include/linux/uaccess.h",
+    "start": 188,
+    "end": 194
+   },
+   {
+    "name": "capable",
+    "kind": "function",
+    "file": "include/linux/capability.h",
+    "start": 233,
+    "end": 236
+   },
+   {
+    "name": "copy_to_user",
+    "kind": "function",
+    "file": "include/linux/uaccess.h",
+    "start": 196,
+    "end": 202
+   },
+   {
+    "name": "netif_running",
+    "kind": "function",
+    "file": "include/linux/netdevice.h",
+    "start": 3387,
+    "end": 3390
+   },
+   {
+    "name": "kfree",
+    "kind": "function",
+    "file": "mm/slab.c",
+    "start": 3775,
+    "end": 3796
+   },
+   {
+    "name": "add_mcs",
+    "kind": "function",
+    "file": "drivers/net/hamradio/yam.c",
+    "start": 337,
+    "end": 400
+   },
+   {
+    "name": "PTR_ERR",
+    "kind": "function",
+    "file": "include/linux/err.h",
+    "start": 29,
+    "end": 32
+   },
+   {
+    "name": "IS_ERR",
+    "kind": "function",
+    "file": "include/linux/err.h",
+    "start": 34,
+    "end": 37
+   },
+   {
+    "name": "memdup_user",
+    "kind": "function",
+    "file": "mm/util.c",
+    "start": 169,
+    "end": 183
+   }
+  ],
+  "callers": [],
+  "types": [
+   {
+    "name": "net_device",
+    "kind": "struct_specifier",
+    "file": "include/linux/netdevice.h",
+    "start": 1956,
+    "end": 2285
+   },
+   {
+    "name": "ifreq",
+    "kind": "struct_specifier",
+    "file": "include/uapi/linux/if.h",
+    "start": 234,
+    "end": 256
+   },
+   {
+    "name": "yam_port",
+    "kind": "struct_specifier",
+    "file": "drivers/net/hamradio/yam.c",
+    "start": 96,
+    "end": 133
+   },
+   {
+    "name": "yamdrv_ioctl_cfg",
+    "kind": "struct_specifier",
+    "file": "include/linux/yam.h",
+    "start": 58,
+    "end": 61
+   },
+   {
+    "name": "yamdrv_ioctl_mcs",
+    "kind": "struct_specifier",
+    "file": "include/linux/yam.h",
+    "start": 63,
+    "end": 67
+   }
+  ]
+ },
+ "974a9f0b47da74e28f68b9c8645c3786aa5ace1a": {
+  "functions": [
+   {
+    "name": "may_open",
+    "kind": "function",
+    "file": "fs/namei.c",
+    "start": 1596,
+    "end": 1675
+   }
+  ],
+  "callees": [
+   {
+    "name": "vfs_permission",
+    "kind": "function",
+    "file": "fs/namei.c",
+    "start": 297,
+    "end": 300
+   },
+   {
+    "name": "break_lease",
+    "kind": "function",
+    "file": "include/linux/fs.h",
+    "start": 1530,
+    "end": 1535
+   },
+   {
+    "name": "DQUOT_INIT",
+    "kind": "function",
+    "file": "include/linux/quotaops.h",
+    "start": 62,
+    "end": 67
+   },
+   {
+    "name": "put_write_access",
+    "kind": "function",
+    "file": "include/linux/fs.h",
+    "start": 1703,
+    "end": 1706
+   },
+   {
+    "name": "do_truncate",
+    "kind": "function",
+    "file": "fs/open.c",
+    "start": 197,
+    "end": 221
+   },
+   {
+    "name": "locks_verify_locked",
+    "kind": "function",
+    "file": "include/linux/fs.h",
+    "start": 1507,
+    "end": 1512
+   },
+   {
+    "name": "get_write_access",
+    "kind": "function",
+    "file": "fs/namei.c",
+    "start": 337,
+    "end": 348
+   },
+   {
+    "name": "S_ISLNK",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 24,
+    "end": 25
+   },
+   {
+    "name": "S_ISDIR",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 26,
+    "end": 27
+   },
+   {
+    "name": "IS_RDONLY",
+    "kind": "macro",
+    "file": "include/linux/fs.h",
+    "start": 169,
+    "end": 170
+   },
+   {
+    "name": "S_ISCHR",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 27,
+    "end": 28
+   },
+   {
+    "name": "S_ISBLK",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 28,
+    "end": 29
+   },
+   {
+    "name": "S_ISSOCK",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 30,
+    "end": 31
+   },
+   {
+    "name": "S_ISFIFO",
+    "kind": "macro",
+    "file": "include/linux/stat.h",
+    "start": 29,
+    "end": 30
+   },
+   {
+    "name": "IS_APPEND",
+    "kind": "macro",
+    "file": "include/linux/fs.h",
+    "start": 178,
+    "end": 179
+   },
+   {
+    "name": "is_owner_or_cap",
+    "kind": "macro",
+    "file": "include/linux/fs.h",
+    "start": 1059,
+    "end": 1061
+   }
+  ],
+  "callers": [
+   {
+    "name": "open_namei_create",
+    "kind": "function",
+    "file": "fs/namei.c",
+    "start": 1677,
+    "end": 1693
+   },
+   {
+    "name": "open_namei",
+    "kind": "function",
+    "file": "fs/namei.c",
+    "start": 1709,
+    "end": 1870
+   },
+   {
+    "name": "do_open",
+    "kind": "function",
+    "file": "arch/x86/kernel/apm_32.c",
+    "start": 1556,
+    "end": 1586
+   }
+  ],
+  "types": [
+   {
+    "name": "nameidata",
+    "kind": "struct_specifier",
+    "file": "include/linux/namei.h",
+    "start": 17,
+    "end": 30
+   },
+   {
+    "name": "dentry",
+    "kind": "struct_specifier",
+    "file": "include/linux/dcache.h",
+    "start": 82,
+    "end": 115
+   },
+   {
+    "name": "inode",
+    "kind": "struct_specifier",
+    "file": "include/linux/fs.h",
+    "start": 591,
+    "end": 656
+   }
+  ]
+ },
+ "a497e47d4aec37aaf8f13509f3ef3d1f6a717d88": {
+  "functions": [
+   {
+    "name": "lbs_debugfs_write",
+    "kind": "function",
+    "file": "drivers/net/wireless/libertas/debugfs.c",
+    "start": 905,
+    "end": 955
+   }
+  ],
+  "callees": [
+   {
+    "name": "kmalloc",
+    "kind": "function",
+    "file": "include/linux/slab.h",
+    "start": 389,
+    "end": 407
+   },
+   {
+    "name": "kfree",
+    "kind": "function",
+    "file": "mm/slab.c",
+    "start": 3799,
+    "end": 3816
+   },
+   {
+    "name": "copy_from_user",
+    "kind": "function",
+    "file": "arch/alpha/include/asm/uaccess.h",
+    "start": 403,
+    "end": 407
+   },
+   {
+    "name": "simple_strtoul",
+    "kind": "function",
+    "file": "lib/vsprintf.c",
+    "start": 70,
+    "end": 73
+   },
+   {
+    "name": "lbs_deb_debugfs",
+    "kind": "macro",
+    "file": "drivers/net/wireless/libertas/defs.h",
+    "start": 76,
+    "end": 77
+   }
+  ],
+  "callers": [],
+  "types": [
+   {
+    "name": "file",
+    "kind": "struct_specifier",
+    "file": "include/linux/fs.h",
+    "start": 766,
+    "end": 813
+   },
+   {
+    "name": "debug_data",
+    "kind": "struct_specifier",
+    "file": "drivers/net/wireless/libertas/debugfs.c",
+    "start": 833,
+    "end": 837
+   }
+  ]
+ },
+ "789f384cc6da5087ebe6628fb8257ba025d6a94a": {
+  "functions": [
+   {
+    "name": "sosend",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket.c",
+    "start": 384,
+    "end": 505
+   }
+  ],
+  "callees": [
+   {
+    "name": "solock",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket2.c",
+    "start": 276,
+    "end": 289
+   },
+   {
+    "name": "sblock",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket2.c",
+    "start": 340,
+    "end": 363
+   },
+   {
+    "name": "m_getuio",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket.c",
+    "start": 507,
+    "end": 573
+   },
+   {
+    "name": "sounlock",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket2.c",
+    "start": 291,
+    "end": 296
+   },
+   {
+    "name": "sbwait",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket2.c",
+    "start": 329,
+    "end": 338
+   },
+   {
+    "name": "sbunlock",
+    "kind": "function",
+    "file": "sys/kern/uipc_socket2.c",
+    "start": 365,
+    "end": 375
+   },
+   {
+    "name": "sbspace",
+    "kind": "function",
+    "file": "sys/sys/socketvar.h",
+    "start": 185,
+    "end": 194
+   },
+   {
+    "name": "m_freem",
+    "kind": "function",
+    "file": "sys/kern/uipc_mbuf.c",
+    "start": 485,
+    "end": 500
+   },
+   {
+    "name": "sosendallatonce",
+    "kind": "macro",
+    "file": "sys/sys/socketvar.h",
+    "start": 197,
+    "end": 199
+   },
+   {
+    "name": "CMSG_SPACE",
+    "kind": "macro",
+    "file": "sys/sys/socket.h",
+    "start": 494,
+    "end": 495
+   },
+   {
+    "name": "CMSG_ALIGN",
+    "kind": "macro",
+    "file": "sys/sys/socket.h",
+    "start": 487,
+    "end": 488
+   },
+   {
+    "name": "mtod",
+    "kind": "macro",
+    "file": "sys/sys/mbuf.h",
+    "start": 79,
+    "end": 80
+   },
+   {
+    "name": "SBLOCKWAIT",
+    "kind": "macro",
+    "file": "sys/kern/uipc_socket.c",
+    "start": 366,
+    "end": 367
+   },
+   {
+    "name": "snderr",
+    "kind": "macro",
+    "file": "sys/kern/uipc_socket.c",
+    "start": 421,
+    "end": 422
+   }
+  ],
+  "callers": [
+   {
+    "name": "dosendsyslog",
+    "kind": "function",
+    "file": "sys/kern/subr_log.c",
+    "start": 406,
+    "end": 528
+   },
+   {
+    "name": "soo_write",
+    "kind": "function",
+    "file": "sys/kern/sys_socket.c",
+    "start": 64,
+    "end": 70
+   },
+   {
+    "name": "sendit",
+    "kind": "function",
+    "file": "sys/kern/uipc_syscalls.c",
+    "start": 590,
+    "end": 700
+   },
+   {
+    "name": "fifo_write",
+    "kind": "function",
+    "file": "sys/miscfs/fifofs/fifo_vnops.c",
+    "start": 237,
+    "end": 257
+   },
+   {
+    "name": "bfd_send",
+    "kind": "function",
+    "file": "sys/net/bfd.c",
+    "start": 985,
+    "end": 996
+   },
+   {
+    "name": "pflow_sendout_mbuf",
+    "kind": "function",
+    "file": "sys/net/if_pflow.c",
+    "start": 1199,
+    "end": 1210
+   },
+   {
+    "name": "krpc_call",
+    "kind": "function",
+    "file": "sys/nfs/krpc_subr.c",
+    "start": 204,
+    "end": 458
+   },
+   {
+    "name": "nfs_send",
+    "kind": "function",
+    "file": "sys/nfs/nfs_socket.c",
+    "start": 448,
+    "end": 498
+   }
+  ],
+  "types": [
+   {
+    "name": "socket",
+    "kind": "struct_specifier",
+    "file": "sys/sys/socketvar.h",
+    "start": 53,
+    "end": 132
+   },
+   {
+    "name": "mbuf",
+    "kind": "struct_specifier",
+    "file": "sys/sys/mbuf.h",
+    "start": 156,
+    "end": 168
+   },
+   {
+    "name": "uio",
+    "kind": "struct_specifier",
+    "file": "sys/sys/uio.h",
+    "start": 67,
+    "end": 75
+   },
+   {
+    "name": "cmsghdr",
+    "kind": "struct_specifier",
+    "file": "sys/sys/socket.h",
+    "start": 457,
+    "end": 462
+   },
+   {
+    "name": "fdpass",
+    "kind": "struct_specifier",
+    "file": "sys/sys/unpcb.h",
+    "start": 89,
+    "end": 92
+   }
+  ]
+ },
+ "a1631ac57b853edd81431e57c266ec813e180acd": {
+  "functions": [
+   {
+    "name": "exif_process_IFD_in_MAKERNOTE",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 3096,
+    "end": 3203
+   }
+  ],
+  "callees": [
+   {
+    "name": "exif_error_docref",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 1940,
+    "end": 1957
+   },
+   {
+    "name": "exif_char_dump",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 1397,
+    "end": 1427
+   },
+   {
+    "name": "exif_get_sectionname",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 1783,
+    "end": 1802
+   },
+   {
+    "name": "php_ifd_get16u",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 1442,
+    "end": 1449
+   },
+   {
+    "name": "php_ifd_get32u",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 1480,
+    "end": 1483
+   },
+   {
+    "name": "exif_process_IFD_TAG",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 3208,
+    "end": 3529
+   }
+  ],
+  "callers": [
+   {
+    "name": "exif_process_IFD_TAG",
+    "kind": "function",
+    "file": "ext/exif/exif.c",
+    "start": 3208,
+    "end": 3529
+   }
+  ],
+  "types": []
+ },
+ "0b39cbf3c01d7feec9d0dd7cc7e0e374b6113542": {
+  "functions": [
+   {
+    "name": "mqtt_read_message_chunk",
+    "kind": "function",
+    "file": "subsys/net/lib/mqtt/mqtt_rx.c",
+    "start": 146,
+    "end": 187
+   }
+  ],
+  "callees": [
+   {
+    "name": "mqtt_transport_read",
+    "kind": "function",
+    "file": "subsys/net/lib/mqtt/mqtt_transport.c",
+    "start": 70,
+    "end": 75
+   },
+   {
+    "name": "MQTT_ERR",
+    "kind": "macro",
+    "file": "subsys/net/lib/mqtt/mqtt_os.h",
+    "start": 37,
+    "end": 38
+   },
+   {
+    "name": "MQTT_TRC",
+    "kind": "macro",
+    "file": "subsys/net/lib/mqtt/mqtt_os.h",
+    "start": 34,
+    "end": 35
+   }
+  ],
+  "callers": [
+   {
+    "name": "mqtt_read_publish_var_header",
+    "kind": "function",
+    "file": "subsys/net/lib/mqtt/mqtt_rx.c",
+    "start": 189,
+    "end": 222
+   },
+   {
+    "name": "mqtt_read_and_parse_fixed_header",
+    "kind": "function",
+    "file": "subsys/net/lib/mqtt/mqtt_rx.c",
+    "start": 224,
+    "end": 247
+   },
+   {
+    "name": "mqtt_handle_rx",
+    "kind": "function",
+    "file": "subsys/net/lib/mqtt/mqtt_rx.c",
+    "start": 249,
+    "end": 285
+   }
+  ],
+  "types": [
+   {
+    "name": "mqtt_client",
+    "kind": "struct_specifier",
+    "file": "include/net/mqtt.h",
+    "start": 459,
+    "end": 528
+   },
+   {
+    "name": "buf_ctx",
+    "kind": "struct_specifier",
+    "file": "subsys/net/lib/mqtt/mqtt_internal.h",
+    "start": 123,
+    "end": 126
+   }
+  ]
+ },
+ "aaa28a9d39158ca1033bbd3372cf423abbf4f202": {
+  "functions": [
+   {
+    "name": "dissect_diameter_base_framed_ipv6_prefix",
+    "kind": "function",
+    "file": "epan/dissectors/packet-diameter.c",
+    "start": 502,
+    "end": 534
+   },
+   {
+    "name": "real_proto_register_diameter",
+    "kind": "function",
+    "file": "epan/dissectors/packet-diameter.c",
+    "start": 2101,
+    "end": 2324
+   }
+  ],
+  "callees": [
+   {
+    "name": "proto_tree_add_item",
+    "kind": "function",
+    "file": "epan/proto.c",
+    "start": 2340,
+    "end": 2348
+   },
+   {
+    "name": "tvb_get_guint8",
+    "kind": "function",
+    "file": "epan/tvbuff.c",
+    "start": 842,
+    "end": 849
+   },
+   {
+    "name": "wmem_strdup_printf",
+    "kind": "function",
+    "file": "epan/wmem/wmem_strutl.c",
+    "start": 68,
+    "end": 79
+   },
+   {
+    "name": "address_to_str",
+    "kind": "function",
+    "file": "epan/address_types.c",
+    "start": 900,
+    "end": 912
+   },
+   {
+    "name": "wmem_packet_scope",
+    "kind": "function",
+    "file": "epan/wmem/wmem_scopes.c",
+    "start": 57,
+    "end": 63
+   },
+   {
+    "name": "set_address",
+    "kind": "function",
+    "file": "epan/address.h",
+    "start": 77,
+    "end": 82
+   },
+   {
+    "name": "proto_tree_add_ipv6",
+    "kind": "function",
+    "file": "epan/proto.c",
+    "start": 2972,
+    "end": 2987
+   },
+   {
+    "name": "tvb_memcpy",
+    "kind": "function",
+    "file": "epan/tvbuff.c",
+    "start": 761,
+    "end": 801
+   },
+   {
+    "name": "wmem_array_append",
+    "kind": "function",
+    "file": "epan/wmem/wmem_array.c",
+    "start": 101,
+    "end": 110
+   },
+   {
+    "name": "proto_register_protocol",
+    "kind": "function",
+    "file": "epan/proto.c",
+    "start": 5279,
+    "end": 5374
+   },
+   {
+    "name": "proto_register_field_array",
+    "kind": "function",
+    "file": "epan/proto.c",
+    "start": 5743,
+    "end": 5769
+   },
+   {
+    "name": "wmem_array_get_count",
+    "kind": "function",
+    "file": "epan/wmem/wmem_array.c",
+    "start": 131,
+    "end": 135
+   },
+   {
+    "name": "wmem_array_get_raw",
+    "kind": "function",
+    "file": "epan/wmem/wmem_array.c",
+    "start": 125,
+    "end": 129
+   },
+   {
+    "name": "proto_register_subtree_array",
+    "kind": "function",
+    "file": "epan/proto.c",
+    "start": 6439,
+    "end": 6481
+   },
+   {
+    "name": "expert_register_protocol",
+    "kind": "function",
+    "file": "epan/expert.c",
+    "start": 312,
+    "end": 324
+   },
+   {
+    "name": "expert_register_field_array",
+    "kind": "function",
+    "file": "epan/expert.c",
+    "start": 362,
+    "end": 394
+   },
+   {
+    "name": "new_register_dissector",
+    "kind": "function",
+    "file": "epan/packet.c",
+    "start": 2620,
+    "end": 2637
+   },
+   {
+    "name": "register_dissector_table",
+    "kind": "function",
+    "file": "epan/packet.c",
+    "start": 2023,
+    "end": 2079
+   },
+   {
+    "name": "range_convert_str",
+    "kind": "function",
+    "file": "epan/range.c",
+    "start": 80,
+    "end": 84
+   },
+   {
+    "name": "prefs_register_protocol",
+    "kind": "function",
+    "file": "epan/prefs.c",
+    "start": 451,
+    "end": 472
+   },
+   {
+    "name": "prefs_register_range_preference",
+    "kind": "function",
+    "file": "epan/prefs.c",
+    "start": 1083,
+    "end": 1108
+   },
+   {
+    "name": "prefs_register_bool_preference",
+    "kind": "function",
+    "file": "epan/prefs.c",
+    "start": 959,
+    "end": 970
+   },
+   {
+    "name": "prefs_register_obsolete_preference",
+    "kind": "function",
+    "file": "epan/prefs.c",
+    "start": 1209,
+    "end": 1213
+   },
+   {
+    "name": "register_tap",
+    "kind": "function",
+    "file": "epan/tap.c",
+    "start": 208,
+    "end": 233
+   },
+   {
+    "name": "register_srt_table",
+    "kind": "function",
+    "file": "epan/srt_table.c",
+    "start": 209,
+    "end": 230
+   },
+   {
+    "name": "VALS",
+    "kind": "macro",
+    "file": "epan/proto.h",
+    "start": 74,
+    "end": 75
+   },
+   {
+    "name": "FRAMENUM_TYPE",
+    "kind": "macro",
+    "file": "epan/proto.h",
+    "start": 103,
+    "end": 104
+   },
+   {
+    "name": "TFS",
+    "kind": "macro",
+    "file": "epan/proto.h",
+    "start": 83,
+    "end": 84
+   },
+   {
+    "name": "VALS_EXT_PTR",
+    "kind": "macro",
+    "file": "epan/proto.h",
+    "start": 80,
+    "end": 81
+   },
+   {
+    "name": "array_length",
+    "kind": "macro",
+    "file": "epan/dissectors/packet-dcerpc-dce122.c",
+    "start": 4430,
+    "end": 4431
+   }
+  ],
+  "callers": [
+   {
+    "name": "proto_reg_handoff_diameter",
+    "kind": "function",
+    "file": "epan/dissectors/packet-diameter.c",
+    "start": 2342,
+    "end": 2411
+   },
+   {
+    "name": "proto_register_diameter",
+    "kind": "function",
+    "file": "epan/dissectors/packet-diameter.c",
+    "start": 2326,
+    "end": 2340
+   }
+  ],
+  "types": [
+   {
+    "name": "diam_sub_dis_t",
+    "kind": "type_definition",
+    "file": "epan/dissectors/packet-diameter.h",
+    "start": 40,
+    "end": 46
+   },
+   {
+    "name": "e_in6_addr",
+    "kind": "struct_specifier",
+    "file": "epan/ipv6-utils.h",
+    "start": 29,
+    "end": 31
+   }
+  ]
+ },
+ "1b1dac2716d713dfd6949b7eb4a3c18c16f1faf6": {
+  "functions": [
+   {
+    "name": "ffio_limit",
+    "kind": "function",
+    "file": "libavformat/utils.c",
+    "start": 244,
+    "end": 264
+   }
+  ],
+  "callees": [
+   {
+    "name": "av_log",
+    "kind": "function",
+    "file": "libavutil/log.c",
+    "start": 407,
+    "end": 413
+   },
+   {
+    "name": "avio_tell",
+    "kind": "function",
+    "file": "libavformat/avio.h",
+    "start": 557,
+    "end": 560
+   },
+   {
+    "name": "avio_size",
+    "kind": "function",
+    "file": "libavformat/aviobuf.c",
+    "start": 346,
+    "end": 366
+   },
+   {
+    "name": "FFMAX",
+    "kind": "macro",
+    "file": "libavutil/common.h",
+    "start": 94,
+    "end": 95
+   }
+  ],
+  "callers": [
+   {
+    "name": "asf_read_stream_properties",
+    "kind": "function",
+    "file": "libavformat/asfdec_f.c",
+    "start": 398,
+    "end": 563
+   },
+   {
+    "name": "cin_read_packet",
+    "kind": "function",
+    "file": "libavformat/dsicin.c",
+    "start": 164,
+    "end": 224
+   },
+   {
+    "name": "roq_read_packet",
+    "kind": "function",
+    "file": "libavformat/idroqdec.c",
+    "start": 94,
+    "end": 240
+   },
+   {
+    "name": "ebml_parse",
+    "kind": "function",
+    "file": "libavformat/matroskadec.c",
+    "start": 1173,
+    "end": 1484
+   },
+   {
+    "name": "rm_assemble_video_frame",
+    "kind": "function",
+    "file": "libavformat/rmdec.c",
+    "start": 761,
+    "end": 861
+   },
+   {
+    "name": "vmd_read_packet",
+    "kind": "function",
+    "file": "libavformat/sierravmd.c",
+    "start": 273,
+    "end": 314
+   },
+   {
+    "name": "siff_read_packet",
+    "kind": "function",
+    "file": "libavformat/siff.c",
+    "start": 192,
+    "end": 250
+   },
+   {
+    "name": "append_packet_chunked",
+    "kind": "function",
+    "file": "libavformat/utils.c",
+    "start": 268,
+    "end": 305
+   }
+  ],
+  "types": []
+ },
+ "31dc73e92a96f08d07650c0e7d31c0b9a1465d46": {
+  "functions": [
+   {
+    "name": "vorbis_parse_setup_hdr_codebooks",
+    "kind": "function",
+    "file": "libavcodec/vorbisdec.c",
+    "start": 230,
+    "end": 454
+   }
+  ],
+  "callees": [
+   {
+    "name": "get_bits",
+    "kind": "function",
+    "file": "libavcodec/get_bits.h",
+    "start": 241,
+    "end": 250
+   },
+   {
+    "name": "av_mallocz",
+    "kind": "function",
+    "file": "libavutil/mem.c",
+    "start": 211,
+    "end": 217
+   },
+   {
+    "name": "av_malloc",
+    "kind": "function",
+    "file": "libavutil/mem.c",
+    "start": 62,
+    "end": 115
+   },
+   {
+    "name": "av_log",
+    "kind": "function",
+    "file": "libavutil/log.c",
+    "start": 169,
+    "end": 179
+   },
+   {
+    "name": "ff_vorbis_len2vlc",
+    "kind": "function",
+    "file": "libavcodec/vorbis.c",
+    "start": 53,
+    "end": 118
+   },
+   {
+    "name": "get_bits1",
+    "kind": "function",
+    "file": "libavcodec/get_bits.h",
+    "start": 272,
+    "end": 290
+   },
+   {
+    "name": "vorbisfloat2float",
+    "kind": "function",
+    "file": "libavcodec/vorbisdec.c",
+    "start": 173,
+    "end": 180
+   },
+   {
+    "name": "get_bits_long",
+    "kind": "function",
+    "file": "libavcodec/get_bits.h",
+    "start": 305,
+    "end": 318
+   },
+   {
+    "name": "ff_vorbis_nth_root",
+    "kind": "function",
+    "file": "libavcodec/vorbis.c",
+    "start": 35,
+    "end": 46
+   },
+   {
+    "name": "av_free",
+    "kind": "function",
+    "file": "libavutil/mem.c",
+    "start": 190,
+    "end": 200
+   },
+   {
+    "name": "av_dlog",
+    "kind": "macro",
+    "file": "libavutil/log.h",
+    "start": 252,
+    "end": 253
+   },
+   {
+    "name": "AVERROR",
+    "kind": "macro",
+    "file": "libavutil/error.h",
+    "start": 43,
+    "end": 44
+   },
+   {
+    "name": "init_vlc",
+    "kind": "macro",
+    "file": "libavcodec/get_bits.h",
+    "start": 425,
+    "end": 433
+   },
+   {
+    "name": "ilog",
+    "kind": "macro",
+    "file": "libavcodec/vorbis.h",
+    "start": 48,
+    "end": 49
+   }
+  ],
+  "callers": [
+   {
+    "name": "vorbis_parse_setup_hdr",
+    "kind": "function",
+    "file": "libavcodec/vorbisdec.c",
+    "start": 890,
+    "end": 932
+   }
+  ],
+  "types": []
+ },
+ "8409dc884a201bf74b30a9d232b6bbdd00cb7e2b": {
+  "functions": [
+   {
+    "name": "serial_exit_core",
+    "kind": "function",
+    "file": "hw/char/serial.c",
+    "start": 906,
+    "end": 910
+   }
+  ],
+  "callees": [
+   {
+    "name": "qemu_chr_fe_deinit",
+    "kind": "function",
+    "file": "qemu-char.c",
+    "start": 932,
+    "end": 945
+   },
+   {
+    "name": "qemu_unregister_reset",
+    "kind": "function",
+    "file": "hw/core/reset.c",
+    "start": 50,
+    "end": 61
+   }
+  ],
+  "callers": [
+   {
+    "name": "serial_pci_exit",
+    "kind": "function",
+    "file": "hw/char/serial-pci.c",
+    "start": 133,
+    "end": 140
+   },
+   {
+    "name": "multi_serial_pci_exit",
+    "kind": "function",
+    "file": "hw/char/serial-pci.c",
+    "start": 142,
+    "end": 155
+   }
+  ],
+  "types": []
+ },
+ "65a23f5dbee4497064e9bb467f81138a62b0dae1": {
+  "functions": [
+   {
+    "name": "get_uncompressed_data",
+    "kind": "function",
+    "file": "libarchive/archive_read_support_format_7zip.c",
+    "start": 2957,
+    "end": 3014
+   }
+  ],
+  "callees": [
+   {
+    "name": "extract_pack_stream",
+    "kind": "function",
+    "file": "libarchive/archive_read_support_format_7zip.c",
+    "start": 3016,
+    "end": 3175
+   },
+   {
+    "name": "archive_set_error",
+    "kind": "function",
+    "file": "libarchive/archive_util.c",
+    "start": 166,
+    "end": 182
+   },
+   {
+    "name": "__archive_read_ahead",
+    "kind": "function",
+    "file": "libarchive/archive_read.c",
+    "start": 1304,
+    "end": 1308
+   }
+  ],
+  "callers": [
+   {
+    "name": "read_stream",
+    "kind": "function",
+    "file": "libarchive/archive_read_support_format_7zip.c",
+    "start": 3202,
+    "end": 3310
+   },
+   {
+    "name": "setup_decode_folder",
+    "kind": "function",
+    "file": "libarchive/archive_read_support_format_7zip.c",
+    "start": 3312,
+    "end": 3568
+   }
+  ],
+  "types": [
+   {
+    "name": "archive_read",
+    "kind": "struct_specifier",
+    "file": "libarchive/archive_read_private.h",
+    "start": 159,
+    "end": 228
+   },
+   {
+    "name": "_7zip",
+    "kind": "struct_specifier",
+    "file": "libarchive/archive_read_support_format_7zip.c",
+    "start": 208,
+    "end": 333
+   }
+  ]
+ },
+ "5421a04adce8465a5f9fc1a0346587404a885632": {
+  "functions": [
+   {
+    "name": "foreach_nfs_host_cb",
+    "kind": "function",
+    "file": "lib/libshare/os/linux/nfs.c",
+    "start": 134,
+    "end": 186
+   }
+  ],
+  "callees": [],
+  "callers": [
+   {
+    "name": "foreach_nfs_host",
+    "kind": "function",
+    "file": "lib/libshare/os/linux/nfs.c",
+    "start": 191,
+    "end": 208
+   }
+  ],
+  "types": [
+   {
+    "name": "nfs_host_cookie_t",
+    "kind": "type_definition",
+    "file": "lib/libshare/os/linux/nfs.c",
+    "start": 121,
+    "end": 127
+   }
+  ]
+ }
+}

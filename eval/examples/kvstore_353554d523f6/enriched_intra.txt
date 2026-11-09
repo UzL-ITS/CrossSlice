@@ -1,0 +1,60 @@
+Context for merged statement of old file: kv.c with new file: kv.c:
+int kv_put(kv_store *s, const char *key, const char *value) {
++ size_t key_len = strlen(key);
+  kv_entry *e;
+  int idx;
++ if (key_len >= KV_MAX_KEY_LEN) {
++ return KV_ERR_KEYLEN;
+  }
+  idx = find_slot(s, key);
+  if (idx < 0) {
++ return KV_ERR_NOMEM;
+  }
+  e = &s->entries[idx];
+  if (!e->in_use) {
+- strcpy(e->key, key);
++ memcpy(e->key, key, key_len + 1);
+  }
+}
+
+Context for merged statement of old file: kv.h with new file: kv.h:
+#ifndef KV_H
+  #define KV_MAX_KEY_LEN 64
+  #define KV_ERR_NOTFOUND -2
+- typedef struct kv_entry { char key[KV_MAX_KEY_LEN]; char *value; int in_use; } kv_entry;
+- struct kv_entry {
+- char key[KV_MAX_KEY_LEN];
+- char *value;
+- int in_use;
+  }
+- typedef struct kv_store { kv_entry *entries; int cap; int count; } kv_store;
+- struct kv_store {
+- kv_entry *entries;
+- int cap;
+- int count;
+  }
+- kv_store *kv_create(void);
+- int kv_put(kv_store *s, const char *key, const char *value);
+- int kv_get(kv_store *s, const char *key, const char **out_value);
+- int kv_remove(kv_store *s, const char *key);
+- void kv_destroy(kv_store *s);
++ #define KV_ERR_KEYLEN -3
++ typedef struct kv_entry { char key[KV_MAX_KEY_LEN]; char *value; int in_use; } kv_entry;
++ struct kv_entry {
++ char key[KV_MAX_KEY_LEN];
++ char *value;
++ int in_use;
+  }
++ typedef struct kv_store { kv_entry *entries; int cap; int count; } kv_store;
++ struct kv_store {
++ kv_entry *entries;
++ int cap;
++ int count;
+  }
++ kv_store *kv_create(void);
++ int kv_put(kv_store *s, const char *key, const char *value);
++ int kv_get(kv_store *s, const char *key, const char **out_value);
++ int kv_remove(kv_store *s, const char *key);
++ void kv_destroy(kv_store *s);
+  #endif
+

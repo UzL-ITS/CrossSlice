@@ -1,0 +1,47 @@
+Context for merged statement of old file: libavcodec/libgsm.c with new file: libavcodec/libgsm.c:
+int libgsm_decode_frame(AVCodecContext *avctx,
+                               void *data, int *data_size,
+                               AVPacket *avpkt) {
++ int out_size = avctx->frame_size * av_get_bytes_per_sample(avctx->sample_fmt);
++ if (*data_size < out_size) {
++ av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
++ return AVERROR(EINVAL);
+  }
+  switch ((avctx->codec_id)) {
+  case CODEC_ID_GSM:
+  case CODEC_ID_GSM_MS:
+  }
+- *data_size = GSM_FRAME_SIZE*sizeof(int16_t)*2;
++ *data_size = out_size;
+}
+
+
+==== Cross-function context ====
+
+-- called macro: AVERROR — libavutil/error.h:36 [priority_fallback, new version] --
+#define AVERROR(e) (e)
+
+-- called function: av_log — libavutil/log.c:129 [gtags_unique, new version] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   AVClass* avc= avcl ? *(AVClass**)avcl : NULL;
+   va_list vl;
+   ...
+   if(avc && avc->version >=(50<<16 | 15<<8 | 2)&& avc->log_level_offset_offset && level>=AV_LOG_FATAL)
+     level += *(int*)(((uint8_t*)avcl)+ avc->log_level_offset_offset);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- called function: av_get_bytes_per_sample — libavutil/samplefmt.c:69 [gtags_unique, new version] --
+int av_get_bytes_per_sample(enum AVSampleFormat sample_fmt) {
+   return sample_fmt < 0 || sample_fmt >= AV_SAMPLE_FMT_NB ? 0 : sample_fmt_info[sample_fmt].bits >> 3;
+}
+   [reads: sample_fmt; writes: -]
+
+-- called macro: AV_LOG_ERROR — libavutil/log.h:111 [gtags_unique, new version] --
+#define AV_LOG_ERROR    16
+
+-- 2nd-level context (summaries) --
+  av_vlog — libavutil/log.c:140 [gtags_unique]: void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+    reads: avcl, fmt, level, vl; writes: -

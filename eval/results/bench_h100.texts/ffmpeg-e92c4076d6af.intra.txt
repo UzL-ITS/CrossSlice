@@ -1,0 +1,11 @@
+Context for merged statement of old file: libavcodec/vmnc.c with new file: libavcodec/vmnc.c:
++ #include "libavutil/attributes.h"
+
+Context for merged statement of old file: libavcodec/vmnc.c with new file: libavcodec/vmnc.c:
+av_cold decode_init(AVCodecContext *avctx) {
+  switch ((c->bpp)) {
+  case 24:
++ av_fallthrough;
+  }
+}
+

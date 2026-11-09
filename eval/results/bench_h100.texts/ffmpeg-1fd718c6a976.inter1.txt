@@ -1,0 +1,82 @@
+Context for merged statement of old file: libavformat/mpegts.c with new file: libavformat/mpegts.c:
+void pmt_cb(MpegTSFilter *filter, const uint8_t *section, int section_len) {
+  const uint8_t *p, *p_end, *desc_list_end;
+  int program_info_length, pcr_pid, pid, stream_type;
+  p_end = section + section_len - 4;
+  p = section;
+  program_info_length = get16(&p, p_end);
+- if (program_info_length < 0) {
++ if (program_info_length < 0 ||(program_info_length & 0xFFF)> p_end - p) {
+  return;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: get16 — libavformat/mpegts.c:683 [gtags_unique] --
+static inline int get16(const uint8_t **pp, const uint8_t *p_end) {
+   const uint8_t *p;
+   int c;
+   p = *pp;
+   if(1 >= p_end - p)
+     return AVERROR_INVALIDDATA;
+   c = AV_RB16(p);
+   p += 2;
+   *pp = p;
+   return c;
+}
+   [reads: p_end, pp; writes: pp*]
+
+-- caller of pmt_cb: pat_cb — libavformat/mpegts.c:2724 --
+static void pat_cb(MpegTSFilter *filter, const uint8_t *section, int section_len) {
+   MpegTSContext *ts = filter->u.section_filter.opaque;
+   ...
+   const uint8_t *p, *p_end;
+   ...
+   p_end = section + section_len - 4;
+   p = section;
+   ...
+   for(; ; ) {
+   ...
+     pmt_pid = get16(&p, p_end);
+   ...
+     pmt_pid &= 0x1fff;
+   ...
+     if(sid == 0x0000) {
+     } else {
+       MpegTSFilter *fil = ts->pids[pmt_pid];
+   ...
+       if(fil)
+         if(fil->type != MPEGTS_SECTION || fil->pid != pmt_pid || fil->u.section_filter.section_cb != pmt_cb)
+   ...
+     }
+   }
+}
+
+-- caller of pmt_cb: pat_cb — libavformat/mpegts.c:2728 --
+static void pat_cb(MpegTSFilter *filter, const uint8_t *section, int section_len) {
+   MpegTSContext *ts = filter->u.section_filter.opaque;
+   ...
+   SectionHeader h1, *h = &h1;
+   const uint8_t *p, *p_end;
+   ...
+   p_end = section + section_len - 4;
+   p = section;
+   ...
+   ts->id = h->id;
+   for(; ; ) {
+   ...
+     pmt_pid = get16(&p, p_end);
+   ...
+     pmt_pid &= 0x1fff;
+   ...
+     if(sid == 0x0000) {
+     } else {
+   ...
+       if(!ts->pids[pmt_pid])
+>        mpegts_open_section_filter(ts, pmt_pid, pmt_cb, ts, 1);
+   ...
+     }
+   }
+}

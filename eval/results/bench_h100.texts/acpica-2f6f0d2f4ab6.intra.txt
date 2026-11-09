@@ -1,0 +1,385 @@
+Context for merged statement of old file: source/compiler/aslcompiler.h with new file: source/compiler/aslcompiler.h:
+#ifndef __ASLCOMPILER_H
+- void AslError(UINT8 Level, UINT8 MessageId, ACPI_PARSE_OBJECT *Op, char *ExtraMessage);
++ void AslError(UINT8 Level, UINT16 MessageId, ACPI_PARSE_OBJECT *Op, char *ExtraMessage);
+- BOOLEAN AslIsExceptionDisabled(UINT8 Level, UINT8 MessageId);
++ BOOLEAN AslIsExceptionDisabled(UINT8 Level, UINT16 MessageId);
+- void AslCommonError(UINT8 Level, UINT8 MessageId, UINT32 CurrentLineNumber, UINT32 LogicalLineNumber, UINT32 LogicalByteOffset, UINT32 Column, char *Filename, char *ExtraMessage);
++ void AslCommonError(UINT8 Level, UINT16 MessageId, UINT32 CurrentLineNumber, UINT32 LogicalLineNumber, UINT32 LogicalByteOffset, UINT32 Column, char *Filename, char *ExtraMessage);
+- void AslCommonError2(UINT8 Level, UINT8 MessageId, UINT32 LineNumber, UINT32 Column, char *SourceLine, char *Filename, char *ExtraMessage);
++ void AslCommonError2(UINT8 Level, UINT16 MessageId, UINT32 LineNumber, UINT32 Column, char *SourceLine, char *Filename, char *ExtraMessage);
++ const char * AeDecodeMessageId(UINT16 MessageId);
++ const char * AeDecodeExceptionLevel(UINT8 Level);
++ UINT16 AeBuildFullExceptionCode(UINT8 Level, UINT16 MessageId);
+  #endif
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+- #define ASL_EXCEPTIONS
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+void AePrintException (
+    UINT32                  FileId,
+    ASL_ERROR_MSG           *Enode,
+    char                    *Header) {
+  UINT32 MsgLength;
+- char *MainMessage;
++ const char *MainMessage;
+  char *ExtraMessage;
+  FILE *OutputFile;
+  BOOLEAN PrematureEOF = FALSE;
+  OutputFile = Gbl_Files[FileId].Handle;
+  if (!Enode->SourceLine) {
+  if (SourceFile) {
+  if ((long)Enode->LogicalByteOffset >= FileSize) {
+  PrematureEOF = TRUE;
+  }
+  }
+  }
+  if (Enode->MessageId == 0) {
++ return;
+  }
+- else { /* Decode the message ID */ if(Gbl_VerboseErrors){ fprintf(OutputFile, "%s %4.4d -", AslErrorLevel[Enode->Level], Enode->MessageId +((Enode->Level+1)* 1000)); } else /* IDE case */ { fprintf(OutputFile, "%s %4.4d:", AslErrorLevelIde[Enode->Level], Enode->MessageId +((Enode->Level+1)* 1000)); } MainMessage = AslMessages[Enode->MessageId]; ExtraMessage = Enode->Message; if(Enode->LineNumber){ /* Main message: try to use string from AslMessages first */ if(!MainMessage){ MainMessage = ""; } MsgLength = strlen(MainMessage); if(MsgLength == 0){ /* Use the secondary/extra message as main message */ MainMessage = Enode->Message; if(!MainMessage){ MainMessage = ""; } MsgLength = strlen(MainMessage); ExtraMessage = NULL; } if(Gbl_VerboseErrors && !PrematureEOF){ if(Total >= 256){ fprintf(OutputFile, " %s", MainMessage); } else { SourceColumn = Enode->Column + Enode->FilenameLength + 6 + 2; ErrorColumn = ASL_ERROR_LEVEL_LENGTH + 5 + 2 + 1; if((MsgLength + ErrorColumn)<(SourceColumn - 1)){ fprintf(OutputFile, "%*s%s", (int)((SourceColumn - 1)- ErrorColumn), MainMessage, " ^ "); } else { fprintf(OutputFile, "%*s %s", (int)((SourceColumn - ErrorColumn)+ 1), "^", MainMessage); } } } else { fprintf(OutputFile, " %s", MainMessage); } /* Print the extra info message if present */ if(ExtraMessage){ fprintf(OutputFile, "(%s)", ExtraMessage); } if(PrematureEOF){ fprintf(OutputFile, " and premature End-Of-File"); } fprintf(OutputFile, "\n"); if(Gbl_VerboseErrors){ fprintf(OutputFile, "\n"); } } else { fprintf(OutputFile, " %s %s\n\n", MainMessage, ExtraMessage); } }
+- if (Gbl_VerboseErrors) {
+- fprintf(OutputFile, "%s %4.4d -", AslErrorLevel[Enode->Level], Enode->MessageId +((Enode->Level+1)* 1000));
+  }
+- else /* IDE case */ { fprintf(OutputFile, "%s %4.4d:", AslErrorLevelIde[Enode->Level], Enode->MessageId +((Enode->Level+1)* 1000)); }
+- fprintf(OutputFile, "%s %4.4d:", AslErrorLevelIde[Enode->Level], Enode->MessageId +((Enode->Level+1)* 1000));
++ fprintf(OutputFile, "%s %4.4d -", AeDecodeExceptionLevel(Enode->Level), AeBuildFullExceptionCode(Enode->Level, Enode->MessageId));
+- MainMessage = AslMessages[Enode->MessageId];
++ MainMessage = AeDecodeMessageId(Enode->MessageId);
++ ExtraMessage = Enode->Message;
+- if (Enode->LineNumber) {
+- if (!MainMessage) {
++ if (!Enode->LineNumber) {
++ fprintf(OutputFile, " %s %s\n\n", MainMessage, ExtraMessage);
+- MainMessage = "";
++ return;
+  }
++ MsgLength = strlen(MainMessage);
++ if (MsgLength == 0) {
++ MainMessage = Enode->Message;
++ if(!MainMessage){ MainMessage = ""; }
++ MainMessage = "";
++ MsgLength = strlen(MainMessage);
++ ExtraMessage = NULL;
+  }
++ if (Gbl_VerboseErrors && !PrematureEOF) {
++ if(Total >= 256){ fprintf(OutputFile, " %s", MainMessage); } else { SourceColumn = Enode->Column + Enode->FilenameLength + 6 + 2; ErrorColumn = ASL_ERROR_LEVEL_LENGTH + 5 + 2 + 1; if((MsgLength + ErrorColumn)<(SourceColumn - 1)){ fprintf(OutputFile, "%*s%s", (int)((SourceColumn - 1)- ErrorColumn), MainMessage, " ^ "); } else { fprintf(OutputFile, "%*s %s", (int)((SourceColumn - ErrorColumn)+ 1), "^", MainMessage); } }
++ fprintf(OutputFile, " %s", MainMessage);
++ SourceColumn = Enode->Column + Enode->FilenameLength + 6 + 2;
++ ErrorColumn = ASL_ERROR_LEVEL_LENGTH + 5 + 2 + 1;
++ if((MsgLength + ErrorColumn)<(SourceColumn - 1)){ fprintf(OutputFile, "%*s%s", (int)((SourceColumn - 1)- ErrorColumn), MainMessage, " ^ "); } else { fprintf(OutputFile, "%*s %s", (int)((SourceColumn - ErrorColumn)+ 1), "^", MainMessage); }
++ fprintf(OutputFile, "%*s%s", (int)((SourceColumn - 1)- ErrorColumn), MainMessage, " ^ ");
++ fprintf(OutputFile, "%*s %s", (int)((SourceColumn - ErrorColumn)+ 1), "^", MainMessage);
+  }
++ else {
++ fprintf(OutputFile, " %s", MainMessage);
++ if(Total >= 256){ fprintf(OutputFile, " %s", MainMessage); } else { SourceColumn = Enode->Column + Enode->FilenameLength + 6 + 2; ErrorColumn = ASL_ERROR_LEVEL_LENGTH + 5 + 2 + 1; if((MsgLength + ErrorColumn)<(SourceColumn - 1)){ fprintf(OutputFile, "%*s%s", (int)((SourceColumn - 1)- ErrorColumn), MainMessage, " ^ "); } else { fprintf(OutputFile, "%*s %s", (int)((SourceColumn - ErrorColumn)+ 1), "^", MainMessage); } }
++ fprintf(OutputFile, " %s", MainMessage);
++ }
++ if (ExtraMessage) {
++ fprintf(OutputFile, "(%s)", ExtraMessage);
+  }
++ if (PrematureEOF) {
++ fprintf(OutputFile, " and premature End-Of-File");
+  }
++ fprintf(OutputFile, "\n");
++ if (Gbl_VerboseErrors) {
++ fprintf(OutputFile, "\n");
+  }
+  }
+- else { fprintf(OutputFile, " %s %s\n\n", MainMessage, ExtraMessage); }
+}
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+- void AslCommonError2 (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    UINT32                  LineNumber,
+    UINT32                  Column,
+    char                    *SourceLine,
+    char                    *Filename,
+    char                    *ExtraMessage) {
++ void AslCommonError2 (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    UINT32                  LineNumber,
+    UINT32                  Column,
+    char                    *SourceLine,
+    char                    *Filename,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+- void AslCommonError (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    UINT32                  CurrentLineNumber,
+    UINT32                  LogicalLineNumber,
+    UINT32                  LogicalByteOffset,
+    UINT32                  Column,
+    char                    *Filename,
+    char                    *ExtraMessage) {
++ void AslCommonError (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    UINT32                  CurrentLineNumber,
+    UINT32                  LogicalLineNumber,
+    UINT32                  LogicalByteOffset,
+    UINT32                  Column,
+    char                    *Filename,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+- BOOLEAN AslIsExceptionDisabled (
+    UINT8                   Level,
+    UINT8                   MessageId) {
++ BOOLEAN AslIsExceptionDisabled (
+    UINT8                   Level,
+    UINT16                  MessageId) {
+  switch ((Level)) {
+  case ASL_REMARK:
+- EncodedMessageId = MessageId +((Level + 1)* 1000);
++ EncodedMessageId = AeBuildFullExceptionCode(Level, MessageId);
+  for (i = 0; i < Gbl_DisabledMessagesIndex; i++) {
+  if (EncodedMessageId == Gbl_DisabledMessages[i]) {
+  return(TRUE);
+  }
+  }
+  }
+}
+}
+
+Context for merged statement of old file: source/compiler/aslerror.c with new file: source/compiler/aslerror.c:
+- void AslError (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *ExtraMessage) {
++ void AslError (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: None with new file: source/compiler/aslmessages.c:
++ #include "aslcompiler.h"
++ #define _COMPONENT ACPI_COMPILER
++ const char *AslErrorLevel [ASL_NUM_REPORT_LEVELS] = { "Optimize", "Remark ", "Warning ", "Warning ", "Warning ", "Error " };
++ const char *AslErrorLevelIde [ASL_NUM_REPORT_LEVELS] = { "optimize", "remark ", "warning ", "warning ", "warning ", "error " };
++ const char *AslCompilerMsgs [] = { "", "Must be a multiple of alignment/granularity value", "String must be entirely alphanumeric", "Opcode is not implemented in compiler AML code generator", "Too many arguments", "Too few arguments", "Method argument is not initialized", "Invalid backwards offset", "Effective AML buffer length is zero", "Could not close file", "Internal compiler error", "Use of compiler reserved name", "A Connection operator is required for this field SpaceId", "Invalid OpRegion SpaceId for use of Connection operator", "Could not evaluate constant expression", "Constant expression evaluated and reduced", "From ACPICA Subsystem", "Could not open debug file", "Could not create debug filename", "Dependent function macros cannot be nested", "Invalid DMA channel(must be 0-7)", "Too many DMA channels(8 max)", "Case value already specified", "Duplicate value in list", "Premature end-of-file reached", "Package length too long to encode", "Too many interrupts(255 max)", "Too few interrupts(1 minimum required)", "Invalid interrupt number(must be 32 bits)", "Access width is greater than region size", "Access width of Field Unit extends beyond region limit", "Field Unit extends beyond region limit", "Name conflicts with a previous GPE method", "_HID string must be exactly 7 or 8 characters", "_HID prefix must be all uppercase or decimal digits", "_HID suffix must be all hex digits", "Could not open include file", "Could not open input file", "64-bit integer in 32-bit table, truncating(DSDT version < 2)", "Integer optimized to single-byte AML opcode", "Too many interrupts(16 max)", "Invalid interrupt number(must be 0-15)", "Invalid AccessSize(Maximum is 4 - QWord access)", "Invalid combination of Length and Min/Max fixed flags", "Invalid operator in constant expression(not type 3/4/5)", "EISAID string must be of the form \"UUUXXXX\"(3 uppercase, 4 hex digits)", "Invalid or unknown escape sequence", "Granularity must be zero for fixed Min/Max", "Granularity must be zero or a power of two minus one", "Length is larger than Min/Max window", "Length is not equal to fixed Min/Max window", "Address Min is greater than Address Max", "Invalid operand", "Invalid performance/robustness value", "Invalid priority value", "Invalid Hex/Octal Escape - Non-ASCII or NULL", "Target operand not allowed in constant expression", "Time parameter too long(255 max)", "Invalid type", "UUID string must be of the form \"aabbccdd-eeff-gghh-iijj-kkllmmnnoopp\"", "Maximum 10-bit ISA address(0x3FF)", "Invalid leading asterisk", "Initializer list longer than declared package length", "Initializer list shorter than declared package length", "Could not open listing file", "Could not create listing filename", "Method local variable is not initialized", "Local or Arg used outside a control method", "Splitting long input line", "Memory allocation failure", "Missing EndDependentFn()macro in dependent resource list", "Missing StartDependentFn()macro in dependent resource list", "More than one Default statement within Switch construct", "Multiple types", "Name already exists in scope", "NamePath optimized", "Creating a named object in a While loop", "Nested comment found", "No Case statements under Switch", "_REG has no corresponding Operation Region", "Called method returns no value", "No enclosing While statement", "Invalid characters found in file", "Operand evaluates to zero", "Object does not exist", "Object not found or not accessible from scope", "Not a control method, cannot invoke", "Not a parameter, used as local only", "Object is not accessible from this scope", "Object is not referenced", "Min/Max/Length/Gran are all zero, but no resource tag", "Invalid zero-length(null)string", "Could not open file", "Could not open output AML file", "Could not create output filename", "Effective AML package length is zero", "Could not create preprocessor filename", "Could not read file", "Recursive method call", "Host Operation Region requires BufferAcc access", "Host Operation Region requires ByteAcc access", "Reserved method has too many arguments", "Reserved method has too few arguments", "Reserved name must be a control method", "Reserved method should not return a value", "Invalid object type for reserved name", "Invalid package length for reserved name", "Reserved method must return a value", "Invalid use of reserved name", "Use of reserved name", "Resource field name cannot be used as a target", "Missing ResourceSourceIndex(required)", "Too many resource items(internal error)", "Missing ResourceSource string(required)", "Result is not used, operator has no effect", "Not all control paths return a value", "Forward references from Scope operator not allowed", "Existing object has invalid type for Scope operator", "Could not seek file", "Control Method marked Serialized", "Control Method should be made Serialized", "NamePath optimized to NameSeg(uses run-time search path)", "Called method may not always return a value", "String literal too long", "Switch expression is not a static Integer/Buffer/String data type, defaulting to Integer", "SyncLevel must be in the range 0-15", "", "Invalid Table Signature", "ResourceTag larger than Field", "ResourceTag smaller than Field", "Result is not used, possible operator timeout will be missed", "Method requires too many temporary variables(_T_x)", "64-bit return value will be truncated to 32 bits(DSDT version < 2)", "Unknown reserved name", "Statement is unreachable", "Unsupported feature", "Non-hex letters must be upper case", "Too many vendor data bytes(7 max)", "Could not write file", "Constant out of range", "Could not allocate line buffer", "Missing dependency" };
++ const char *AslTableCompilerMsgs [] = { "Invalid element in buffer initializer list", "Expression contains divide-by-zero", "Flag value is too large", "Integer too large for target", "Invalid expression", "Invalid Field Name", "Invalid hex integer constant", "OEM table - unknown contents", "Reserved field", "Label is undefined", "Unknown subtable type", "Unknown ACPI table signature", "Value must be non-zero" };
++ const char *AslPreprocessorMsgs [] = { "Invalid directive syntax", "Mismatched #endif", "#error", "Name is already defined", "Invalid macro invocation", "Invalid macro syntax", "Too many macro arguments", "Unknown directive", "Unknown pragma", "#warning" };
+
+Context for merged statement of old file: None with new file: source/compiler/aslmessages.c:
++ char *
+AeDecodeMessageId (
+    UINT16                  MessageId) {
++ UINT32 Index;
++ const char **MessageTable;
++ if (MessageId <= ASL_MSG_MAIN_COMPILER_END) {
++ MessageTable = AslCompilerMsgs;
++ Index = MessageId;
++ if (Index >= ACPI_ARRAY_LENGTH(AslCompilerMsgs)) {
++ return("[Unknown ASL Compiler exception ID]");
+  }
+  }
++ else {
++ if (MessageId <= ASL_MSG_TABLE_COMPILER_END) {
++ MessageTable = AslTableCompilerMsgs;
++ Index = MessageId - ASL_MSG_TABLE_COMPILER;
++ if (Index >= ACPI_ARRAY_LENGTH(AslTableCompilerMsgs)) {
++ return("[Unknown Table Compiler exception ID]");
+  }
+  }
++ else {
++ if (MessageId <= ASL_MSG_PREPROCESSOR_END) {
++ MessageTable = AslPreprocessorMsgs;
++ Index = MessageId - ASL_MSG_PREPROCESSOR;
++ if (Index >= ACPI_ARRAY_LENGTH(AslPreprocessorMsgs)) {
++ return("[Unknown Preprocesor exception ID]");
+  }
+  }
++ else {
++ return("[Unknown exception/component ID]");
++ }
++ }
++ }
++ return(MessageTable[Index]);
+}
+
+Context for merged statement of old file: None with new file: source/compiler/aslmessages.c:
++ char *
+AeDecodeExceptionLevel (
+    UINT8                   Level) {
++ if (Level >= ACPI_ARRAY_LENGTH(AslErrorLevel)) {
++ return("Unknown exception level");
+  }
++ if (Gbl_VerboseErrors) {
++ return(AslErrorLevel[Level]);
+  }
++ return(AslErrorLevelIde[Level]);
+}
+
+Context for merged statement of old file: None with new file: source/compiler/aslmessages.c:
++ UINT16 AeBuildFullExceptionCode (
+    UINT8                   Level,
+    UINT16                  MessageId) {
++ return(((Level + 1)* 1000)+ MessageId);
+}
+
+Context for merged statement of old file: source/compiler/aslmessages.h with new file: source/compiler/aslmessages.h:
+#ifndef __ASLMESSAGES_H
+- #ifdef ASL_EXCEPTIONS const char *AslErrorLevel [ASL_NUM_REPORT_LEVELS] = { "Optimize", "Remark ", "Warning ", "Warning ", "Warning ", "Error " }; const char *AslErrorLevelIde [ASL_NUM_REPORT_LEVELS] = { "optimize", "remark ", "warning ", "warning ", "warning ", "error " }; #define ASL_ERROR_LEVEL_LENGTH 8 #endif
++ #define ASL_ERROR_LEVEL_LENGTH 8
+- const char *AslErrorLevel [ASL_NUM_REPORT_LEVELS] = { "Optimize", "Remark ", "Warning ", "Warning ", "Warning ", "Error " };
++ #define ASL_MSG_MAIN_COMPILER 0
++ #define ASL_MSG_MAIN_COMPILER_END 299
+- const char *AslErrorLevelIde [ASL_NUM_REPORT_LEVELS] = { "optimize", "remark ", "warning ", "warning ", "warning ", "error " };
++ #define ASL_MSG_TABLE_COMPILER 300
++ #define ASL_MSG_TABLE_COMPILER_END 499
+- #define ASL_ERROR_LEVEL_LENGTH 8
++ #define ASL_MSG_PREPROCESSOR 500
++ #define ASL_MSG_PREPROCESSOR_END 599
+- typedef enum { ASL_MSG_RESERVED = 0, ASL_MSG_ALIGNMENT, ASL_MSG_ALPHANUMERIC_STRING, ASL_MSG_AML_NOT_IMPLEMENTED, ASL_MSG_ARG_COUNT_HI, ASL_MSG_ARG_COUNT_LO, ASL_MSG_ARG_INIT, ASL_MSG_BACKWARDS_OFFSET, ASL_MSG_BUFFER_LENGTH, ASL_MSG_CLOSE, ASL_MSG_COMPILER_INTERNAL, ASL_MSG_COMPILER_RESERVED, ASL_MSG_CONNECTION_MISSING, ASL_MSG_CONNECTION_INVALID, ASL_MSG_CONSTANT_EVALUATION, ASL_MSG_CONSTANT_FOLDED, ASL_MSG_CORE_EXCEPTION, ASL_MSG_DEBUG_FILE_OPEN, ASL_MSG_DEBUG_FILENAME, ASL_MSG_DEPENDENT_NESTING, ASL_MSG_DMA_CHANNEL, ASL_MSG_DMA_LIST, ASL_MSG_DUPLICATE_CASE, ASL_MSG_DUPLICATE_ITEM, ASL_MSG_EARLY_EOF, ASL_MSG_ENCODING_LENGTH, ASL_MSG_EX_INTERRUPT_LIST, ASL_MSG_EX_INTERRUPT_LIST_MIN, ASL_MSG_EX_INTERRUPT_NUMBER, ASL_MSG_FIELD_ACCESS_WIDTH, ASL_MSG_FIELD_UNIT_ACCESS_WIDTH, ASL_MSG_FIELD_UNIT_OFFSET, ASL_MSG_GPE_NAME_CONFLICT, ASL_MSG_HID_LENGTH, ASL_MSG_HID_PREFIX, ASL_MSG_HID_SUFFIX, ASL_MSG_INCLUDE_FILE_OPEN, ASL_MSG_INPUT_FILE_OPEN, ASL_MSG_INTEGER_LENGTH, ASL_MSG_INTEGER_OPTIMIZATION, ASL_MSG_INTERRUPT_LIST, ASL_MSG_INTERRUPT_NUMBER, ASL_MSG_INVALID_ACCESS_SIZE, ASL_MSG_INVALID_ADDR_FLAGS, ASL_MSG_INVALID_CONSTANT_OP, ASL_MSG_INVALID_EISAID, ASL_MSG_INVALID_ESCAPE, ASL_MSG_INVALID_GRAN_FIXED, ASL_MSG_INVALID_GRANULARITY, ASL_MSG_INVALID_LENGTH, ASL_MSG_INVALID_LENGTH_FIXED, ASL_MSG_INVALID_MIN_MAX, ASL_MSG_INVALID_OPERAND, ASL_MSG_INVALID_PERFORMANCE, ASL_MSG_INVALID_PRIORITY, ASL_MSG_INVALID_STRING, ASL_MSG_INVALID_TARGET, ASL_MSG_INVALID_TIME, ASL_MSG_INVALID_TYPE, ASL_MSG_INVALID_UUID, ASL_MSG_ISA_ADDRESS, ASL_MSG_LEADING_ASTERISK, ASL_MSG_LIST_LENGTH_LONG, ASL_MSG_LIST_LENGTH_SHORT, ASL_MSG_LISTING_FILE_OPEN, ASL_MSG_LISTING_FILENAME, ASL_MSG_LOCAL_INIT, ASL_MSG_LOCAL_OUTSIDE_METHOD, ASL_MSG_LONG_LINE, ASL_MSG_MEMORY_ALLOCATION, ASL_MSG_MISSING_ENDDEPENDENT, ASL_MSG_MISSING_STARTDEPENDENT, ASL_MSG_MULTIPLE_DEFAULT, ASL_MSG_MULTIPLE_TYPES, ASL_MSG_NAME_EXISTS, ASL_MSG_NAME_OPTIMIZATION, ASL_MSG_NAMED_OBJECT_IN_WHILE, ASL_MSG_NESTED_COMMENT, ASL_MSG_NO_CASES, ASL_MSG_NO_REGION, ASL_MSG_NO_RETVAL, ASL_MSG_NO_WHILE, ASL_MSG_NON_ASCII, ASL_MSG_NON_ZERO, ASL_MSG_NOT_EXIST, ASL_MSG_NOT_FOUND, ASL_MSG_NOT_METHOD, ASL_MSG_NOT_PARAMETER, ASL_MSG_NOT_REACHABLE, ASL_MSG_NOT_REFERENCED, ASL_MSG_NULL_DESCRIPTOR, ASL_MSG_NULL_STRING, ASL_MSG_OPEN, ASL_MSG_OUTPUT_FILE_OPEN, ASL_MSG_OUTPUT_FILENAME, ASL_MSG_PACKAGE_LENGTH, ASL_MSG_PREPROCESSOR_FILENAME, ASL_MSG_READ, ASL_MSG_RECURSION, ASL_MSG_REGION_BUFFER_ACCESS, ASL_MSG_REGION_BYTE_ACCESS, ASL_MSG_RESERVED_ARG_COUNT_HI, ASL_MSG_RESERVED_ARG_COUNT_LO, ASL_MSG_RESERVED_METHOD, ASL_MSG_RESERVED_NO_RETURN_VAL, ASL_MSG_RESERVED_OPERAND_TYPE, ASL_MSG_RESERVED_PACKAGE_LENGTH, ASL_MSG_RESERVED_RETURN_VALUE, ASL_MSG_RESERVED_USE, ASL_MSG_RESERVED_WORD, ASL_MSG_RESOURCE_FIELD, ASL_MSG_RESOURCE_INDEX, ASL_MSG_RESOURCE_LIST, ASL_MSG_RESOURCE_SOURCE, ASL_MSG_RESULT_NOT_USED, ASL_MSG_RETURN_TYPES, ASL_MSG_SCOPE_FWD_REF, ASL_MSG_SCOPE_TYPE, ASL_MSG_SEEK, ASL_MSG_SERIALIZED, ASL_MSG_SERIALIZED_REQUIRED, ASL_MSG_SINGLE_NAME_OPTIMIZATION, ASL_MSG_SOME_NO_RETVAL, ASL_MSG_STRING_LENGTH, ASL_MSG_SWITCH_TYPE, ASL_MSG_SYNC_LEVEL, ASL_MSG_SYNTAX, ASL_MSG_TABLE_SIGNATURE, ASL_MSG_TAG_LARGER, ASL_MSG_TAG_SMALLER, ASL_MSG_TIMEOUT, ASL_MSG_TOO_MANY_TEMPS, ASL_MSG_TRUNCATION, ASL_MSG_UNKNOWN_RESERVED_NAME, ASL_MSG_UNREACHABLE_CODE, ASL_MSG_UNSUPPORTED, ASL_MSG_UPPER_CASE, ASL_MSG_VENDOR_LIST, ASL_MSG_WRITE, ASL_MSG_RANGE, ASL_MSG_BUFFER_ALLOCATION, ASL_MSG_MISSING_DEPENDENCY, ASL_MSG_DIRECTIVE_SYNTAX, ASL_MSG_ENDIF_MISMATCH, ASL_MSG_ERROR_DIRECTIVE, ASL_MSG_EXISTING_NAME, ASL_MSG_INVALID_INVOCATION, ASL_MSG_MACRO_SYNTAX, ASL_MSG_TOO_MANY_ARGUMENTS, ASL_MSG_UNKNOWN_DIRECTIVE, ASL_MSG_UNKNOWN_PRAGMA, ASL_MSG_WARNING_DIRECTIVE, ASL_MSG_BUFFER_ELEMENT, ASL_MSG_DIVIDE_BY_ZERO, ASL_MSG_FLAG_VALUE, ASL_MSG_INTEGER_SIZE, ASL_MSG_INVALID_EXPRESSION, ASL_MSG_INVALID_FIELD_NAME, ASL_MSG_INVALID_HEX_INTEGER, ASL_MSG_OEM_TABLE, ASL_MSG_RESERVED_VALUE, ASL_MSG_UNKNOWN_LABEL, ASL_MSG_UNKNOWN_SUBTABLE, ASL_MSG_UNKNOWN_TABLE, ASL_MSG_ZERO_VALUE } ASL_MESSAGE_IDS;
++ typedef enum { ASL_MSG_RESERVED = ASL_MSG_MAIN_COMPILER, ASL_MSG_ALIGNMENT, ASL_MSG_ALPHANUMERIC_STRING, ASL_MSG_AML_NOT_IMPLEMENTED, ASL_MSG_ARG_COUNT_HI, ASL_MSG_ARG_COUNT_LO, ASL_MSG_ARG_INIT, ASL_MSG_BACKWARDS_OFFSET, ASL_MSG_BUFFER_LENGTH, ASL_MSG_CLOSE, ASL_MSG_COMPILER_INTERNAL, ASL_MSG_COMPILER_RESERVED, ASL_MSG_CONNECTION_MISSING, ASL_MSG_CONNECTION_INVALID, ASL_MSG_CONSTANT_EVALUATION, ASL_MSG_CONSTANT_FOLDED, ASL_MSG_CORE_EXCEPTION, ASL_MSG_DEBUG_FILE_OPEN, ASL_MSG_DEBUG_FILENAME, ASL_MSG_DEPENDENT_NESTING, ASL_MSG_DMA_CHANNEL, ASL_MSG_DMA_LIST, ASL_MSG_DUPLICATE_CASE, ASL_MSG_DUPLICATE_ITEM, ASL_MSG_EARLY_EOF, ASL_MSG_ENCODING_LENGTH, ASL_MSG_EX_INTERRUPT_LIST, ASL_MSG_EX_INTERRUPT_LIST_MIN, ASL_MSG_EX_INTERRUPT_NUMBER, ASL_MSG_FIELD_ACCESS_WIDTH, ASL_MSG_FIELD_UNIT_ACCESS_WIDTH, ASL_MSG_FIELD_UNIT_OFFSET, ASL_MSG_GPE_NAME_CONFLICT, ASL_MSG_HID_LENGTH, ASL_MSG_HID_PREFIX, ASL_MSG_HID_SUFFIX, ASL_MSG_INCLUDE_FILE_OPEN, ASL_MSG_INPUT_FILE_OPEN, ASL_MSG_INTEGER_LENGTH, ASL_MSG_INTEGER_OPTIMIZATION, ASL_MSG_INTERRUPT_LIST, ASL_MSG_INTERRUPT_NUMBER, ASL_MSG_INVALID_ACCESS_SIZE, ASL_MSG_INVALID_ADDR_FLAGS, ASL_MSG_INVALID_CONSTANT_OP, ASL_MSG_INVALID_EISAID, ASL_MSG_INVALID_ESCAPE, ASL_MSG_INVALID_GRAN_FIXED, ASL_MSG_INVALID_GRANULARITY, ASL_MSG_INVALID_LENGTH, ASL_MSG_INVALID_LENGTH_FIXED, ASL_MSG_INVALID_MIN_MAX, ASL_MSG_INVALID_OPERAND, ASL_MSG_INVALID_PERFORMANCE, ASL_MSG_INVALID_PRIORITY, ASL_MSG_INVALID_STRING, ASL_MSG_INVALID_TARGET, ASL_MSG_INVALID_TIME, ASL_MSG_INVALID_TYPE, ASL_MSG_INVALID_UUID, ASL_MSG_ISA_ADDRESS, ASL_MSG_LEADING_ASTERISK, ASL_MSG_LIST_LENGTH_LONG, ASL_MSG_LIST_LENGTH_SHORT, ASL_MSG_LISTING_FILE_OPEN, ASL_MSG_LISTING_FILENAME, ASL_MSG_LOCAL_INIT, ASL_MSG_LOCAL_OUTSIDE_METHOD, ASL_MSG_LONG_LINE, ASL_MSG_MEMORY_ALLOCATION, ASL_MSG_MISSING_ENDDEPENDENT, ASL_MSG_MISSING_STARTDEPENDENT, ASL_MSG_MULTIPLE_DEFAULT, ASL_MSG_MULTIPLE_TYPES, ASL_MSG_NAME_EXISTS, ASL_MSG_NAME_OPTIMIZATION, ASL_MSG_NAMED_OBJECT_IN_WHILE, ASL_MSG_NESTED_COMMENT, ASL_MSG_NO_CASES, ASL_MSG_NO_REGION, ASL_MSG_NO_RETVAL, ASL_MSG_NO_WHILE, ASL_MSG_NON_ASCII, ASL_MSG_NON_ZERO, ASL_MSG_NOT_EXIST, ASL_MSG_NOT_FOUND, ASL_MSG_NOT_METHOD, ASL_MSG_NOT_PARAMETER, ASL_MSG_NOT_REACHABLE, ASL_MSG_NOT_REFERENCED, ASL_MSG_NULL_DESCRIPTOR, ASL_MSG_NULL_STRING, ASL_MSG_OPEN, ASL_MSG_OUTPUT_FILE_OPEN, ASL_MSG_OUTPUT_FILENAME, ASL_MSG_PACKAGE_LENGTH, ASL_MSG_PREPROCESSOR_FILENAME, ASL_MSG_READ, ASL_MSG_RECURSION, ASL_MSG_REGION_BUFFER_ACCESS, ASL_MSG_REGION_BYTE_ACCESS, ASL_MSG_RESERVED_ARG_COUNT_HI, ASL_MSG_RESERVED_ARG_COUNT_LO, ASL_MSG_RESERVED_METHOD, ASL_MSG_RESERVED_NO_RETURN_VAL, ASL_MSG_RESERVED_OPERAND_TYPE, ASL_MSG_RESERVED_PACKAGE_LENGTH, ASL_MSG_RESERVED_RETURN_VALUE, ASL_MSG_RESERVED_USE, ASL_MSG_RESERVED_WORD, ASL_MSG_RESOURCE_FIELD, ASL_MSG_RESOURCE_INDEX, ASL_MSG_RESOURCE_LIST, ASL_MSG_RESOURCE_SOURCE, ASL_MSG_RESULT_NOT_USED, ASL_MSG_RETURN_TYPES, ASL_MSG_SCOPE_FWD_REF, ASL_MSG_SCOPE_TYPE, ASL_MSG_SEEK, ASL_MSG_SERIALIZED, ASL_MSG_SERIALIZED_REQUIRED, ASL_MSG_SINGLE_NAME_OPTIMIZATION, ASL_MSG_SOME_NO_RETVAL, ASL_MSG_STRING_LENGTH, ASL_MSG_SWITCH_TYPE, ASL_MSG_SYNC_LEVEL, ASL_MSG_SYNTAX, ASL_MSG_TABLE_SIGNATURE, ASL_MSG_TAG_LARGER, ASL_MSG_TAG_SMALLER, ASL_MSG_TIMEOUT, ASL_MSG_TOO_MANY_TEMPS, ASL_MSG_TRUNCATION, ASL_MSG_UNKNOWN_RESERVED_NAME, ASL_MSG_UNREACHABLE_CODE, ASL_MSG_UNSUPPORTED, ASL_MSG_UPPER_CASE, ASL_MSG_VENDOR_LIST, ASL_MSG_WRITE, ASL_MSG_RANGE, ASL_MSG_BUFFER_ALLOCATION, ASL_MSG_MISSING_DEPENDENCY, ASL_MSG_BUFFER_ELEMENT = ASL_MSG_TABLE_COMPILER, ASL_MSG_DIVIDE_BY_ZERO, ASL_MSG_FLAG_VALUE, ASL_MSG_INTEGER_SIZE, ASL_MSG_INVALID_EXPRESSION, ASL_MSG_INVALID_FIELD_NAME, ASL_MSG_INVALID_HEX_INTEGER, ASL_MSG_OEM_TABLE, ASL_MSG_RESERVED_VALUE, ASL_MSG_UNKNOWN_LABEL, ASL_MSG_UNKNOWN_SUBTABLE, ASL_MSG_UNKNOWN_TABLE, ASL_MSG_ZERO_VALUE, ASL_MSG_DIRECTIVE_SYNTAX = ASL_MSG_PREPROCESSOR, ASL_MSG_ENDIF_MISMATCH, ASL_MSG_ERROR_DIRECTIVE, ASL_MSG_EXISTING_NAME, ASL_MSG_INVALID_INVOCATION, ASL_MSG_MACRO_SYNTAX, ASL_MSG_TOO_MANY_ARGUMENTS, ASL_MSG_UNKNOWN_DIRECTIVE, ASL_MSG_UNKNOWN_PRAGMA, ASL_MSG_WARNING_DIRECTIVE, } ASL_MESSAGE_IDS;
+- enum {
++ enum {
+- ASL_MSG_RESERVED = 0
++ ASL_MSG_RESERVED = ASL_MSG_MAIN_COMPILER
+- ASL_MSG_DIRECTIVE_SYNTAX
++ ASL_MSG_BUFFER_ELEMENT = ASL_MSG_TABLE_COMPILER
+- ASL_MSG_WARNING_DIRECTIVE
+- ASL_MSG_UNKNOWN_PRAGMA
+- ASL_MSG_UNKNOWN_DIRECTIVE
+- ASL_MSG_TOO_MANY_ARGUMENTS
+- ASL_MSG_MACRO_SYNTAX
+- ASL_MSG_INVALID_INVOCATION
+- ASL_MSG_EXISTING_NAME
+- ASL_MSG_ERROR_DIRECTIVE
+- ASL_MSG_ENDIF_MISMATCH
+- ASL_MSG_BUFFER_ELEMENT
++ ASL_MSG_DIVIDE_BY_ZERO
++ ASL_MSG_FLAG_VALUE
++ ASL_MSG_INTEGER_SIZE
++ ASL_MSG_INVALID_EXPRESSION
++ ASL_MSG_INVALID_FIELD_NAME
++ ASL_MSG_INVALID_HEX_INTEGER
++ ASL_MSG_OEM_TABLE
++ ASL_MSG_RESERVED_VALUE
++ ASL_MSG_UNKNOWN_LABEL
++ ASL_MSG_UNKNOWN_SUBTABLE
++ ASL_MSG_UNKNOWN_TABLE
++ ASL_MSG_ZERO_VALUE
++ ASL_MSG_DIRECTIVE_SYNTAX = ASL_MSG_PREPROCESSOR
++ ASL_MSG_ENDIF_MISMATCH
++ ASL_MSG_ERROR_DIRECTIVE
++ ASL_MSG_EXISTING_NAME
++ ASL_MSG_INVALID_INVOCATION
++ ASL_MSG_MACRO_SYNTAX
++ ASL_MSG_TOO_MANY_ARGUMENTS
++ ASL_MSG_UNKNOWN_DIRECTIVE
++ ASL_MSG_UNKNOWN_PRAGMA
++ ASL_MSG_WARNING_DIRECTIVE
+- ASL_MSG_ZERO_VALUE
+- ASL_MSG_UNKNOWN_TABLE
+- ASL_MSG_UNKNOWN_SUBTABLE
+- ASL_MSG_UNKNOWN_LABEL
+- ASL_MSG_RESERVED_VALUE
+- ASL_MSG_OEM_TABLE
+- ASL_MSG_INVALID_HEX_INTEGER
+- ASL_MSG_INVALID_FIELD_NAME
+- ASL_MSG_INVALID_EXPRESSION
+- ASL_MSG_INTEGER_SIZE
+- ASL_MSG_FLAG_VALUE
+- ASL_MSG_DIVIDE_BY_ZERO
+  }
+- #ifdef ASL_EXCEPTIONS
+- char *AslMessages [] = { "", "Must be a multiple of alignment/granularity value", "String must be entirely alphanumeric", "Opcode is not implemented in compiler AML code generator", "Too many arguments", "Too few arguments", "Method argument is not initialized", "Invalid backwards offset", "Effective AML buffer length is zero", "Could not close file", "Internal compiler error", "Use of compiler reserved name", "A Connection operator is required for this field SpaceId", "Invalid OpRegion SpaceId for use of Connection operator", "Could not evaluate constant expression", "Constant expression evaluated and reduced", "From ACPICA Subsystem", "Could not open debug file", "Could not create debug filename", "Dependent function macros cannot be nested", "Invalid DMA channel(must be 0-7)", "Too many DMA channels(8 max)", "Case value already specified", "Duplicate value in list", "Premature end-of-file reached", "Package length too long to encode", "Too many interrupts(255 max)", "Too few interrupts(1 minimum required)", "Invalid interrupt number(must be 32 bits)", "Access width is greater than region size", "Access width of Field Unit extends beyond region limit", "Field Unit extends beyond region limit", "Name conflicts with a previous GPE method", "_HID string must be exactly 7 or 8 characters", "_HID prefix must be all uppercase or decimal digits", "_HID suffix must be all hex digits", "Could not open include file", "Could not open input file", "64-bit integer in 32-bit table, truncating(DSDT version < 2)", "Integer optimized to single-byte AML opcode", "Too many interrupts(16 max)", "Invalid interrupt number(must be 0-15)", "Invalid AccessSize(Maximum is 4 - QWord access)", "Invalid combination of Length and Min/Max fixed flags", "Invalid operator in constant expression(not type 3/4/5)", "EISAID string must be of the form \"UUUXXXX\"(3 uppercase, 4 hex digits)", "Invalid or unknown escape sequence", "Granularity must be zero for fixed Min/Max", "Granularity must be zero or a power of two minus one", "Length is larger than Min/Max window", "Length is not equal to fixed Min/Max window", "Address Min is greater than Address Max", "Invalid operand", "Invalid performance/robustness value", "Invalid priority value", "Invalid Hex/Octal Escape - Non-ASCII or NULL", "Target operand not allowed in constant expression", "Time parameter too long(255 max)", "Invalid type", "UUID string must be of the form \"aabbccdd-eeff-gghh-iijj-kkllmmnnoopp\"", "Maximum 10-bit ISA address(0x3FF)", "Invalid leading asterisk", "Initializer list longer than declared package length", "Initializer list shorter than declared package length", "Could not open listing file", "Could not create listing filename", "Method local variable is not initialized", "Local or Arg used outside a control method", "Splitting long input line", "Memory allocation failure", "Missing EndDependentFn()macro in dependent resource list", "Missing StartDependentFn()macro in dependent resource list", "More than one Default statement within Switch construct", "Multiple types", "Name already exists in scope", "NamePath optimized", "Creating a named object in a While loop", "Nested comment found", "No Case statements under Switch", "_REG has no corresponding Operation Region", "Called method returns no value", "No enclosing While statement", "Invalid characters found in file", "Operand evaluates to zero", "Object does not exist", "Object not found or not accessible from scope", "Not a control method, cannot invoke", "Not a parameter, used as local only", "Object is not accessible from this scope", "Object is not referenced", "Min/Max/Length/Gran are all zero, but no resource tag", "Invalid zero-length(null)string", "Could not open file", "Could not open output AML file", "Could not create output filename", "Effective AML package length is zero", "Could not create preprocessor filename", "Could not read file", "Recursive method call", "Host Operation Region requires BufferAcc access", "Host Operation Region requires ByteAcc access", "Reserved method has too many arguments", "Reserved method has too few arguments", "Reserved name must be a control method", "Reserved method should not return a value", "Invalid object type for reserved name", "Invalid package length for reserved name", "Reserved method must return a value", "Invalid use of reserved name", "Use of reserved name", "Resource field name cannot be used as a target", "Missing ResourceSourceIndex(required)", "Too many resource items(internal error)", "Missing ResourceSource string(required)", "Result is not used, operator has no effect", "Not all control paths return a value", "Forward references from Scope operator not allowed", "Existing object has invalid type for Scope operator", "Could not seek file", "Control Method marked Serialized", "Control Method should be made Serialized", "NamePath optimized to NameSeg(uses run-time search path)", "Called method may not always return a value", "String literal too long", "Switch expression is not a static Integer/Buffer/String data type, defaulting to Integer", "SyncLevel must be in the range 0-15", "", "Invalid Table Signature", "ResourceTag larger than Field", "ResourceTag smaller than Field", "Result is not used, possible operator timeout will be missed", "Method requires too many temporary variables(_T_x)", "64-bit return value will be truncated to 32 bits(DSDT version < 2)", "Unknown reserved name", "Statement is unreachable", "Unsupported feature", "Non-hex letters must be upper case", "Too many vendor data bytes(7 max)", "Could not write file", "Constant out of range", "Could not allocate line buffer", "Missing dependency", "Invalid directive syntax", "Mismatched #endif", "#error", "Name is already defined", "Invalid macro invocation", "Invalid macro syntax", "Too many macro arguments", "Unknown directive", "Unknown pragma", "#warning", "Invalid element in buffer initializer list", "Expression contains divide-by-zero", "Flag value is too large", "Integer too large for target", "Invalid expression", "Invalid Field Name", "Invalid hex integer constant", "OEM table - unknown contents", "Reserved field", "Label is undefined", "Unknown subtable type", "Unknown ACPI table signature", "Value must be non-zero" };
+  #endif
+  #endif
+
+Context for merged statement of old file: source/compiler/asltypes.h with new file: source/compiler/asltypes.h:
+#ifndef __ASLTYPES_H
+- typedef struct asl_error_msg { UINT32 LineNumber; UINT32 LogicalLineNumber; UINT32 LogicalByteOffset; UINT32 Column; char *Message; struct asl_error_msg *Next; char *Filename; char *SourceLine; UINT32 FilenameLength; UINT8 MessageId; UINT8 Level; } ASL_ERROR_MSG;
++ typedef struct asl_error_msg { UINT32 LineNumber; UINT32 LogicalLineNumber; UINT32 LogicalByteOffset; UINT32 Column; char *Message; struct asl_error_msg *Next; char *Filename; char *SourceLine; UINT32 FilenameLength; UINT16 MessageId; UINT8 Level; } ASL_ERROR_MSG;
+- struct asl_error_msg {
++ struct asl_error_msg {
+- UINT8 MessageId;
++ UINT16 MessageId;
+  }
+  #endif
+
+Context for merged statement of old file: source/compiler/dtcompiler.h with new file: source/compiler/dtcompiler.h:
+#ifndef _DTCOMPILER
+- void DtError(UINT8 Level, UINT8 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
++ void DtError(UINT8 Level, UINT16 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
+- void DtNameError(UINT8 Level, UINT8 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
++ void DtNameError(UINT8 Level, UINT16 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
+- void DtFatal(UINT8 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
++ void DtFatal(UINT16 MessageId, DT_FIELD *FieldObject, char *ExtraMessage);
+  #endif
+
+Context for merged statement of old file: source/compiler/dtutils.c with new file: source/compiler/dtutils.c:
+- void DtError (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
++ void DtError (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: source/compiler/dtutils.c with new file: source/compiler/dtutils.c:
+- void DtNameError (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
++ void DtNameError (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: source/compiler/dtutils.c with new file: source/compiler/dtutils.c:
+- void DtFatal (
+    UINT8                   MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
++ void DtFatal (
+    UINT16                  MessageId,
+    DT_FIELD                *FieldObject,
+    char                    *ExtraMessage) {
+}
+}
+
+Context for merged statement of old file: source/compiler/preprocess.h with new file: source/compiler/preprocess.h:
+#ifndef _PREPROCESS
+- void PrError(UINT8 Level, UINT8 MessageId, UINT32 Column);
++ void PrError(UINT8 Level, UINT16 MessageId, UINT32 Column);
+  #endif
+
+Context for merged statement of old file: source/compiler/prutils.c with new file: source/compiler/prutils.c:
+- void PrError (
+    UINT8                   Level,
+    UINT8                   MessageId,
+    UINT32                  Column) {
++ void PrError (
+    UINT8                   Level,
+    UINT16                  MessageId,
+    UINT32                  Column) {
+}
+}
+

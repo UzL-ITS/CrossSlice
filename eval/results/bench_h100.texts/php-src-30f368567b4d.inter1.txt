@@ -1,0 +1,47 @@
+Context for merged statement of old file: ext/phar/stream.c with new file: ext/phar/stream.c:
+int phar_stream_close(php_stream *stream, int close_handle) {
+- phar_stream_flush(stream);
++ int ret = phar_stream_flush(stream);
+- return 0;
++ return ret;
+}
+
+
+==== Cross-function context ====
+
+-- called function: phar_stream_flush — ext/phar/stream.c:469 [gtags_unique, old version] --
+static int phar_stream_flush(php_stream *stream) /* {
+   char *error;
+   ...
+   phar_entry_data *data =(phar_entry_data *)stream->abstract;
+   if(data->internal_file->is_modified) {
+     data->internal_file->timestamp = time(0);
+     ret = phar_flush(data->phar, &error);
+     if(error) {
+       php_stream_wrapper_log_error(stream->wrapper, REPORT_ERRORS, "%s", error);
+   ...
+     }
+     return ret;
+   ...
+   }
+}
+   [reads: stream; writes: -]
+
+-- called function: phar_stream_flush — ext/phar/stream.c:469 [gtags_unique, new version] --
+static int phar_stream_flush(php_stream *stream) /* {
+   char *error;
+   int ret;
+   phar_entry_data *data =(phar_entry_data *)stream->abstract;
+   if(data->internal_file->is_modified) {
+     data->internal_file->timestamp = time(0);
+     ret = phar_flush(data->phar, &error);
+     if(error) {
+       php_stream_wrapper_log_error(stream->wrapper, REPORT_ERRORS, "%s", error);
+   ...
+     }
+     return ret;
+   } else {
+     return EOF;
+   }
+}
+   [reads: stream; writes: -]

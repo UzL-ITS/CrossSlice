@@ -1,0 +1,102 @@
+Context for merged statement of old file: ext/mysqlnd/mysqlnd_connection.c with new file: ext/mysqlnd/mysqlnd_connection.c:
+enum_func_status MYSQLND_METHOD(mysqlnd_conn_data, set_client_option_2d)(MYSQLND_CONN_DATA * const conn,
+														const enum_mysqlnd_client_option option,
+														const char * const key,
+														const char * const value
+														) {
+  switch ((option)) {
+  case MYSQL_OPT_CONNECT_ATTR_ADD:
+  zval attrz;
+  zend_string *str;
+- str = zend_string_init(key, strlen(key), 1);
++ str = zend_string_init(key, strlen(key), conn->persistent);
+- ZVAL_NEW_STR(&attrz, zend_string_init(value, strlen(value), 1));
++ ZVAL_NEW_STR(&attrz, zend_string_init(value, strlen(value), conn->persistent));
+  if (conn->persistent) {
++ GC_MAKE_PERSISTENT_LOCAL(str);
++ GC_MAKE_PERSISTENT_LOCAL(Z_COUNTED(attrz));
+  }
+- else { str = zend_string_init(key, strlen(key), 0); ZVAL_NEW_STR(&attrz, zend_string_init(value, strlen(value), 0)); }
+  zend_hash_update(conn->options->connect_attr, str, &attrz);
+- zend_string_release_ex(str, 1);
++ zend_string_release_ex(str, conn->persistent);
+- str = zend_string_init(key, strlen(key), 0);
+- ZVAL_NEW_STR(&attrz, zend_string_init(value, strlen(value), 0));
+  }
+- GC_MAKE_PERSISTENT_LOCAL(str);
+- GC_MAKE_PERSISTENT_LOCAL(Z_COUNTED(attrz));
+}
+
+
+==== Cross-function context ====
+
+-- called function: zend_string_init — Zend/zend_string.h:196 [gtags_unique] --
+static zend_always_inline zend_string *zend_string_init(const char *str, size_t len, bool persistent) {
+   zend_string *ret = zend_string_alloc(len, persistent);
+   memcpy(ZSTR_VAL(ret), str, len);
+   ZSTR_VAL(ret)[len] = '\0';
+   return ret;
+}
+   [reads: len, persistent, str; writes: -]
+
+-- called macro: GC_MAKE_PERSISTENT_LOCAL — Zend/zend_types.h:1325 [lsp] --
+# define GC_MAKE_PERSISTENT_LOCAL(p) \
+	do { } while (0)
+
+-- called macro: ZVAL_NEW_STR — Zend/zend_types.h:1107 [gtags_unique] --
+#define ZVAL_NEW_STR(z, s) do {					\
+		zval *__z = (z);						\
+		zend_string *__s = (s);					\
+		Z_STR_P(__z) = __s;						\
+		Z_TYPE_INFO_P(__z) = IS_STRING_EX;		\
+	} while (0)
+
+-- called macro: Z_COUNTED — Zend/zend_types.h:698 [gtags_unique] --
+#define Z_COUNTED(zval)				(zval).value.counted
+
+-- called function: zend_string_release_ex — Zend/zend_string.h:353 [gtags_unique] --
+static zend_always_inline void zend_string_release_ex(zend_string *s, bool persistent) {
+   if(!ZSTR_IS_INTERNED(s)) {
+     if(GC_DELREF(s)== 0) {
+       if(persistent) {
+         ZEND_ASSERT(GC_FLAGS(s)& IS_STR_PERSISTENT);
+         free(s);
+       } else {
+         ZEND_ASSERT(!(GC_FLAGS(s)& IS_STR_PERSISTENT));
+         efree(s);
+       }
+     }
+   }
+}
+   [reads: persistent, s; writes: -]
+
+-- called function: zend_hash_update — Zend/zend_hash.c:1004 [gtags_unique] --
+ZEND_API zval* ZEND_FASTCALL zend_hash_update(HashTable *ht, zend_string *key, zval *pData) {
+   return _zend_hash_add_or_update_i(ht, key, pData, HASH_UPDATE);
+}
+   [reads: ht, key, pData; writes: -]
+
+-- called function: DBG_INF_FMT — ext/mysqlnd/mysqlnd_debug.h:209 [lsp] --
+static inline void DBG_INF_FMT(const char * const format, ...) {
+}
+
+-- called macro: zend_hash_init — Zend/zend_hash.h:108 [gtags_unique] --
+#define zend_hash_init(ht, nSize, pHashFunction, pDestructor, persistent) \
+	_zend_hash_init((ht), (nSize), (pDestructor), (persistent))
+
+-- called macro: mnd_pemalloc — ext/mysqlnd/mysqlnd_alloc.h:44 [gtags_unique] --
+#define mnd_pemalloc(size, pers)		mysqlnd_allocator.m_pemalloc((size), (pers) MYSQLND_MEM_C)
+
+-- called function: DBG_INF — ext/mysqlnd/mysqlnd_debug.h:207 [lsp] --
+static inline void DBG_INF(const char * const msg) {
+}
+
+-- 2nd-level context (summaries) --
+  zend_string_alloc — Zend/zend_string.h:174 [gtags_unique]: static zend_always_inline zend_string *zend_string_alloc(size_t len, bool persistent)
+    reads: len, persistent; writes: -
+  ZSTR_VAL — Zend/zend_string.h:68 [gtags_unique]: #define ZSTR_VAL(zstr)  (zstr)->val
+  ZEND_ASSERT — Zend/zend_portability.h:104 [lsp]: # define ZEND_ASSERT(c)	assert(c)
+  GC_FLAGS — Zend/zend_types.h:768 [gtags_unique]: #define GC_FLAGS(p)					zval_gc_flags(GC_TYPE_INFO(p))
+  efree — Zend/zend_alloc.h:155 [gtags_unique]: #define efree(ptr)							_efree((ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+  _zend_hash_add_or_update_i — Zend/zend_hash.c:824 [gtags_unique]: static zend_always_inline zval *_zend_hash_add_or_update_i(HashTable *ht, zend_string *key, zval *pData, uint32_t flag)
+    reads: flag, ht, key, pData; writes: ht*

@@ -1,0 +1,255 @@
+Context for merged statement of old file: source/components/resources/rscalc.c with new file: source/components/resources/rscalc.c:
+ACPI_STATUS AcpiRsGetListLength (
+    UINT8                   *AmlBuffer,
+    UINT32                  AmlBufferLength,
+    ACPI_SIZE               *SizeNeeded) {
+  UINT8 *Buffer;
+  UINT32 BufferSize;
+  UINT16 Temp16;
+  UINT16 ResourceLength;
+  UINT32 ExtraStructBytes;
+  UINT8 ResourceIndex;
+  UINT8 MinimumAmlResourceLength;
+  AML_RESOURCE *AmlResource;
+  *SizeNeeded = ACPI_RS_SIZE_MIN;
+  while ((AmlBuffer < EndAml)) {
+  AmlResource =(void *)AmlBuffer;
+  ResourceLength = AcpiUtGetResourceLength(AmlBuffer);
+  MinimumAmlResourceLength = AcpiGbl_ResourceAmlSizes[ResourceIndex];
+  ExtraStructBytes = 0;
+  Buffer = AmlBuffer + AcpiUtGetResourceHeaderLength(AmlBuffer);
+  switch ((AcpiUtGetResourceType(AmlBuffer))) {
+  ExtraStructBytes = AcpiRsCountSetBits(Temp16);
+  ExtraStructBytes = AcpiRsCountSetBits(*Buffer);
+  ExtraStructBytes = ResourceLength;
+  if (ExtraStructBytes) {
+  ExtraStructBytes--;
+  }
+  ExtraStructBytes = AcpiRsStreamOptionLength(ResourceLength, MinimumAmlResourceLength);
+  ExtraStructBytes =(Buffer[1] - 1)* sizeof(UINT32);
+  ExtraStructBytes += AcpiRsStreamOptionLength(ResourceLength - ExtraStructBytes, MinimumAmlResourceLength);
+  if (AmlResource->Gpio.VendorLength) {
+  ExtraStructBytes += AmlResource->Gpio.VendorOffset - AmlResource->Gpio.PinTableOffset + AmlResource->Gpio.VendorLength;
+  }
+  else {
+  ExtraStructBytes += AmlResource->LargeHeader.ResourceLength + sizeof(AML_RESOURCE_LARGE_HEADER)- AmlResource->Gpio.PinTableOffset;
+  }
+  if (AmlResource->PinFunction.VendorLength) {
+  ExtraStructBytes += AmlResource->PinFunction.VendorOffset - AmlResource->PinFunction.PinTableOffset + AmlResource->PinFunction.VendorLength;
+  }
+  else {
+  ExtraStructBytes += AmlResource->LargeHeader.ResourceLength + sizeof(AML_RESOURCE_LARGE_HEADER)- AmlResource->PinFunction.PinTableOffset;
+  }
+  MinimumAmlResourceLength = AcpiGbl_ResourceAmlSerialBusSizes[ AmlResource->CommonSerialBus.Type];
+  ExtraStructBytes += AmlResource->CommonSerialBus.ResourceLength - MinimumAmlResourceLength;
+  if (AmlResource->PinConfig.VendorLength) {
+  ExtraStructBytes += AmlResource->PinConfig.VendorOffset - AmlResource->PinConfig.PinTableOffset + AmlResource->PinConfig.VendorLength;
+  }
+  else {
+  ExtraStructBytes += AmlResource->LargeHeader.ResourceLength + sizeof(AML_RESOURCE_LARGE_HEADER)- AmlResource->PinConfig.PinTableOffset;
+  }
+  ExtraStructBytes += AmlResource->PinGroup.VendorOffset - AmlResource->PinGroup.PinTableOffset + AmlResource->PinGroup.VendorLength;
+  ExtraStructBytes += AmlResource->PinGroupFunction.VendorOffset - AmlResource->PinGroupFunction.ResSourceOffset + AmlResource->PinGroupFunction.VendorLength;
+  ExtraStructBytes += AmlResource->PinGroupConfig.VendorOffset - AmlResource->PinGroupConfig.ResSourceOffset + AmlResource->PinGroupConfig.VendorLength;
+  }
+  if (AcpiUtGetResourceType(AmlBuffer)== ACPI_RESOURCE_NAME_SERIAL_BUS) {
+  BufferSize = AcpiGbl_ResourceStructSerialBusSizes[ AmlResource->CommonSerialBus.Type] + ExtraStructBytes;
+  }
+  else {
+  BufferSize = AcpiGbl_ResourceStructSizes[ResourceIndex] + ExtraStructBytes;
+  }
+  BufferSize =(UINT32)ACPI_ROUND_UP_TO_NATIVE_WORD(BufferSize);
+  *SizeNeeded += BufferSize;
+- ACPI_DEBUG_PRINT((ACPI_DB_RESOURCES, "Type %.2X, AmlLength %.2X InternalLength %.2lX\n", AcpiUtGetResourceType(AmlBuffer), AcpiUtGetDescriptorLength(AmlBuffer), *SizeNeeded));
++ ACPI_DEBUG_PRINT((ACPI_DB_RESOURCES, "Type %.2X, AmlLength %.2X InternalLength %.2X%8X\n", AcpiUtGetResourceType(AmlBuffer), AcpiUtGetDescriptorLength(AmlBuffer), ACPI_FORMAT_UINT64(*SizeNeeded)));
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: AcpiUtGetResourceType — source/components/utilities/utresrc.c:594 [gtags_unique] --
+UINT8 AcpiUtGetResourceType ( void                    *Aml) {
+   ...
+   if(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_LARGE) {
+     return(ACPI_GET8(Aml));
+   } else {
+     return((UINT8)(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_SMALL_MASK));
+   }
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiRsStreamOptionLength — source/components/resources/rscalc.c:263 [gtags_unique] --
+static UINT32 AcpiRsStreamOptionLength ( UINT32                  ResourceLength, UINT32                  MinimumAmlResourceLength) {
+   UINT32 StringLength = 0;
+   ...
+   if(ResourceLength > MinimumAmlResourceLength) {
+     StringLength = ResourceLength - MinimumAmlResourceLength - 1;
+   }
+   return((UINT32)ACPI_ROUND_UP_TO_NATIVE_WORD(StringLength));
+}
+   [reads: MinimumAmlResourceLength, ResourceLength; writes: -]
+
+-- called function: AcpiUtGetDescriptorLength — source/components/utilities/utresrc.c:713 [gtags_unique] --
+UINT32 AcpiUtGetDescriptorLength ( void                    *Aml) {
+   ...
+   return(AcpiUtGetResourceLength(Aml)+ AcpiUtGetResourceHeaderLength(Aml));
+}
+   [reads: Aml; writes: -]
+
+-- called macro: return_ACPI_STATUS — source/include/acoutput.h:604 [lsp] --
+#define return_ACPI_STATUS(s)           return(s)
+
+-- called macro: ACPI_DEBUG_PRINT — source/include/acoutput.h:583 [lsp] --
+#define ACPI_DEBUG_PRINT(pl)
+
+-- called macro: ACPI_ROUND_UP_TO_NATIVE_WORD — source/include/acmacros.h:362 [gtags_unique] --
+#define ACPI_ROUND_UP_TO_NATIVE_WORD(a)     ACPI_ROUND_UP(a, sizeof(ACPI_SIZE))
+
+-- called macro: ACPI_MOVE_16_TO_16 — source/include/acmacros.h:249 [lsp] --
+#define ACPI_MOVE_16_TO_16(d, s)        *(UINT16 *)(void *)(d) = *(UINT16 *)(void *)(s)
+
+-- called function: AcpiUtGetResourceHeaderLength — source/components/utilities/utresrc.c:679 [gtags_unique] --
+UINT8 AcpiUtGetResourceHeaderLength ( void                    *Aml) {
+   ...
+   if(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_LARGE) {
+     return(sizeof(AML_RESOURCE_LARGE_HEADER));
+   } else {
+     return(sizeof(AML_RESOURCE_SMALL_HEADER));
+   }
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiUtGetResourceLength — source/components/utilities/utresrc.c:634 [gtags_unique] --
+UINT16 AcpiUtGetResourceLength ( void                    *Aml) {
+   ACPI_RS_LENGTH ResourceLength;
+   ...
+   if(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_LARGE) {
+     ACPI_MOVE_16_TO_16(&ResourceLength, ACPI_ADD_PTR(UINT8, Aml, 1));
+   } else {
+     ResourceLength =(UINT16)(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_SMALL_LENGTH_MASK);
+   }
+   return(ResourceLength);
+}
+   [reads: Aml; writes: -]
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:203 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: AcpiUtValidateResource — source/components/utilities/utresrc.c:421 [gtags_unique, old version] --
+ACPI_STATUS AcpiUtValidateResource ( ACPI_WALK_STATE         *WalkState, void                    *Aml, UINT8                   *ReturnIndex) {
+   ...
+   UINT8 ResourceType;
+   UINT8 ResourceIndex;
+   ...
+   ResourceType = ACPI_GET8(Aml);
+   if(ResourceType & ACPI_RESOURCE_NAME_LARGE) {
+     if(ResourceType > ACPI_RESOURCE_NAME_LARGE_MAX) {
+   ...
+     }
+     ResourceIndex =(UINT8)(ResourceType - 0x70);
+   } else {
+     ResourceIndex =(UINT8)((ResourceType & ACPI_RESOURCE_NAME_SMALL_MASK)>> 3);
+   }
+   if(!AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+   }
+   ResourceLength = AcpiUtGetResourceLength(Aml);
+   MinimumResourceLength = AcpiGbl_ResourceAmlSizes[ResourceIndex];
+   switch(AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+     if(ResourceLength != MinimumResourceLength) {
+   ...
+     }
+   ...
+     if(ResourceLength < MinimumResourceLength) {
+   ...
+     }
+   ...
+     if((ResourceLength > MinimumResourceLength)||(ResourceLength <(MinimumResourceLength - 1))) {
+   ...
+     }
+   }
+   AmlResource = ACPI_CAST_PTR(AML_RESOURCE, Aml);
+   if(ResourceType == ACPI_RESOURCE_NAME_SERIAL_BUS) {
+     if((AmlResource->CommonSerialBus.Type == 0)||(AmlResource->CommonSerialBus.Type > AML_RESOURCE_MAX_SERIALBUSTYPE)) {
+       if(WalkState) {
+         ACPI_ERROR((AE_INFO, "Invalid/unsupported SerialBus resource descriptor: BusType 0x%2.2X", AmlResource->CommonSerialBus.Type));
+       }
+       return(AE_AML_INVALID_RESOURCE_TYPE);
+     }
+   }
+   if(ReturnIndex) {
+     *ReturnIndex = ResourceIndex;
+   }
+   return(AE_OK);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid/unsupported resource descriptor: Type 0x%2.2X", ResourceType));
+   }
+   return(AE_AML_INVALID_RESOURCE_TYPE);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid resource descriptor length: Type " "0x%2.2X, Length 0x%4.4X, MinLength 0x%4.4X", ResourceType, ResourceLength, MinimumResourceLength));
+   }
+   return(AE_AML_BAD_RESOURCE_LENGTH);
+}
+   [reads: Aml, ReturnIndex, WalkState; writes: ReturnIndex*]
+
+-- called macro: ACPI_FORMAT_UINT64 — source/include/acmacros.h:179 [gtags_unique, new version] --
+#define ACPI_FORMAT_UINT64(i)           ACPI_HIDWORD(i), ACPI_LODWORD(i)
+
+-- caller of AcpiRsGetListLength: AcpiBufferToResource — source/components/resources/rscreate.c:197 --
+ACPI_STATUS AcpiBufferToResource ( UINT8                   *AmlBuffer, UINT16                  AmlBufferLength, ACPI_RESOURCE           **ResourcePtr) {
+   ...
+   ACPI_SIZE ListSizeNeeded;
+   ...
+>  Status = AcpiRsGetListLength(AmlBuffer, AmlBufferLength, &ListSizeNeeded);
+   if(Status == AE_AML_NO_RESOURCE_END_TAG) {
+   ...
+   }
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   }
+   ...
+   if(Status == AE_AML_NO_RESOURCE_END_TAG) {
+   ...
+   }
+   if(ACPI_FAILURE(Status)) {
+   ...
+   } else {
+   }
+   ...
+   return_ACPI_STATUS(Status);
+}
+
+-- caller of AcpiRsGetListLength: AcpiRsCreateResourceList — source/components/resources/rscreate.c:286 --
+AcpiRsCreateResourceList ( ACPI_OPERAND_OBJECT     *AmlBuffer, ACPI_BUFFER             *OutputBuffer) {
+   ...
+   UINT8 *AmlStart;
+   ACPI_SIZE ListSizeNeeded = 0;
+   UINT32 AmlBufferLength;
+   ...
+   AmlBufferLength = AmlBuffer->Buffer.Length;
+   AmlStart = AmlBuffer->Buffer.Pointer;
+>  Status = AcpiRsGetListLength(AmlStart, AmlBufferLength, &ListSizeNeeded);
+   ACPI_DEBUG_PRINT((ACPI_DB_INFO, "Status=%X ListSizeNeeded=%X\n", Status, (UINT32)ListSizeNeeded));
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   ...
+   }
+}
+
+-- 2nd-level context (summaries) --
+  ACPI_GET8 — source/include/acmacros.h:165 [gtags_unique]: #define ACPI_GET8(ptr)                  (*ACPI_CAST8 (ptr))
+  ACPI_ADD_PTR — source/include/actypes.h:654 [gtags_unique]: #define ACPI_ADD_PTR(t, a, b)           ACPI_CAST_PTR (t, (ACPI_CAST_PTR (UINT8, (a)) + (ACPI_SIZE)(b)))
+  ACPI_CAST_PTR — source/include/actypes.h:652 [gtags_unique]: #define ACPI_CAST_PTR(t, p)             ((t *) (ACPI_UINTPTR_T) (p))
+  ACPI_ERROR — source/include/acoutput.h:348 [lsp]: #define ACPI_ERROR(plist)               AcpiError plist

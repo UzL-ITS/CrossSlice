@@ -1,0 +1,17 @@
+Context for merged statement of old file: libavformat/matroskaenc.c with new file: libavformat/matroskaenc.c:
+int mkv_write_block(void *logctx, MatroskaMuxContext *mkv,
+                           AVIOContext *pb, const AVStream *st,
+                           mkv_track *track, const AVPacket *pkt,
+                           int keyframe, int64_t ts, uint64_t duration,
+                           int force_blockgroup, int64_t relative_packet_pos) {
+  #define SMPTE_2094_APP5_MAX_SIZE 855
+  uint8_t smpte_2094_app5_buf[5 + SMPTE_2094_APP5_MAX_SIZE];
+  if (par->codec_type == AVMEDIA_TYPE_VIDEO) {
+  if (side_data) {
+  size_t payload_size = sizeof(smpte_2094_app5_buf)- 5;
+- mkv_write_blockadditional(&writer, t35_buf, payload_size + 5, MATROSKA_BLOCK_ADD_ID_ITU_T_T35);
++ mkv_write_blockadditional(&writer, smpte_2094_app5_buf, payload_size + 5, MATROSKA_BLOCK_ADD_ID_ITU_T_T35);
+  }
+  }
+}
+

@@ -1,0 +1,106 @@
+Context for merged statement of old file: libavcodec/dirac_vlc.c with new file: libavcodec/dirac_vlc.c:
+int ff_dirac_golomb_read_32bit(DiracGolombLUT *lut_ctx, const uint8_t *buf,
+                               int bytes, uint8_t *_dst, int coeffs) {
+  for (b = 1; b <= bytes; b++) {
+  if (res_bits && l->sign) {
+- SET_RESIDUE(res, 0, 0);
++ res_bits = res = 0;
+  }
+  APPEND_RESIDUE(res, l->leftover);
+  l = future[l->need_s ? 3 : !res_bits ? 2 : res_bits & 1];
+  }
+}
+
+Context for merged statement of old file: libavcodec/dirac_vlc.c with new file: libavcodec/dirac_vlc.c:
+int ff_dirac_golomb_read_16bit(DiracGolombLUT *lut_ctx, const uint8_t *buf,
+                               int bytes, uint8_t *_dst, int coeffs) {
+  for (b = 1; b <= bytes; b++) {
+  if (res_bits && l->sign) {
+- SET_RESIDUE(res, 0, 0);
++ res_bits = res = 0;
+  }
+  APPEND_RESIDUE(res, l->leftover);
+  l = future[l->need_s ? 3 : !res_bits ? 2 : res_bits & 1];
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: APPEND_RESIDUE — libavcodec/dirac_vlc.c:38 [gtags_unique] --
+#define APPEND_RESIDUE(N, M)                                                   \
+    N          |= M >> (N ## _bits);                                           \
+    N ## _bits +=      (M ## _bits)
+
+-- called macro: SET_RESIDUE — libavcodec/dirac_vlc.c:34 [gtags_unique, old version] --
+#define SET_RESIDUE(N, I, B)                                                   \
+    N          = CONVERT_TO_RESIDUE(I, B);                                     \
+    N ## _bits = B
+
+-- caller of ff_dirac_golomb_read_32bit: decode_hq_slice — libavcodec/diracdec.c:849 --
+static int decode_hq_slice(DiracContext *s, DiracSlice *slice, uint8_t *tmp_buf) {
+   int i, level, orientation, quant_idx;
+   ...
+   GetBitContext *gb = &slice->gb;
+   SliceCoeffs coeffs_num[MAX_DWT_LEVELS];
+   ...
+   for(i = 0; i < 3; i++) {
+     int coef_num, coef_par, off = 0;
+     int64_t length = s->highquality.size_scaler*get_bits(gb, 8);
+   ...
+     const uint8_t *addr = align_get_bits(gb);
+   ...
+     coef_num = subband_coeffs(s, slice->slice_x, slice->slice_y, i, coeffs_num);
+     if(s->pshift)
+>      coef_par = ff_dirac_golomb_read_32bit(s->reader_ctx, addr, length, tmp_buf, coef_num);
+     else
+   ...
+       if(coef_num > coef_par) {
+         const int start_b = coef_par *(1 <<(s->pshift + 1));
+   ...
+         memset(&tmp_buf[start_b], 0, end_b - start_b);
+       }
+     for(level = 0; level < s->wavelet_depth; level++) {
+   ...
+       for(orientation = !!level; orientation < 4; orientation++) {
+   ...
+         s->diracdsp.dequant_subband[qfunc](&tmp_buf[off], buf, b1->stride, qfactor[level][orientation], qoffset[level][orientation], c->tot_v, c->tot_h);
+   ...
+       }
+     }
+   }
+}
+
+-- caller of ff_dirac_golomb_read_16bit: decode_hq_slice — libavcodec/diracdec.c:852 --
+static int decode_hq_slice(DiracContext *s, DiracSlice *slice, uint8_t *tmp_buf) {
+   int i, level, orientation, quant_idx;
+   ...
+   GetBitContext *gb = &slice->gb;
+   SliceCoeffs coeffs_num[MAX_DWT_LEVELS];
+   ...
+   for(i = 0; i < 3; i++) {
+     int coef_num, coef_par, off = 0;
+     int64_t length = s->highquality.size_scaler*get_bits(gb, 8);
+   ...
+     const uint8_t *addr = align_get_bits(gb);
+   ...
+     coef_num = subband_coeffs(s, slice->slice_x, slice->slice_y, i, coeffs_num);
+     if(s->pshift)
+   ...
+     else
+>      coef_par = ff_dirac_golomb_read_16bit(s->reader_ctx, addr, length, tmp_buf, coef_num);
+     if(coef_num > coef_par) {
+       const int start_b = coef_par *(1 <<(s->pshift + 1));
+   ...
+       memset(&tmp_buf[start_b], 0, end_b - start_b);
+     }
+     for(level = 0; level < s->wavelet_depth; level++) {
+   ...
+       for(orientation = !!level; orientation < 4; orientation++) {
+   ...
+         s->diracdsp.dequant_subband[qfunc](&tmp_buf[off], buf, b1->stride, qfactor[level][orientation], qoffset[level][orientation], c->tot_v, c->tot_h);
+   ...
+       }
+     }
+   }
+}

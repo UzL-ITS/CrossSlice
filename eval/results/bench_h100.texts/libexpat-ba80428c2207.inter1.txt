@@ -1,0 +1,1199 @@
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+enum XML_Error internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
+                        const char **nextPtr) {
+  ENTITY *entity;
+  OPEN_INTERNAL_ENTITY *openEntity = parser->m_openInternalEntities;
+  entity = openEntity->entity;
+  if (entity->hasMore) {
++ if (! entity->is_param &&(openEntity->startTagLevel != parser->m_tagLevel)) {
++ return XML_ERROR_ASYNC_ENTITY;
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: triggerReenter — expat/lib/xmlparse.c:2650 [gtags_unique] --
+static void triggerReenter(XML_Parser parser) {
+   parser->m_reenter = XML_TRUE;
+}
+   [reads: parser; writes: parser*]
+
+-- called function: doContent — expat/lib/xmlparse.c:3305 [gtags_unique] --
+static enum XML_Error doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc, const char *s, const char *end, const char **nextPtr, XML_Bool haveMore, enum XML_Account account) {
+   DTD *const dtd = parser->m_dtd;
+   const char **eventPP;
+   const char **eventEndPP;
+   if(enc == parser->m_encoding) {
+     eventPP = &parser->m_eventPtr;
+     eventEndPP = &parser->m_eventEndPtr;
+   } else {
+     eventPP = &(parser->m_openInternalEntities->internalEventPtr);
+     eventEndPP = &(parser->m_openInternalEntities->internalEventEndPtr);
+   }
+   *eventPP = s;
+   for(; ; ) {
+     const char *next = s;
+     int tok = XmlContentTok(enc, s, end, &next);
+     #if XML_GE == 1
+     const char *accountAfter =((tok == XML_TOK_TRAILING_RSQB)||(tok == XML_TOK_TRAILING_CR))?(haveMore ? s : end): next;
+     if(! accountingDiffTolerated(parser, tok, s, accountAfter, __LINE__, account)) {
+       accountingOnAbort(parser);
+       return XML_ERROR_AMPLIFICATION_LIMIT_BREACH;
+     }
+     #endif
+     *eventEndPP = next;
+     switch(tok) {
+   ...
+       if(haveMore) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       *eventEndPP = end;
+       if(parser->m_characterDataHandler) {
+         XML_Char c = 0xA;
+         parser->m_characterDataHandler(parser->m_handlerArg, &c, 1);
+       } else if(parser->m_defaultHandler)
+         reportDefault(parser, enc, s, end);
+       if(startTagLevel == 0)
+         return XML_ERROR_NO_ELEMENTS;
+       if(parser->m_tagLevel != startTagLevel)
+         return XML_ERROR_ASYNC_ENTITY;
+       *nextPtr = end;
+       return XML_ERROR_NONE;
+   ...
+       if(haveMore) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       if(startTagLevel > 0) {
+         if(parser->m_tagLevel != startTagLevel)
+           return XML_ERROR_ASYNC_ENTITY;
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       return XML_ERROR_NO_ELEMENTS;
+   ...
+       *eventPP = next;
+       return XML_ERROR_INVALID_TOKEN;
+   ...
+       if(haveMore) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       return XML_ERROR_UNCLOSED_TOKEN;
+   ...
+       if(haveMore) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       return XML_ERROR_PARTIAL_CHAR;
+   ...
+         const XML_Char *name;
+         ENTITY *entity;
+         XML_Char ch =(XML_Char)XmlPredefinedEntityName(enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(ch) {
+           #if XML_GE == 1
+           accountingDiffTolerated(parser, tok, (char *)&ch, ((char *)&ch)+ sizeof(XML_Char), __LINE__, XML_ACCOUNT_ENTITY_EXPANSION);
+           #endif
+           if(parser->m_characterDataHandler)
+             parser->m_characterDataHandler(parser->m_handlerArg, &ch, 1);
+           else if(parser->m_defaultHandler)
+             reportDefault(parser, enc, s, next);
+   ...
+         }
+         name = poolStoreString(&dtd->pool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! name)
+           return XML_ERROR_NO_MEMORY;
+         entity =(ENTITY *)lookup(parser, &dtd->generalEntities, name, 0);
+         poolDiscard(&dtd->pool);
+         if(! dtd->hasParamEntityRefs || dtd->standalone) {
+           if(! entity)
+             return XML_ERROR_UNDEFINED_ENTITY;
+           else if(! entity->is_internal)
+             return XML_ERROR_ENTITY_DECLARED_IN_PE;
+         } else if(! entity) {
+           if(parser->m_skippedEntityHandler)
+             parser->m_skippedEntityHandler(parser->m_handlerArg, name, 0);
+           else if(parser->m_defaultHandler)
+             reportDefault(parser, enc, s, next);
+   ...
+         }
+         if(entity->open)
+           return XML_ERROR_RECURSIVE_ENTITY_REF;
+         if(entity->notation)
+           return XML_ERROR_BINARY_ENTITY_REF;
+         if(entity->textPtr) {
+           enum XML_Error result;
+           if(! parser->m_defaultExpandInternalEntities) {
+             if(parser->m_skippedEntityHandler)
+               parser->m_skippedEntityHandler(parser->m_handlerArg, entity->name, 0);
+             else if(parser->m_defaultHandler)
+               reportDefault(parser, enc, s, next);
+   ...
+           }
+           result = processEntity(parser, entity, XML_FALSE, ENTITY_INTERNAL);
+           if(result != XML_ERROR_NONE)
+             return result;
+         } else if(parser->m_externalEntityRefHandler) {
+           const XML_Char *context;
+           entity->open = XML_TRUE;
+           context = getContext(parser);
+           entity->open = XML_FALSE;
+           if(! context)
+             return XML_ERROR_NO_MEMORY;
+           if(! parser->m_externalEntityRefHandler(parser->m_externalEntityRefHandlerArg, context, entity->base, entity->systemId, entity->publicId))
+             return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+           poolDiscard(&parser->m_tempPool);
+         } else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+   ...
+         TAG *tag;
+         enum XML_Error result;
+         XML_Char *toPtr;
+         if(parser->m_freeTagList) {
+           tag = parser->m_freeTagList;
+           parser->m_freeTagList = parser->m_freeTagList->parent;
+         } else {
+           tag = MALLOC(parser, sizeof(TAG));
+           if(! tag)
+             return XML_ERROR_NO_MEMORY;
+           tag->buf = MALLOC(parser, INIT_TAG_BUF_SIZE);
+           if(! tag->buf) {
+             FREE(parser, tag);
+             return XML_ERROR_NO_MEMORY;
+           }
+           tag->bufEnd = tag->buf + INIT_TAG_BUF_SIZE;
+         }
+         tag->bindings = NULL;
+         tag->parent = parser->m_tagStack;
+         parser->m_tagStack = tag;
+         tag->name.localPart = NULL;
+         tag->name.prefix = NULL;
+         tag->rawName = s + enc->minBytesPerChar;
+         tag->rawNameLength = XmlNameLength(enc, tag->rawName);
+         ++parser->m_tagLevel;
+           const char *rawNameEnd = tag->rawName + tag->rawNameLength;
+           const char *fromPtr = tag->rawName;
+           toPtr =(XML_Char *)tag->buf;
+           for(; ; ) {
+             int bufSize;
+             int convLen;
+             const enum XML_Convert_Result convert_res = XmlConvert(enc, &fromPtr, rawNameEnd, (ICHAR **)&toPtr, (ICHAR *)tag->bufEnd - 1);
+             convLen =(int)(toPtr -(XML_Char *)tag->buf);
+             if((fromPtr >= rawNameEnd)||(convert_res == XML_CONVERT_INPUT_INCOMPLETE)) {
+               tag->name.strLen = convLen;
+   ...
+             }
+             bufSize =(int)(tag->bufEnd - tag->buf)<< 1;
+               char *temp = REALLOC(parser, tag->buf, bufSize);
+               if(temp == NULL)
+                 return XML_ERROR_NO_MEMORY;
+               tag->buf = temp;
+               tag->bufEnd = temp + bufSize;
+               toPtr =(XML_Char *)temp + convLen;
+           }
+         tag->name.str =(XML_Char *)tag->buf;
+         *toPtr = XML_T('\0');
+         result = storeAtts(parser, enc, s, &(tag->name), &(tag->bindings), account);
+         if(result)
+           return result;
+         if(parser->m_startElementHandler)
+           parser->m_startElementHandler(parser->m_handlerArg, tag->name.str, (const XML_Char **)parser->m_atts);
+         else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+         poolClear(&parser->m_tempPool);
+   ...
+         const char *rawName = s + enc->minBytesPerChar;
+         enum XML_Error result;
+         BINDING *bindings = NULL;
+         XML_Bool noElmHandlers = XML_TRUE;
+         TAG_NAME name;
+         name.str = poolStoreString(&parser->m_tempPool, enc, rawName, rawName + XmlNameLength(enc, rawName));
+         if(! name.str)
+           return XML_ERROR_NO_MEMORY;
+         poolFinish(&parser->m_tempPool);
+         result = storeAtts(parser, enc, s, &name, &bindings, XML_ACCOUNT_NONE);
+         if(result != XML_ERROR_NONE) {
+           freeBindings(parser, bindings);
+           return result;
+         }
+         poolFinish(&parser->m_tempPool);
+         if(parser->m_startElementHandler) {
+           parser->m_startElementHandler(parser->m_handlerArg, name.str, (const XML_Char **)parser->m_atts);
+           noElmHandlers = XML_FALSE;
+         }
+         if(parser->m_endElementHandler) {
+           if(parser->m_startElementHandler)
+             *eventPP = *eventEndPP;
+           parser->m_endElementHandler(parser->m_handlerArg, name.str);
+           noElmHandlers = XML_FALSE;
+         }
+         if(noElmHandlers && parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+         poolClear(&parser->m_tempPool);
+         freeBindings(parser, bindings);
+       if((parser->m_tagLevel == 0)&&(parser->m_parsingStatus.parsing != XML_FINISHED)) {
+         if(parser->m_parsingStatus.parsing == XML_SUSPENDED ||(parser->m_parsingStatus.parsing == XML_PARSING && parser->m_reenter))
+           parser->m_processor = epilogProcessor;
+         else
+           return epilogProcessor(parser, next, end, nextPtr);
+       }
+   ...
+       if(parser->m_tagLevel == startTagLevel)
+         return XML_ERROR_ASYNC_ENTITY;
+       else {
+   ...
+         const char *rawName;
+         TAG *tag = parser->m_tagStack;
+         rawName = s + enc->minBytesPerChar * 2;
+         len = XmlNameLength(enc, rawName);
+         if(len != tag->rawNameLength || memcmp(tag->rawName, rawName, len)!= 0) {
+           *eventPP = rawName;
+           return XML_ERROR_TAG_MISMATCH;
+         }
+         parser->m_tagStack = tag->parent;
+         tag->parent = parser->m_freeTagList;
+         parser->m_freeTagList = tag;
+         --parser->m_tagLevel;
+         if(parser->m_endElementHandler) {
+           const XML_Char *localPart;
+           const XML_Char *prefix;
+           XML_Char *uri;
+           localPart = tag->name.localPart;
+           if(parser->m_ns && localPart) {
+             uri =(XML_Char *)tag->name.str + tag->name.uriLen;
+             while(*localPart)
+               *uri++ = *localPart++;
+             prefix = tag->name.prefix;
+             if(parser->m_ns_triplets && prefix) {
+               *uri++ = parser->m_namespaceSeparator;
+               while(*prefix)
+                 *uri++ = *prefix++;
+             }
+             *uri = XML_T('\0');
+           }
+           parser->m_endElementHandler(parser->m_handlerArg, tag->name.str);
+         } else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+         while(tag->bindings) {
+           BINDING *b = tag->bindings;
+           if(parser->m_endNamespaceDeclHandler)
+             parser->m_endNamespaceDeclHandler(parser->m_handlerArg, b->prefix->name);
+           tag->bindings = tag->bindings->nextTagBinding;
+           b->nextTagBinding = parser->m_freeBindingList;
+           parser->m_freeBindingList = b;
+           b->prefix->binding = b->prevPrefixBinding;
+         }
+         if((parser->m_tagLevel == 0)&&(parser->m_parsingStatus.parsing != XML_FINISHED)) {
+           if(parser->m_parsingStatus.parsing == XML_SUSPENDED ||(parser->m_parsingStatus.parsing == XML_PARSING && parser->m_reenter))
+             parser->m_processor = epilogProcessor;
+           else
+             return epilogProcessor(parser, next, end, nextPtr);
+         }
+       }
+   ...
+         int n = XmlCharRefNumber(enc, s);
+         if(n < 0)
+           return XML_ERROR_BAD_CHAR_REF;
+         if(parser->m_characterDataHandler) {
+           XML_Char buf[XML_ENCODE_MAX];
+           parser->m_characterDataHandler(parser->m_handlerArg, buf, XmlEncode(n, (ICHAR *)buf));
+         } else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+   ...
+       return XML_ERROR_MISPLACED_XML_PI;
+   ...
+       if(parser->m_characterDataHandler) {
+         XML_Char c = 0xA;
+         parser->m_characterDataHandler(parser->m_handlerArg, &c, 1);
+       } else if(parser->m_defaultHandler)
+         reportDefault(parser, enc, s, next);
+   ...
+         enum XML_Error result;
+         if(parser->m_startCdataSectionHandler)
+           parser->m_startCdataSectionHandler(parser->m_handlerArg);
+         else if((0)&& parser->m_characterDataHandler)
+           parser->m_characterDataHandler(parser->m_handlerArg, parser->m_dataBuf, 0);
+         else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+         result = doCdataSection(parser, enc, &next, end, nextPtr, haveMore, account);
+         if(result != XML_ERROR_NONE)
+           return result;
+         else if(! next) {
+           parser->m_processor = cdataSectionProcessor;
+           return result;
+         }
+   ...
+       if(haveMore) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       if(parser->m_characterDataHandler) {
+         if(MUST_CONVERT(enc, s)) {
+           ICHAR *dataPtr =(ICHAR *)parser->m_dataBuf;
+           XmlConvert(enc, &s, end, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
+           parser->m_characterDataHandler(parser->m_handlerArg, parser->m_dataBuf, (int)(dataPtr -(ICHAR *)parser->m_dataBuf));
+         } else
+           parser->m_characterDataHandler(parser->m_handlerArg, (const XML_Char *)s, (int)((const XML_Char *)end -(const XML_Char *)s));
+       } else if(parser->m_defaultHandler)
+         reportDefault(parser, enc, s, end);
+       if(startTagLevel == 0) {
+         *eventPP = end;
+         return XML_ERROR_NO_ELEMENTS;
+       }
+       if(parser->m_tagLevel != startTagLevel) {
+         *eventPP = end;
+         return XML_ERROR_ASYNC_ENTITY;
+       }
+       *nextPtr = end;
+       return XML_ERROR_NONE;
+   ...
+         XML_CharacterDataHandler charDataHandler = parser->m_characterDataHandler;
+         if(charDataHandler) {
+           if(MUST_CONVERT(enc, s)) {
+             for(; ; ) {
+               ICHAR *dataPtr =(ICHAR *)parser->m_dataBuf;
+               const enum XML_Convert_Result convert_res = XmlConvert(enc, &s, next, &dataPtr, (ICHAR *)parser->m_dataBufEnd);
+               *eventEndPP = s;
+               charDataHandler(parser->m_handlerArg, parser->m_dataBuf, (int)(dataPtr -(ICHAR *)parser->m_dataBuf));
+               if((convert_res == XML_CONVERT_COMPLETED)||(convert_res == XML_CONVERT_INPUT_INCOMPLETE))
+   ...
+               *eventPP = s;
+             }
+           } else
+             charDataHandler(parser->m_handlerArg, (const XML_Char *)s, (int)((const XML_Char *)next -(const XML_Char *)s));
+         } else if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+   ...
+       if(! reportProcessingInstruction(parser, enc, s, next))
+         return XML_ERROR_NO_MEMORY;
+   ...
+       if(! reportComment(parser, enc, s, next))
+         return XML_ERROR_NO_MEMORY;
+   ...
+       if(parser->m_defaultHandler)
+         reportDefault(parser, enc, s, next);
+   ...
+     }
+     switch(parser->m_parsingStatus.parsing) {
+   ...
+       *eventPP = next;
+       *nextPtr = next;
+       return XML_ERROR_NONE;
+   ...
+       *eventPP = next;
+       return XML_ERROR_ABORTED;
+   ...
+       if(parser->m_reenter) {
+         *nextPtr = next;
+         return XML_ERROR_NONE;
+       }
+   ...
+       *eventPP = s = next;
+     }
+   }
+}
+   [reads: account, enc, end, haveMore, nextPtr, parser, s, startTagLevel; writes: nextPtr*, parser*, s*]
+
+-- called function: doProlog — expat/lib/xmlparse.c:5187 [gtags_unique] --
+static enum XML_Error doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end, int tok, const char *next, const char **nextPtr, XML_Bool haveMore, XML_Bool allowClosingDoctype, {
+   #ifdef ...
+   static const XML_Char externalSubsetName[] = {ASCII_HASH, '\0'};
+   #endif
+   static const XML_Char atypeCDATA[] = {ASCII_C, ASCII_D, ASCII_A, ASCII_T, ASCII_A, '\0'};
+   static const XML_Char atypeID[] = {ASCII_I, ASCII_D, '\0'};
+   static const XML_Char atypeIDREF[] = {ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F, '\0'};
+   static const XML_Char atypeIDREFS[] = {ASCII_I, ASCII_D, ASCII_R, ASCII_E, ASCII_F, ASCII_S, '\0'};
+   static const XML_Char atypeENTITY[] = {ASCII_E, ASCII_N, ASCII_T, ASCII_I, ASCII_T, ASCII_Y, '\0'};
+   static const XML_Char atypeENTITIES[] = {ASCII_E, ASCII_N, ASCII_T, ASCII_I, ASCII_T, ASCII_I, ASCII_E, ASCII_S, '\0'};
+   static const XML_Char atypeNMTOKEN[] = {ASCII_N, ASCII_M, ASCII_T, ASCII_O, ASCII_K, ASCII_E, ASCII_N, '\0'};
+   static const XML_Char atypeNMTOKENS[] = {ASCII_N, ASCII_M, ASCII_T, ASCII_O, ASCII_K, ASCII_E, ASCII_N, ASCII_S, '\0'};
+   static const XML_Char notationPrefix[] = {ASCII_N, ASCII_O, ASCII_T, ASCII_A, ASCII_T, ASCII_I, ASCII_O, ASCII_N, ASCII_LPAREN, '\0'};
+   static const XML_Char enumValueSep[] = {ASCII_PIPE, '\0'};
+   static const XML_Char enumValueStart[] = {ASCII_LPAREN, '\0'};
+   #ifndef ...
+   UNUSED_P(account);
+   #endif
+   DTD *const dtd = parser->m_dtd;
+   const char **eventPP;
+   const char **eventEndPP;
+   enum XML_Content_Quant quant;
+   if(enc == parser->m_encoding) {
+     eventPP = &parser->m_eventPtr;
+     eventEndPP = &parser->m_eventEndPtr;
+   } else {
+     eventPP = &(parser->m_openInternalEntities->internalEventPtr);
+     eventEndPP = &(parser->m_openInternalEntities->internalEventEndPtr);
+   }
+   for(; ; ) {
+     int role;
+     XML_Bool handleDefault = XML_TRUE;
+     *eventPP = s;
+     *eventEndPP = next;
+     if(tok <= 0) {
+       if(haveMore && tok != XML_TOK_INVALID) {
+         *nextPtr = s;
+         return XML_ERROR_NONE;
+       }
+       switch(tok) {
+   ...
+         *eventPP = next;
+         return XML_ERROR_INVALID_TOKEN;
+   ...
+         return XML_ERROR_UNCLOSED_TOKEN;
+   ...
+         return XML_ERROR_PARTIAL_CHAR;
+   ...
+         tok = -tok;
+   ...
+         #ifdef ...
+         if(enc != parser->m_encoding && ! parser->m_openInternalEntities->betweenDecl) {
+           *nextPtr = s;
+           return XML_ERROR_NONE;
+         }
+         if(parser->m_isParamEntity || enc != parser->m_encoding) {
+           if(XmlTokenRole(&parser->m_prologState, XML_TOK_NONE, end, end, enc)== XML_ROLE_ERROR)
+             return XML_ERROR_INCOMPLETE_PE;
+           *nextPtr = s;
+           return XML_ERROR_NONE;
+         }
+         #endif
+         return XML_ERROR_NO_ELEMENTS;
+   ...
+         tok = -tok;
+         next = end;
+   ...
+       }
+     }
+     role = XmlTokenRole(&parser->m_prologState, tok, s, next, enc);
+     #if XML_GE == 1
+     switch(role) {
+   ...
+       if(! accountingDiffTolerated(parser, tok, s, next, __LINE__, account)) {
+         accountingOnAbort(parser);
+         return XML_ERROR_AMPLIFICATION_LIMIT_BREACH;
+       }
+     }
+     #endif
+     switch(role) {
+   ...
+         enum XML_Error result = processXmlDecl(parser, 0, s, next);
+         if(result != XML_ERROR_NONE)
+           return result;
+         enc = parser->m_encoding;
+         handleDefault = XML_FALSE;
+   ...
+       if(parser->m_startDoctypeDeclHandler) {
+         parser->m_doctypeName = poolStoreString(&parser->m_tempPool, enc, s, next);
+         if(! parser->m_doctypeName)
+           return XML_ERROR_NO_MEMORY;
+         poolFinish(&parser->m_tempPool);
+         parser->m_doctypePubid = NULL;
+         handleDefault = XML_FALSE;
+       }
+       parser->m_doctypeSysid = NULL;
+   ...
+       if(parser->m_startDoctypeDeclHandler) {
+         parser->m_startDoctypeDeclHandler(parser->m_handlerArg, parser->m_doctypeName, parser->m_doctypeSysid, parser->m_doctypePubid, 1);
+         parser->m_doctypeName = NULL;
+         poolClear(&parser->m_tempPool);
+         handleDefault = XML_FALSE;
+       }
+   ...
+       #ifdef ...
+   ...
+         enum XML_Error result = processXmlDecl(parser, 1, s, next);
+         if(result != XML_ERROR_NONE)
+           return result;
+         enc = parser->m_encoding;
+         handleDefault = XML_FALSE;
+   ...
+       #endif
+   ...
+       #ifdef ...
+       parser->m_useForeignDTD = XML_FALSE;
+       parser->m_declEntity =(ENTITY *)lookup(parser, &dtd->paramEntities, externalSubsetName, sizeof(ENTITY));
+       if(! parser->m_declEntity)
+         return XML_ERROR_NO_MEMORY;
+       #endif
+       dtd->hasParamEntityRefs = XML_TRUE;
+       if(parser->m_startDoctypeDeclHandler) {
+         XML_Char *pubId;
+         if(! XmlIsPublicId(enc, s, next, eventPP))
+           return XML_ERROR_PUBLICID;
+         pubId = poolStoreString(&parser->m_tempPool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! pubId)
+           return XML_ERROR_NO_MEMORY;
+         normalizePublicId(pubId);
+         poolFinish(&parser->m_tempPool);
+         parser->m_doctypePubid = pubId;
+         handleDefault = XML_FALSE;
+   ...
+       }
+   ...
+       if(! XmlIsPublicId(enc, s, next, eventPP))
+         return XML_ERROR_PUBLICID;
+   ...
+       if(dtd->keepProcessing && parser->m_declEntity) {
+         XML_Char *tem = poolStoreString(&dtd->pool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! tem)
+           return XML_ERROR_NO_MEMORY;
+         normalizePublicId(tem);
+         parser->m_declEntity->publicId = tem;
+         poolFinish(&dtd->pool);
+         if(parser->m_entityDeclHandler && role == XML_ROLE_ENTITY_PUBLIC_ID)
+           handleDefault = XML_FALSE;
+       }
+   ...
+       if(allowClosingDoctype != XML_TRUE) {
+         return XML_ERROR_INVALID_TOKEN;
+       }
+       if(parser->m_doctypeName) {
+         parser->m_startDoctypeDeclHandler(parser->m_handlerArg, parser->m_doctypeName, parser->m_doctypeSysid, parser->m_doctypePubid, 0);
+         poolClear(&parser->m_tempPool);
+         handleDefault = XML_FALSE;
+       }
+       #ifdef ...
+       if(parser->m_doctypeSysid || parser->m_useForeignDTD) {
+         XML_Bool hadParamEntityRefs = dtd->hasParamEntityRefs;
+         dtd->hasParamEntityRefs = XML_TRUE;
+         if(parser->m_paramEntityParsing && parser->m_externalEntityRefHandler) {
+           ENTITY *entity =(ENTITY *)lookup(parser, &dtd->paramEntities, externalSubsetName, sizeof(ENTITY));
+           if(! entity) {
+             return XML_ERROR_NO_MEMORY;
+           }
+           if(parser->m_useForeignDTD)
+             entity->base = parser->m_curBase;
+           dtd->paramEntityRead = XML_FALSE;
+           if(! parser->m_externalEntityRefHandler(parser->m_externalEntityRefHandlerArg, 0, entity->base, entity->systemId, entity->publicId))
+             return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+           if(dtd->paramEntityRead) {
+             if(! dtd->standalone && parser->m_notStandaloneHandler && ! parser->m_notStandaloneHandler(parser->m_handlerArg))
+               return XML_ERROR_NOT_STANDALONE;
+           } else if(! parser->m_doctypeSysid)
+             dtd->hasParamEntityRefs = hadParamEntityRefs;
+         }
+         parser->m_useForeignDTD = XML_FALSE;
+       }
+       #endif
+       if(parser->m_endDoctypeDeclHandler) {
+         parser->m_endDoctypeDeclHandler(parser->m_handlerArg);
+         handleDefault = XML_FALSE;
+       }
+   ...
+       #ifdef ...
+       if(parser->m_useForeignDTD) {
+         XML_Bool hadParamEntityRefs = dtd->hasParamEntityRefs;
+         dtd->hasParamEntityRefs = XML_TRUE;
+         if(parser->m_paramEntityParsing && parser->m_externalEntityRefHandler) {
+           ENTITY *entity =(ENTITY *)lookup(parser, &dtd->paramEntities, externalSubsetName, sizeof(ENTITY));
+           if(! entity)
+             return XML_ERROR_NO_MEMORY;
+           entity->base = parser->m_curBase;
+           dtd->paramEntityRead = XML_FALSE;
+           if(! parser->m_externalEntityRefHandler(parser->m_externalEntityRefHandlerArg, 0, entity->base, entity->systemId, entity->publicId))
+             return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+           if(dtd->paramEntityRead) {
+             if(! dtd->standalone && parser->m_notStandaloneHandler && ! parser->m_notStandaloneHandler(parser->m_handlerArg))
+               return XML_ERROR_NOT_STANDALONE;
+           } else
+             dtd->hasParamEntityRefs = hadParamEntityRefs;
+         }
+       }
+       #endif
+       parser->m_processor = contentProcessor;
+       return contentProcessor(parser, s, end, nextPtr);
+   ...
+       parser->m_declElementType = getElementType(parser, enc, s, next);
+       if(! parser->m_declElementType)
+         return XML_ERROR_NO_MEMORY;
+   ...
+       parser->m_declAttributeId = getAttributeId(parser, enc, s, next);
+       if(! parser->m_declAttributeId)
+         return XML_ERROR_NO_MEMORY;
+       parser->m_declAttributeIsCdata = XML_FALSE;
+       parser->m_declAttributeType = NULL;
+       parser->m_declAttributeIsId = XML_FALSE;
+   ...
+       parser->m_declAttributeIsCdata = XML_TRUE;
+       parser->m_declAttributeType = atypeCDATA;
+   ...
+       parser->m_declAttributeIsId = XML_TRUE;
+       parser->m_declAttributeType = atypeID;
+   ...
+       parser->m_declAttributeType = atypeIDREF;
+   ...
+       parser->m_declAttributeType = atypeIDREFS;
+   ...
+       parser->m_declAttributeType = atypeENTITY;
+   ...
+       parser->m_declAttributeType = atypeENTITIES;
+   ...
+       parser->m_declAttributeType = atypeNMTOKEN;
+   ...
+       parser->m_declAttributeType = atypeNMTOKENS;
+   ...
+       if(dtd->keepProcessing && parser->m_attlistDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(dtd->keepProcessing && parser->m_attlistDeclHandler) {
+         const XML_Char *prefix;
+         if(parser->m_declAttributeType) {
+           prefix = enumValueSep;
+         } else {
+           prefix =(role == XML_ROLE_ATTRIBUTE_NOTATION_VALUE ? notationPrefix : enumValueStart);
+         }
+         if(! poolAppendString(&parser->m_tempPool, prefix))
+           return XML_ERROR_NO_MEMORY;
+         if(! poolAppend(&parser->m_tempPool, enc, s, next))
+           return XML_ERROR_NO_MEMORY;
+         parser->m_declAttributeType = parser->m_tempPool.start;
+         handleDefault = XML_FALSE;
+       }
+   ...
+       if(dtd->keepProcessing) {
+         if(! defineAttribute(parser->m_declElementType, parser->m_declAttributeId, parser->m_declAttributeIsCdata, parser->m_declAttributeIsId, 0, parser))
+           return XML_ERROR_NO_MEMORY;
+         if(parser->m_attlistDeclHandler && parser->m_declAttributeType) {
+           if(*parser->m_declAttributeType == XML_T(ASCII_LPAREN)||(*parser->m_declAttributeType == XML_T(ASCII_N)&& parser->m_declAttributeType[1] == XML_T(ASCII_O))) {
+             if(! poolAppendChar(&parser->m_tempPool, XML_T(ASCII_RPAREN))|| ! poolAppendChar(&parser->m_tempPool, XML_T('\0')))
+               return XML_ERROR_NO_MEMORY;
+             parser->m_declAttributeType = parser->m_tempPool.start;
+             poolFinish(&parser->m_tempPool);
+           }
+           *eventEndPP = s;
+           parser->m_attlistDeclHandler(parser->m_handlerArg, parser->m_declElementType->name, parser->m_declAttributeId->name, parser->m_declAttributeType, 0, role == XML_ROLE_REQUIRED_ATTRIBUTE_VALUE);
+           handleDefault = XML_FALSE;
+         }
+       }
+       poolClear(&parser->m_tempPool);
+   ...
+       if(dtd->keepProcessing) {
+         const XML_Char *attVal;
+         enum XML_Error result = storeAttributeValue(parser, enc, parser->m_declAttributeIsCdata, s + enc->minBytesPerChar, next - enc->minBytesPerChar, &dtd->pool, XML_ACCOUNT_NONE);
+         if(result)
+           return result;
+         attVal = poolStart(&dtd->pool);
+         poolFinish(&dtd->pool);
+         if(! defineAttribute(parser->m_declElementType, parser->m_declAttributeId, parser->m_declAttributeIsCdata, XML_FALSE, attVal, parser))
+           return XML_ERROR_NO_MEMORY;
+         if(parser->m_attlistDeclHandler && parser->m_declAttributeType) {
+           if(*parser->m_declAttributeType == XML_T(ASCII_LPAREN)||(*parser->m_declAttributeType == XML_T(ASCII_N)&& parser->m_declAttributeType[1] == XML_T(ASCII_O))) {
+             if(! poolAppendChar(&parser->m_tempPool, XML_T(ASCII_RPAREN))|| ! poolAppendChar(&parser->m_tempPool, XML_T('\0')))
+               return XML_ERROR_NO_MEMORY;
+             parser->m_declAttributeType = parser->m_tempPool.start;
+             poolFinish(&parser->m_tempPool);
+           }
+           *eventEndPP = s;
+           parser->m_attlistDeclHandler(parser->m_handlerArg, parser->m_declElementType->name, parser->m_declAttributeId->name, parser->m_declAttributeType, attVal, role == XML_ROLE_FIXED_ATTRIBUTE_VALUE);
+           poolClear(&parser->m_tempPool);
+           handleDefault = XML_FALSE;
+         }
+       }
+   ...
+       if(dtd->keepProcessing) {
+         #if XML_GE == 1
+         enum XML_Error result = callStoreEntityValue(parser, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar, XML_ACCOUNT_NONE);
+         if(parser->m_declEntity) {
+           parser->m_declEntity->textPtr = poolStart(&dtd->entityValuePool);
+           parser->m_declEntity->textLen =(int)(poolLength(&dtd->entityValuePool));
+           poolFinish(&dtd->entityValuePool);
+           if(parser->m_entityDeclHandler) {
+             *eventEndPP = s;
+             parser->m_entityDeclHandler(parser->m_handlerArg, parser->m_declEntity->name, parser->m_declEntity->is_param, parser->m_declEntity->textPtr, parser->m_declEntity->textLen, parser->m_curBase, 0, 0, 0);
+             handleDefault = XML_FALSE;
+           }
+         } else
+           poolDiscard(&dtd->entityValuePool);
+         if(result != XML_ERROR_NONE)
+           return result;
+   ...
+         if(parser->m_declEntity != NULL) {
+           const enum XML_Error result = storeSelfEntityValue(parser, parser->m_declEntity);
+           if(result != XML_ERROR_NONE)
+             return result;
+           if(parser->m_entityDeclHandler) {
+             *eventEndPP = s;
+             parser->m_entityDeclHandler(parser->m_handlerArg, parser->m_declEntity->name, parser->m_declEntity->is_param, parser->m_declEntity->textPtr, parser->m_declEntity->textLen, parser->m_curBase, 0, 0, 0);
+             handleDefault = XML_FALSE;
+           }
+         }
+         #endif
+       }
+   ...
+       #ifdef ...
+       parser->m_useForeignDTD = XML_FALSE;
+       #endif
+       dtd->hasParamEntityRefs = XML_TRUE;
+       if(parser->m_startDoctypeDeclHandler) {
+         parser->m_doctypeSysid = poolStoreString(&parser->m_tempPool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(parser->m_doctypeSysid == NULL)
+           return XML_ERROR_NO_MEMORY;
+         poolFinish(&parser->m_tempPool);
+         handleDefault = XML_FALSE;
+       }
+       #ifdef ...
+       else parser->m_doctypeSysid = externalSubsetName;
+       #endif
+       if(! dtd->standalone #ifdef XML_DTD && ! parser->m_paramEntityParsing #endif /* XML_DTD */ && parser->m_notStandaloneHandler && ! parser->m_notStandaloneHandler(parser->m_handlerArg))
+         return XML_ERROR_NOT_STANDALONE;
+       #ifndef ...
+   ...
+       if(! parser->m_declEntity) {
+         parser->m_declEntity =(ENTITY *)lookup(parser, &dtd->paramEntities, externalSubsetName, sizeof(ENTITY));
+         if(! parser->m_declEntity)
+           return XML_ERROR_NO_MEMORY;
+         parser->m_declEntity->publicId = NULL;
+       }
+       #endif
+   ...
+       if(dtd->keepProcessing && parser->m_declEntity) {
+         parser->m_declEntity->systemId = poolStoreString(&dtd->pool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! parser->m_declEntity->systemId)
+           return XML_ERROR_NO_MEMORY;
+         parser->m_declEntity->base = parser->m_curBase;
+         poolFinish(&dtd->pool);
+         if(parser->m_entityDeclHandler && role == XML_ROLE_ENTITY_SYSTEM_ID)
+           handleDefault = XML_FALSE;
+       }
+   ...
+       #if XML_GE == 0
+       if(parser->m_declEntity != NULL) {
+         const enum XML_Error result = storeSelfEntityValue(parser, parser->m_declEntity);
+         if(result != XML_ERROR_NONE)
+           return result;
+       }
+       #endif
+       if(dtd->keepProcessing && parser->m_declEntity && parser->m_entityDeclHandler) {
+         *eventEndPP = s;
+         parser->m_entityDeclHandler(parser->m_handlerArg, parser->m_declEntity->name, parser->m_declEntity->is_param, 0, 0, parser->m_declEntity->base, parser->m_declEntity->systemId, parser->m_declEntity->publicId, 0);
+         handleDefault = XML_FALSE;
+       }
+   ...
+       if(dtd->keepProcessing && parser->m_declEntity) {
+         parser->m_declEntity->notation = poolStoreString(&dtd->pool, enc, s, next);
+         if(! parser->m_declEntity->notation)
+           return XML_ERROR_NO_MEMORY;
+         poolFinish(&dtd->pool);
+         if(parser->m_unparsedEntityDeclHandler) {
+           *eventEndPP = s;
+           parser->m_unparsedEntityDeclHandler(parser->m_handlerArg, parser->m_declEntity->name, parser->m_declEntity->base, parser->m_declEntity->systemId, parser->m_declEntity->publicId, parser->m_declEntity->notation);
+           handleDefault = XML_FALSE;
+         } else if(parser->m_entityDeclHandler) {
+           *eventEndPP = s;
+           parser->m_entityDeclHandler(parser->m_handlerArg, parser->m_declEntity->name, 0, 0, 0, parser->m_declEntity->base, parser->m_declEntity->systemId, parser->m_declEntity->publicId, parser->m_declEntity->notation);
+           handleDefault = XML_FALSE;
+         }
+       }
+   ...
+         if(XmlPredefinedEntityName(enc, s, next)) {
+           parser->m_declEntity = NULL;
+   ...
+         }
+         if(dtd->keepProcessing) {
+           const XML_Char *name = poolStoreString(&dtd->pool, enc, s, next);
+           if(! name)
+             return XML_ERROR_NO_MEMORY;
+           parser->m_declEntity =(ENTITY *)lookup(parser, &dtd->generalEntities, name, sizeof(ENTITY));
+           if(! parser->m_declEntity)
+             return XML_ERROR_NO_MEMORY;
+           if(parser->m_declEntity->name != name) {
+             poolDiscard(&dtd->pool);
+             parser->m_declEntity = NULL;
+           } else {
+             poolFinish(&dtd->pool);
+             parser->m_declEntity->publicId = NULL;
+             parser->m_declEntity->is_param = XML_FALSE;
+             parser->m_declEntity->is_internal = !(parser->m_parentParser || parser->m_openInternalEntities);
+             if(parser->m_entityDeclHandler)
+               handleDefault = XML_FALSE;
+           }
+         } else {
+           poolDiscard(&dtd->pool);
+           parser->m_declEntity = NULL;
+         }
+   ...
+       #ifdef ...
+       if(dtd->keepProcessing) {
+         const XML_Char *name = poolStoreString(&dtd->pool, enc, s, next);
+         if(! name)
+           return XML_ERROR_NO_MEMORY;
+         parser->m_declEntity =(ENTITY *)lookup(parser, &dtd->paramEntities, name, sizeof(ENTITY));
+         if(! parser->m_declEntity)
+           return XML_ERROR_NO_MEMORY;
+         if(parser->m_declEntity->name != name) {
+           poolDiscard(&dtd->pool);
+           parser->m_declEntity = NULL;
+         } else {
+           poolFinish(&dtd->pool);
+           parser->m_declEntity->publicId = NULL;
+           parser->m_declEntity->is_param = XML_TRUE;
+           parser->m_declEntity->is_internal = !(parser->m_parentParser || parser->m_openInternalEntities);
+           if(parser->m_entityDeclHandler)
+             handleDefault = XML_FALSE;
+         }
+       } else {
+         poolDiscard(&dtd->pool);
+         parser->m_declEntity = NULL;
+       }
+   ...
+       parser->m_declEntity = NULL;
+       #endif
+   ...
+       parser->m_declNotationPublicId = NULL;
+       parser->m_declNotationName = NULL;
+       if(parser->m_notationDeclHandler) {
+         parser->m_declNotationName = poolStoreString(&parser->m_tempPool, enc, s, next);
+         if(! parser->m_declNotationName)
+           return XML_ERROR_NO_MEMORY;
+         poolFinish(&parser->m_tempPool);
+         handleDefault = XML_FALSE;
+       }
+   ...
+       if(! XmlIsPublicId(enc, s, next, eventPP))
+         return XML_ERROR_PUBLICID;
+       if(parser ->m_declNotationName) {
+         XML_Char *tem = poolStoreString(&parser->m_tempPool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! tem)
+           return XML_ERROR_NO_MEMORY;
+         normalizePublicId(tem);
+         parser->m_declNotationPublicId = tem;
+         poolFinish(&parser->m_tempPool);
+         handleDefault = XML_FALSE;
+       }
+   ...
+       if(parser->m_declNotationName && parser->m_notationDeclHandler) {
+         const XML_Char *systemId = poolStoreString(&parser->m_tempPool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! systemId)
+           return XML_ERROR_NO_MEMORY;
+         *eventEndPP = s;
+         parser->m_notationDeclHandler(parser->m_handlerArg, parser->m_declNotationName, parser->m_curBase, systemId, parser->m_declNotationPublicId);
+         handleDefault = XML_FALSE;
+       }
+       poolClear(&parser->m_tempPool);
+   ...
+       if(parser->m_declNotationPublicId && parser->m_notationDeclHandler) {
+         *eventEndPP = s;
+         parser->m_notationDeclHandler(parser->m_handlerArg, parser->m_declNotationName, parser->m_curBase, 0, parser->m_declNotationPublicId);
+         handleDefault = XML_FALSE;
+       }
+       poolClear(&parser->m_tempPool);
+   ...
+       switch(tok) {
+   ...
+         return XML_ERROR_PARAM_ENTITY_REF;
+   ...
+         return XML_ERROR_MISPLACED_XML_PI;
+   ...
+         return XML_ERROR_SYNTAX;
+       }
+       #ifdef ...
+   ...
+         enum XML_Error result;
+         if(parser->m_defaultHandler)
+           reportDefault(parser, enc, s, next);
+         handleDefault = XML_FALSE;
+         result = doIgnoreSection(parser, enc, &next, end, nextPtr, haveMore);
+         if(result != XML_ERROR_NONE)
+           return result;
+         else if(! next) {
+           parser->m_processor = ignoreSectionProcessor;
+           return result;
+   ...
+         }
+       #endif
+   ...
+       if(parser->m_prologState.level >= parser->m_groupSize) {
+         if(parser->m_groupSize) {
+             if(parser->m_groupSize >(unsigned int)(-1)/ 2u) {
+               return XML_ERROR_NO_MEMORY;
+             }
+             char *const new_connector = REALLOC(parser, parser->m_groupConnector, parser->m_groupSize *= 2);
+             if(new_connector == NULL) {
+               parser->m_groupSize /= 2;
+               return XML_ERROR_NO_MEMORY;
+             }
+             parser->m_groupConnector = new_connector;
+           if(dtd->scaffIndex) {
+             #if UINT_MAX >= SIZE_MAX
+             if(parser->m_groupSize >(size_t)(-1)/ sizeof(int)) {
+               return XML_ERROR_NO_MEMORY;
+             }
+             #endif
+             int *const new_scaff_index = REALLOC(parser, dtd->scaffIndex, parser->m_groupSize * sizeof(int));
+             if(new_scaff_index == NULL)
+               return XML_ERROR_NO_MEMORY;
+             dtd->scaffIndex = new_scaff_index;
+           }
+         } else {
+           parser->m_groupConnector = MALLOC(parser, parser->m_groupSize = 32);
+           if(! parser->m_groupConnector) {
+             parser->m_groupSize = 0;
+             return XML_ERROR_NO_MEMORY;
+           }
+         }
+       }
+       parser->m_groupConnector[parser->m_prologState.level] = 0;
+       if(dtd->in_eldecl) {
+         int myindex = nextScaffoldPart(parser);
+         if(myindex < 0)
+           return XML_ERROR_NO_MEMORY;
+         assert(dtd->scaffIndex != NULL);
+         dtd->scaffIndex[dtd->scaffLevel] = myindex;
+         dtd->scaffLevel++;
+         dtd->scaffold[myindex].type = XML_CTYPE_SEQ;
+         if(parser->m_elementDeclHandler)
+           handleDefault = XML_FALSE;
+       }
+   ...
+       if(parser->m_groupConnector[parser->m_prologState.level] == ASCII_PIPE)
+         return XML_ERROR_SYNTAX;
+       parser->m_groupConnector[parser->m_prologState.level] = ASCII_COMMA;
+       if(dtd->in_eldecl && parser->m_elementDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(parser->m_groupConnector[parser->m_prologState.level] == ASCII_COMMA)
+         return XML_ERROR_SYNTAX;
+       if(dtd->in_eldecl && ! parser->m_groupConnector[parser->m_prologState.level] &&(dtd->scaffold[dtd->scaffIndex[dtd->scaffLevel - 1]].type != XML_CTYPE_MIXED)) {
+         dtd->scaffold[dtd->scaffIndex[dtd->scaffLevel - 1]].type = XML_CTYPE_CHOICE;
+         if(parser->m_elementDeclHandler)
+           handleDefault = XML_FALSE;
+       }
+       parser->m_groupConnector[parser->m_prologState.level] = ASCII_PIPE;
+   ...
+       #ifdef ...
+   ...
+       dtd->hasParamEntityRefs = XML_TRUE;
+       if(! parser->m_paramEntityParsing)
+         dtd->keepProcessing = dtd->standalone;
+       else {
+         const XML_Char *name;
+         ENTITY *entity;
+         name = poolStoreString(&dtd->pool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
+         if(! name)
+           return XML_ERROR_NO_MEMORY;
+         entity =(ENTITY *)lookup(parser, &dtd->paramEntities, name, 0);
+         poolDiscard(&dtd->pool);
+         if(parser->m_prologState.documentEntity &&(dtd->standalone ? ! parser->m_openInternalEntities : ! dtd->hasParamEntityRefs)) {
+           if(! entity)
+             return XML_ERROR_UNDEFINED_ENTITY;
+           else if(! entity->is_internal) {
+             return XML_ERROR_ENTITY_DECLARED_IN_PE;
+           }
+         } else if(! entity) {
+           dtd->keepProcessing = dtd->standalone;
+           if((role == XML_ROLE_PARAM_ENTITY_REF)&& parser->m_skippedEntityHandler) {
+             parser->m_skippedEntityHandler(parser->m_handlerArg, name, 1);
+             handleDefault = XML_FALSE;
+   ...
+           }
+         }
+         if(entity->open)
+           return XML_ERROR_RECURSIVE_ENTITY_REF;
+         if(entity->textPtr) {
+           enum XML_Error result;
+           XML_Bool betweenDecl =(role == XML_ROLE_PARAM_ENTITY_REF ? XML_TRUE : XML_FALSE);
+           result = processEntity(parser, entity, betweenDecl, ENTITY_INTERNAL);
+           if(result != XML_ERROR_NONE)
+             return result;
+           handleDefault = XML_FALSE;
+   ...
+         }
+         if(parser->m_externalEntityRefHandler) {
+           dtd->paramEntityRead = XML_FALSE;
+           entity->open = XML_TRUE;
+           entityTrackingOnOpen(parser, entity, __LINE__);
+           if(! parser->m_externalEntityRefHandler(parser->m_externalEntityRefHandlerArg, 0, entity->base, entity->systemId, entity->publicId)) {
+             entityTrackingOnClose(parser, entity, __LINE__);
+             entity->open = XML_FALSE;
+             return XML_ERROR_EXTERNAL_ENTITY_HANDLING;
+           }
+           entityTrackingOnClose(parser, entity, __LINE__);
+           entity->open = XML_FALSE;
+           handleDefault = XML_FALSE;
+           if(! dtd->paramEntityRead) {
+             dtd->keepProcessing = dtd->standalone;
+   ...
+           }
+         } else {
+           dtd->keepProcessing = dtd->standalone;
+   ...
+         }
+       }
+       #endif
+       if(! dtd->standalone && parser->m_notStandaloneHandler && ! parser->m_notStandaloneHandler(parser->m_handlerArg))
+         return XML_ERROR_NOT_STANDALONE;
+   ...
+       if(parser->m_elementDeclHandler) {
+         parser->m_declElementType = getElementType(parser, enc, s, next);
+         if(! parser->m_declElementType)
+           return XML_ERROR_NO_MEMORY;
+         dtd->scaffLevel = 0;
+         dtd->scaffCount = 0;
+         dtd->in_eldecl = XML_TRUE;
+         handleDefault = XML_FALSE;
+       }
+   ...
+       if(dtd->in_eldecl) {
+         if(parser->m_elementDeclHandler) {
+           XML_Content *content = parser->m_mem.malloc_fcn(sizeof(XML_Content));
+           if(! content)
+             return XML_ERROR_NO_MEMORY;
+           content->quant = XML_CQUANT_NONE;
+           content->name = NULL;
+           content->numchildren = 0;
+           content->children = NULL;
+           content->type =((role == XML_ROLE_CONTENT_ANY)? XML_CTYPE_ANY : XML_CTYPE_EMPTY);
+           *eventEndPP = s;
+           parser->m_elementDeclHandler(parser->m_handlerArg, parser->m_declElementType->name, content);
+           handleDefault = XML_FALSE;
+         }
+         dtd->in_eldecl = XML_FALSE;
+       }
+   ...
+       if(dtd->in_eldecl) {
+         dtd->scaffold[dtd->scaffIndex[dtd->scaffLevel - 1]].type = XML_CTYPE_MIXED;
+         if(parser->m_elementDeclHandler)
+           handleDefault = XML_FALSE;
+       }
+   ...
+       quant = XML_CQUANT_NONE;
+   ...
+       quant = XML_CQUANT_OPT;
+   ...
+       quant = XML_CQUANT_REP;
+   ...
+       quant = XML_CQUANT_PLUS;
+   ...
+       if(dtd->in_eldecl) {
+   ...
+         const char *nxt =(quant == XML_CQUANT_NONE ? next : next - enc->minBytesPerChar);
+         int myindex = nextScaffoldPart(parser);
+         if(myindex < 0)
+           return XML_ERROR_NO_MEMORY;
+         dtd->scaffold[myindex].type = XML_CTYPE_NAME;
+         dtd->scaffold[myindex].quant = quant;
+         el = getElementType(parser, enc, s, nxt);
+         if(! el)
+           return XML_ERROR_NO_MEMORY;
+         name = el->name;
+         dtd->scaffold[myindex].name = name;
+   ...
+         while(name[nameLen++])
+   ...
+         if(nameLen > UINT_MAX - dtd->contentStringLen) {
+           return XML_ERROR_NO_MEMORY;
+         }
+         dtd->contentStringLen +=(unsigned)nameLen;
+         if(parser->m_elementDeclHandler)
+           handleDefault = XML_FALSE;
+       }
+   ...
+       if(dtd->in_eldecl) {
+         if(parser->m_elementDeclHandler)
+           handleDefault = XML_FALSE;
+         dtd->scaffLevel--;
+         dtd->scaffold[dtd->scaffIndex[dtd->scaffLevel]].quant = quant;
+         if(dtd->scaffLevel == 0) {
+           if(! handleDefault) {
+             XML_Content *model = build_model(parser);
+             if(! model)
+               return XML_ERROR_NO_MEMORY;
+             *eventEndPP = s;
+             parser->m_elementDeclHandler(parser->m_handlerArg, parser->m_declElementType->name, model);
+           }
+           dtd->in_eldecl = XML_FALSE;
+           dtd->contentStringLen = 0;
+         }
+       }
+   ...
+       if(! reportProcessingInstruction(parser, enc, s, next))
+         return XML_ERROR_NO_MEMORY;
+       handleDefault = XML_FALSE;
+   ...
+       if(! reportComment(parser, enc, s, next))
+         return XML_ERROR_NO_MEMORY;
+       handleDefault = XML_FALSE;
+   ...
+       switch(tok) {
+   ...
+         handleDefault = XML_FALSE;
+   ...
+       }
+   ...
+       if(parser->m_startDoctypeDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(dtd->keepProcessing && parser->m_entityDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(parser->m_notationDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(dtd->keepProcessing && parser->m_attlistDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+       if(parser->m_elementDeclHandler)
+         handleDefault = XML_FALSE;
+   ...
+     }
+     if(handleDefault && parser->m_defaultHandler)
+       reportDefault(parser, enc, s, next);
+     switch(parser->m_parsingStatus.parsing) {
+   ...
+       *nextPtr = next;
+       return XML_ERROR_NONE;
+   ...
+       return XML_ERROR_ABORTED;
+   ...
+       if(parser->m_reenter) {
+         *nextPtr = next;
+         return XML_ERROR_NONE;
+       }
+   ...
+       s = next;
+       tok = XmlPrologTok(enc, s, end, &next);
+     }
+   }
+}
+   [reads: account, allowClosingDoctype, enc, end, haveMore, next, nextPtr, parser, s, tok; writes: next*, nextPtr*, parser*, s*]
+
+-- called macro: XmlPrologTok — expat/lib/xmltok.h:226 [gtags_unique] --
+#  define XmlPrologTok(enc, ptr, end, nextTokPtr)                              \
+    XmlTok(enc, XML_PROLOG_STATE, ptr, end, nextTokPtr)
+
+-- caller of internalEntityProcessor: processEntity — expat/lib/xmlparse.c:6344 --
+static enum XML_Error processEntity(XML_Parser parser, ENTITY *entity, XML_Bool betweenDecl, enum EntityType type) {
+   ...
+   switch(type) {
+   ...
+>    parser->m_processor = internalEntityProcessor;
+   ...
+   }
+   if(*freeEntityList) {
+   ...
+   } else {
+     openEntity = MALLOC(parser, sizeof(OPEN_INTERNAL_ENTITY));
+     if(! openEntity)
+   ...
+   }
+   ...
+   #if XML_GE == 1
+   entityTrackingOnOpen(parser, entity, __LINE__);
+   #endif
+   ...
+   openEntity->next = *openEntityList;
+   *openEntityList = openEntity;
+   openEntity->entity = entity;
+   openEntity->type = type;
+   openEntity->startTagLevel = parser->m_tagLevel;
+   openEntity->betweenDecl = betweenDecl;
+   openEntity->internalEventPtr = NULL;
+   openEntity->internalEventEndPtr = NULL;
+   if(type == ENTITY_INTERNAL) {
+     triggerReenter(parser);
+   ...
+   }
+}

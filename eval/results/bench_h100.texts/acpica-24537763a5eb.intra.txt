@@ -1,0 +1,20 @@
+Context for merged statement of old file: source/components/disassembler/dmbuffer.c with new file: source/components/disassembler/dmbuffer.c:
+BOOLEAN AcpiDmIsUnicodeBuffer (
+    ACPI_PARSE_OBJECT       *Op) {
+  UINT8 *ByteData;
+  UINT32 ByteCount;
+  ACPI_PARSE_OBJECT *SizeOp;
+  ACPI_PARSE_OBJECT *NextOp;
+  UINT32 i;
+  SizeOp = Op->Common.Value.Arg;
+  NextOp = SizeOp->Common.Next;
+  ByteData = NextOp->Named.Data;
+  ByteCount =(UINT32)NextOp->Common.Value.Integer;
+  for (i = 0; i <(ByteCount - 2); i += 2) {
+- if ((ByteData[i] > 0x7F)||(ByteData[(ACPI_SIZE)i + 1] != 0)) {
++ if ((ByteData[i] == 0)||(ByteData[i] > 0x7F)||(ByteData[(ACPI_SIZE)i + 1] != 0)) {
+  return(FALSE);
+  }
+  }
+}
+

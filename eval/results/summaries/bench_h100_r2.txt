@@ -1,0 +1,39 @@
+total=100 ok=98 other={'no_functions': 2}
+engine=fields analysis_version=2026-11-03.10
+
+latency (cold = empty cache; warm = second run, cache filled):
+  t_setup       n= 98 median=  0.07s mean=  0.11s p90=  0.27s max=  0.76s
+  t_intra       n= 98 median=  2.01s mean=  8.35s p90= 26.53s max=115.19s
+  t_cross       n= 98 median=  2.52s mean=  6.23s p90= 10.14s max=115.38s
+  t_total       n= 98 median=  7.69s mean= 14.70s p90= 34.49s max=184.85s
+  t_cross_warm  n= 98 median=  2.23s mean=  4.72s p90=  6.80s max=113.35s
+  t_total_warm  n= 98 median=  5.16s mean= 13.23s p90= 32.32s max=189.35s
+
+cascade tiers (both versions): {'gtags_unique': 1567, 'gtags+ts': 57, 'lsp': 301, 'priority_fallback': 204, 'unresolved': 317, 'stdlib_skipped': 262}
+  gtags_unique        1567 ( 73.6% of resolved)
+  gtags+ts              57 (  2.7% of resolved)
+  lsp                  301 ( 14.1% of resolved)
+  priority_fallback    204 (  9.6% of resolved)
+  resolution rate:  87.0% of non-stdlib targets (2129/2446)
+  unresolved reasons: {'no_definition_in_repo': 138, 'no_verifiable_definition': 66, 'arity_mismatch': 2}
+
+context size, n=98 (median chars / lines; ratio of medians vs full functions; median paired ratio):
+  diff_u3             1318 chars     34 lines   0.09x  paired  0.14
+  full_functions     14020 chars    418 lines   1.00x  paired  1.00
+  intra               1351 chars     33 lines   0.10x  paired  0.19
+  inter1              6508 chars    194 lines   0.46x  paired  0.61
+  inter2              7954 chars    206 lines   0.57x  paired  0.63
+  large functions (full > 10000 chars, n=56): median paired intra/full  0.11
+  large functions (full > 10000 chars, n=56): median paired inter1/full  0.38
+  commits where inter1 exceeds the full functions: 29/98
+
+slice fraction (relevant / all statements of the changed functions), n=98: median 0.17 p90 0.51 max 0.82; changed statements median 7
+
+stability: texts identical between the cold and the warm run: 98/98
+
+per repository (ok commits; median total s; median paired inter1/full):
+  acpica     n= 20 total   5.46s inter1/full  0.25
+  ffmpeg     n= 20 total   8.90s inter1/full  0.85
+  libexpat   n= 20 total   5.19s inter1/full  0.86
+  php-src    n= 19 total  11.50s inter1/full  0.88
+  zlib       n= 19 total   2.41s inter1/full  0.50

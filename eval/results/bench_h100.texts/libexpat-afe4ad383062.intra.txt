@@ -1,0 +1,10 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+START_TEST (test_misc_version) {
+- XML_Expat_Version parsed_version;
++ XML_Expat_Version parsed_version = { 0, 0, 0 };
+  if (!parse_version(version_text, &parsed_version)) {
+  }
+  if (!versions_equal(&read_version, &parsed_version)) {
+  }
+}
+

@@ -1,0 +1,98 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
++ END_TEST static int
+
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+END_TEST *
+make_suite(void) {
+  TCase *tc_basic = tcase_create("basic tests");
++ tcase_add_test(tc_basic, test_missing_encoding_conversion_fn);
+}
+
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
++ XMLCALL BadEncodingHandler(void *data,
+                   const XML_Char *UNUSED_P(encoding),
+                   XML_Encoding *info) {
++ int i;
+  for (i = 0; i < 128; ++i) {
++ info->map[i] = i;
+  }
+  for (; i < 256; ++i) {
++ info->map[i] = -2;
+  }
++ info->data = NULL;
++ info->convert =(int(XMLCALL *)(void *, const char *))data;
++ info->release = NULL;
++ return XML_STATUS_OK;
+}
+
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
++ START_TEST (test_missing_encoding_conversion_fn) {
++ const char *text = "<?xml version='1.0' encoding='experimental'?>\n" "<doc>\x81</doc>";
++ XML_SetUnknownEncodingHandler(parser, BadEncodingHandler, NULL);
++ expect_failure(text, XML_ERROR_UNKNOWN_ENCODING, "Encoding with missing convert()not faulted");
+}
+
+
+==== Cross-function context ====
+
+-- called function: tcase_create — expat/tests/minicheck.c:26 [gtags_unique] --
+TCase * tcase_create(const char *name) {
+   TCase *tc =(TCase *)calloc(1, sizeof(TCase));
+   if(tc != NULL) {
+     tc->name = name;
+   }
+   return tc;
+}
+   [reads: name; writes: -]
+
+-- called function: tcase_add_test — expat/tests/minicheck.c:57 [gtags_unique, new version] --
+void tcase_add_test(TCase *tc, tcase_test_function test) {
+   assert(tc != NULL);
+   if(tc->allocated == tc->ntests) {
+     int nalloc = tc->allocated + 100;
+     size_t new_size = sizeof(tcase_test_function)* nalloc;
+     tcase_test_function *new_tests = realloc(tc->tests, new_size);
+     assert(new_tests != NULL);
+     tc->tests = new_tests;
+     tc->allocated = nalloc;
+   }
+   tc->tests[tc->ntests] = test;
+   tc->ntests++;
+}
+   [reads: tc, test; writes: tc*]
+
+-- called macro: XML_STATUS_OK — expat/lib/expat.h:48 [lsp, new version] --
+#define XML_STATUS_OK XML_STATUS_OK
+
+-- called function: XML_SetUnknownEncodingHandler — expat/lib/xmlparse.c:1759 [gtags_unique, new version] --
+void XMLCALL XML_SetUnknownEncodingHandler(XML_Parser parser, XML_UnknownEncodingHandler handler, void *data) {
+   if(parser == NULL)
+   ...
+   unknownEncodingHandler = handler;
+   ...
+}
+   [reads: data, handler, parser; writes: -]
+
+-- called macro: expect_failure — expat/tests/runtests.c:124 [gtags_unique, new version] --
+#define expect_failure(text, errorCode, errorMessage) \
+        _expect_failure((text), (errorCode), (errorMessage), \
+                        __FILE__, __LINE__)
+
+-- caller of make_suite: main — expat/tests/runtests.c:10694 --
+int main(int argc, char *argv[]) {
+   ...
+>  Suite *s = make_suite();
+   SRunner *sr = srunner_create(s);
+   ...
+   srunner_run_all(sr, verbosity);
+   nf = srunner_ntests_failed(sr);
+   srunner_free(sr);
+   return(nf == 0)? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+-- caller of BadEncodingHandler: START_TEST(test_missing_encoding_conversion_fn) — expat/tests/runtests.c:5295 --
+START_TEST(test_missing_encoding_conversion_fn) {
+   ...
+>  XML_SetUnknownEncodingHandler(parser, BadEncodingHandler, NULL);
+   ...
+}

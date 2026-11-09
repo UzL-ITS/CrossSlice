@@ -1,0 +1,96 @@
+Context for merged statement of old file: libavcodec/wmv2dec.c with new file: libavcodec/wmv2dec.c:
+int parse_mb_skip(WMV2DecContext *w) {
+  H263DecContext *const h = &w->ms.h;
+  switch ((skip_type)) {
+  case SKIP_TYPE_ROW:
+  for (int mb_y = 0;; mb_y < h->c.mb_height; mb_y++) {
+  if (get_bits1(&h->gb)) {
+  }
+  else {
++ if (get_bits_left(&h->gb)< h->c.mb_width) {
++ return AVERROR_INVALIDDATA;
+  }
+  }
+  }
+  case SKIP_TYPE_COL:
+  for (int mb_x = 0;; mb_x < h->c.mb_width; mb_x++) {
+  if (get_bits1(&h->gb)) {
+  }
+  else {
++ if (get_bits_left(&h->gb)< h->c.mb_height) {
++ return AVERROR_INVALIDDATA;
+  }
+  }
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: get_bits1 — libavcodec/get_bits.h:391 [lsp] --
+static inline unsigned int get_bits1(GetBitContext *s) {
+   unsigned int index = s->index;
+   uint8_t result = s->buffer[index >> 3];
+   #ifdef ...
+   result >>= index & 7;
+   result &= 1;
+   ...
+   result <<= index & 7;
+   result >>= 8 - 1;
+   #endif
+   #if !UNCHECKED_BITSTREAM_READER
+   if(s->index < s->size_in_bits_plus8)
+   ...
+   #endif
+   index++;
+   s->index = index;
+   return result;
+}
+   [reads: s; writes: s*]
+
+-- called function: get_bits_left — libavcodec/get_bits.h:688 [lsp] --
+static inline int get_bits_left(GetBitContext *gb) {
+   return gb->size_in_bits - get_bits_count(gb);
+}
+   [reads: gb; writes: -]
+
+-- called macro: AVERROR_INVALIDDATA — libavutil/error.h:61 [gtags_unique, new version] --
+#define AVERROR_INVALIDDATA        FFERRTAG( 'I','N','D','A') ///< Invalid data found when processing input
+
+-- called macro: SKIP_TYPE_ROW — libavcodec/wmv2.h:30 [gtags_unique, new version] --
+#define SKIP_TYPE_ROW  2
+
+-- called macro: SKIP_TYPE_COL — libavcodec/wmv2.h:31 [gtags_unique, new version] --
+#define SKIP_TYPE_COL  3
+
+-- caller of parse_mb_skip: ff_wmv2_decode_secondary_picture_header — libavcodec/wmv2dec.c:499 --
+int ff_wmv2_decode_secondary_picture_header(H263DecContext *const h) {
+   WMV2DecContext *const w =(WMV2DecContext *)h;
+   if(h->c.pict_type == AV_PICTURE_TYPE_I) {
+   ...
+     if(w->j_type_bit)
+       w->j_type = get_bits1(&h->gb);
+     else
+       w->j_type = 0;
+     if(!w->j_type) {
+       if(w->per_mb_rl_bit)
+         w->ms.per_mb_rl_table = get_bits1(&h->gb);
+       else
+         w->ms.per_mb_rl_table = 0;
+       if(!w->ms.per_mb_rl_table) {
+         w->ms.rl_chroma_table_index = decode012(&h->gb);
+         w->ms.rl_table_index = decode012(&h->gb);
+       }
+       w->ms.dc_table_index = get_bits1(&h->gb);
+   ...
+     }
+   } else {
+   ...
+     w->j_type = 0;
+>    ret = parse_mb_skip(w);
+     if(ret < 0)
+       return ret;
+   ...
+   }
+}

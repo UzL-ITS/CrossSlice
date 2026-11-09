@@ -1,0 +1,1442 @@
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
+#ifdef crypto_ipcrypt_KEYBYTES
+  #endif
++ #ifdef crypto_xof_shake128_STATEBYTES
+  #endif
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_keygen) {
++ unsigned char key[crypto_ipcrypt_KEYBYTES];
++ if (zend_parse_parameters_none()== FAILURE) {
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_keygen(key);
++ RETURN_STRINGL((const char *)key, sizeof key);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_encrypt) {
++ char *ip;
++ size_t ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_BYTES];
++ unsigned char encrypted[crypto_ipcrypt_BYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ip, &ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, ip, ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_encrypt(encrypted, bin, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, encrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_decrypt) {
++ char *encrypted_ip;
++ size_t encrypted_ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_BYTES];
++ unsigned char decrypted[crypto_ipcrypt_BYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &encrypted_ip, &encrypted_ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, encrypted_ip, encrypted_ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_decrypt(decrypted, bin, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, decrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_nd_keygen) {
++ unsigned char key[crypto_ipcrypt_ND_KEYBYTES];
++ if (zend_parse_parameters_none()== FAILURE) {
++ RETURN_THROWS();
+  }
++ randombytes_buf(key, sizeof key);
++ RETURN_STRINGL((const char *)key, sizeof key);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_nd_encrypt) {
++ char *ip;
++ size_t ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_ND_INPUTBYTES];
++ unsigned char tweak[crypto_ipcrypt_ND_TWEAKBYTES];
++ unsigned char encrypted[crypto_ipcrypt_ND_OUTPUTBYTES];
++ char hex_out[crypto_ipcrypt_ND_OUTPUTBYTES * 2 + 1];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ip, &ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_ND_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_ND_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, ip, ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ randombytes_buf(tweak, sizeof tweak);
++ crypto_ipcrypt_nd_encrypt(encrypted, bin, tweak, key);
++ sodium_bin2hex(hex_out, sizeof hex_out, encrypted, sizeof encrypted);
++ RETURN_STRINGL(hex_out, crypto_ipcrypt_ND_OUTPUTBYTES * 2);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_nd_decrypt) {
++ char *ciphertext_hex;
++ size_t ciphertext_hex_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char encrypted[crypto_ipcrypt_ND_OUTPUTBYTES];
++ unsigned char decrypted[crypto_ipcrypt_ND_INPUTBYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ciphertext_hex, &ciphertext_hex_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_ND_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_ND_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (ciphertext_hex_len != crypto_ipcrypt_ND_OUTPUTBYTES * 2) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid hex-encoded ciphertext");
++ RETURN_THROWS();
+  }
++ if (sodium_hex2bin(encrypted, sizeof encrypted, ciphertext_hex, ciphertext_hex_len, NULL, NULL, NULL)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid hex-encoded ciphertext");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_nd_decrypt(decrypted, encrypted, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, decrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_ndx_keygen) {
++ unsigned char key[crypto_ipcrypt_NDX_KEYBYTES];
++ if (zend_parse_parameters_none()== FAILURE) {
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_ndx_keygen(key);
++ RETURN_STRINGL((const char *)key, sizeof key);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_ndx_encrypt) {
++ char *ip;
++ size_t ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_NDX_INPUTBYTES];
++ unsigned char tweak[crypto_ipcrypt_NDX_TWEAKBYTES];
++ unsigned char encrypted[crypto_ipcrypt_NDX_OUTPUTBYTES];
++ char hex_out[crypto_ipcrypt_NDX_OUTPUTBYTES * 2 + 1];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ip, &ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_NDX_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_NDX_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, ip, ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ randombytes_buf(tweak, sizeof tweak);
++ crypto_ipcrypt_ndx_encrypt(encrypted, bin, tweak, key);
++ sodium_bin2hex(hex_out, sizeof hex_out, encrypted, sizeof encrypted);
++ RETURN_STRINGL(hex_out, crypto_ipcrypt_NDX_OUTPUTBYTES * 2);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_ndx_decrypt) {
++ char *ciphertext_hex;
++ size_t ciphertext_hex_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char encrypted[crypto_ipcrypt_NDX_OUTPUTBYTES];
++ unsigned char decrypted[crypto_ipcrypt_NDX_INPUTBYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ciphertext_hex, &ciphertext_hex_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_NDX_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_NDX_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (ciphertext_hex_len != crypto_ipcrypt_NDX_OUTPUTBYTES * 2) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid hex-encoded ciphertext");
++ RETURN_THROWS();
+  }
++ if (sodium_hex2bin(encrypted, sizeof encrypted, ciphertext_hex, ciphertext_hex_len, NULL, NULL, NULL)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid hex-encoded ciphertext");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_ndx_decrypt(decrypted, encrypted, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, decrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_pfx_keygen) {
++ unsigned char key[crypto_ipcrypt_PFX_KEYBYTES];
++ if (zend_parse_parameters_none()== FAILURE) {
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_pfx_keygen(key);
++ RETURN_STRINGL((const char *)key, sizeof key);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_pfx_encrypt) {
++ char *ip;
++ size_t ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_PFX_BYTES];
++ unsigned char encrypted[crypto_ipcrypt_PFX_BYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &ip, &ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_PFX_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_PFX_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, ip, ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_pfx_encrypt(encrypted, bin, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, encrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_ipcrypt_pfx_decrypt) {
++ char *encrypted_ip;
++ size_t encrypted_ip_len;
++ unsigned char *key;
++ size_t key_len;
++ unsigned char bin[crypto_ipcrypt_PFX_BYTES];
++ unsigned char decrypted[crypto_ipcrypt_PFX_BYTES];
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ss", &encrypted_ip, &encrypted_ip_len, &key, &key_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (key_len != crypto_ipcrypt_PFX_KEYBYTES) {
++ zend_argument_error(sodium_exception_ce, 2, "must be SODIUM_CRYPTO_IPCRYPT_PFX_KEYBYTES bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, encrypted_ip, encrypted_ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ crypto_ipcrypt_pfx_decrypt(decrypted, bin, key);
++ if (sodium_bin2ip(ip_out, sizeof ip_out, decrypted)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_bin2ip) {
++ unsigned char *bin;
++ size_t bin_len;
++ char ip_out[46];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &bin, &bin_len)== FAILURE) {
++ RETURN_THROWS();
+  }
++ if (bin_len != 16) {
++ zend_argument_error(sodium_exception_ce, 1, "must be 16 bytes long");
++ RETURN_THROWS();
+  }
++ if (sodium_bin2ip(ip_out, sizeof ip_out, bin)== NULL) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ RETURN_STRING(ip_out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_ip2bin) {
++ char *ip;
++ size_t ip_len;
++ unsigned char bin[16];
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &ip, &ip_len)== FAILURE) {
++ RETURN_THROWS();
+  }
++ if (sodium_ip2bin(bin, ip, ip_len)!= 0) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a valid IP address");
++ RETURN_THROWS();
+  }
++ RETURN_STRINGL((const char *)bin, sizeof bin);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake128) {
++ zend_string *out;
++ unsigned char *msg;
++ zend_long out_len;
++ size_t msg_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ls", &out_len, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ if (crypto_xof_shake128((unsigned char *)ZSTR_VAL(out), (size_t)out_len, msg, (unsigned long long)msg_len)!= 0) {
++ zend_string_efree(out);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake128_init) {
++ crypto_xof_shake128_state state_tmp;
++ zend_string *state;
++ zend_long domain = -1;
++ bool domain_is_null = 1;
++ ZEND_PARSE_PARAMETERS_START(0, 1)
++ ;
++ memset(&state_tmp, 0, sizeof state_tmp);
++ if (domain_is_null) {
++ if (crypto_xof_shake128_init(&state_tmp)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
+  }
++ else {
++ if (domain < 0x01 || domain > 0x7f) {
++ zend_argument_error(sodium_exception_ce, 1, "must be between 0x01 and 0x7f");
++ RETURN_THROWS();
+  }
++ if (crypto_xof_shake128_init_with_domain(&state_tmp, (unsigned char)domain)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ }
++ state = zend_string_alloc(sizeof state_tmp, 0);
++ memcpy(ZSTR_VAL(state), &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(state)[sizeof state_tmp] = 0;
++ RETURN_STR(state);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake128_update) {
++ crypto_xof_shake128_state state_tmp;
++ zval *state_zv;
++ unsigned char *msg;
++ unsigned char *state;
++ size_t msg_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs", &state_zv, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_shake128_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_shake128_update(&state_tmp, msg, (unsigned long long)msg_len)!= 0) {
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ RETURN_TRUE;
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake128_squeeze) {
++ crypto_xof_shake128_state state_tmp;
++ zval *state_zv;
++ zend_string *out;
++ unsigned char *state;
++ zend_long out_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &state_zv, &out_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_shake128_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 2, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_shake128_squeeze(&state_tmp, (unsigned char *)ZSTR_VAL(out), (size_t)out_len)!= 0) {
++ zend_string_efree(out);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake256) {
++ zend_string *out;
++ unsigned char *msg;
++ zend_long out_len;
++ size_t msg_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ls", &out_len, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ if (crypto_xof_shake256((unsigned char *)ZSTR_VAL(out), (size_t)out_len, msg, (unsigned long long)msg_len)!= 0) {
++ zend_string_efree(out);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake256_init) {
++ crypto_xof_shake256_state state_tmp;
++ zend_string *state;
++ zend_long domain = -1;
++ bool domain_is_null = 1;
++ ZEND_PARSE_PARAMETERS_START(0, 1)
++ ;
++ memset(&state_tmp, 0, sizeof state_tmp);
++ if (domain_is_null) {
++ if (crypto_xof_shake256_init(&state_tmp)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
+  }
++ else {
++ if (domain < 0x01 || domain > 0x7f) {
++ zend_argument_error(sodium_exception_ce, 1, "must be between 0x01 and 0x7f");
++ RETURN_THROWS();
+  }
++ if (crypto_xof_shake256_init_with_domain(&state_tmp, (unsigned char)domain)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ }
++ state = zend_string_alloc(sizeof state_tmp, 0);
++ memcpy(ZSTR_VAL(state), &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(state)[sizeof state_tmp] = 0;
++ RETURN_STR(state);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake256_update) {
++ crypto_xof_shake256_state state_tmp;
++ zval *state_zv;
++ unsigned char *msg;
++ unsigned char *state;
++ size_t msg_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs", &state_zv, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_shake256_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_shake256_update(&state_tmp, msg, (unsigned long long)msg_len)!= 0) {
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ RETURN_TRUE;
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_shake256_squeeze) {
++ crypto_xof_shake256_state state_tmp;
++ zval *state_zv;
++ zend_string *out;
++ unsigned char *state;
++ zend_long out_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &state_zv, &out_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_shake256_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 2, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_shake256_squeeze(&state_tmp, (unsigned char *)ZSTR_VAL(out), (size_t)out_len)!= 0) {
++ zend_string_efree(out);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake128) {
++ zend_string *out;
++ unsigned char *msg;
++ zend_long out_len;
++ size_t msg_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ls", &out_len, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ if (crypto_xof_turboshake128((unsigned char *)ZSTR_VAL(out), (size_t)out_len, msg, (unsigned long long)msg_len)!= 0) {
++ zend_string_efree(out);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake128_init) {
++ crypto_xof_turboshake128_state state_tmp;
++ zend_string *state;
++ zend_long domain = -1;
++ bool domain_is_null = 1;
++ ZEND_PARSE_PARAMETERS_START(0, 1)
++ ;
++ memset(&state_tmp, 0, sizeof state_tmp);
++ if (domain_is_null) {
++ if (crypto_xof_turboshake128_init(&state_tmp)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
+  }
++ else {
++ if (domain < 0x01 || domain > 0x7f) {
++ zend_argument_error(sodium_exception_ce, 1, "must be between 0x01 and 0x7f");
++ RETURN_THROWS();
+  }
++ if (crypto_xof_turboshake128_init_with_domain(&state_tmp, (unsigned char)domain)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ }
++ state = zend_string_alloc(sizeof state_tmp, 0);
++ memcpy(ZSTR_VAL(state), &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(state)[sizeof state_tmp] = 0;
++ RETURN_STR(state);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake128_update) {
++ crypto_xof_turboshake128_state state_tmp;
++ zval *state_zv;
++ unsigned char *msg;
++ unsigned char *state;
++ size_t msg_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs", &state_zv, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_turboshake128_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_turboshake128_update(&state_tmp, msg, (unsigned long long)msg_len)!= 0) {
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ RETURN_TRUE;
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake128_squeeze) {
++ crypto_xof_turboshake128_state state_tmp;
++ zval *state_zv;
++ zend_string *out;
++ unsigned char *state;
++ zend_long out_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &state_zv, &out_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_turboshake128_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 2, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_turboshake128_squeeze(&state_tmp, (unsigned char *)ZSTR_VAL(out), (size_t)out_len)!= 0) {
++ zend_string_efree(out);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake256) {
++ zend_string *out;
++ unsigned char *msg;
++ zend_long out_len;
++ size_t msg_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "ls", &out_len, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ if (crypto_xof_turboshake256((unsigned char *)ZSTR_VAL(out), (size_t)out_len, msg, (unsigned long long)msg_len)!= 0) {
++ zend_string_efree(out);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake256_init) {
++ crypto_xof_turboshake256_state state_tmp;
++ zend_string *state;
++ zend_long domain = -1;
++ bool domain_is_null = 1;
++ ZEND_PARSE_PARAMETERS_START(0, 1)
++ ;
++ memset(&state_tmp, 0, sizeof state_tmp);
++ if (domain_is_null) {
++ if (crypto_xof_turboshake256_init(&state_tmp)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
+  }
++ else {
++ if (domain < 0x01 || domain > 0x7f) {
++ zend_argument_error(sodium_exception_ce, 1, "must be between 0x01 and 0x7f");
++ RETURN_THROWS();
+  }
++ if (crypto_xof_turboshake256_init_with_domain(&state_tmp, (unsigned char)domain)!= 0) {
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ }
++ state = zend_string_alloc(sizeof state_tmp, 0);
++ memcpy(ZSTR_VAL(state), &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(state)[sizeof state_tmp] = 0;
++ RETURN_STR(state);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake256_update) {
++ crypto_xof_turboshake256_state state_tmp;
++ zval *state_zv;
++ unsigned char *msg;
++ unsigned char *state;
++ size_t msg_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zs", &state_zv, &msg, &msg_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_turboshake256_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_turboshake256_update(&state_tmp, msg, (unsigned long long)msg_len)!= 0) {
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ RETURN_TRUE;
+}
+
+Context for merged statement of old file: ext/sodium/libsodium.c with new file: ext/sodium/libsodium.c:
++ PHP_FUNCTION (sodium_crypto_xof_turboshake256_squeeze) {
++ crypto_xof_turboshake256_state state_tmp;
++ zval *state_zv;
++ zend_string *out;
++ unsigned char *state;
++ zend_long out_len;
++ size_t state_len;
++ if (zend_parse_parameters(ZEND_NUM_ARGS(), "zl", &state_zv, &out_len)== FAILURE) {
++ sodium_remove_param_values_from_backtrace(EG(exception));
++ RETURN_THROWS();
+  }
++ ZVAL_DEREF(state_zv);
++ if (Z_TYPE_P(state_zv)!= IS_STRING) {
++ zend_argument_error(sodium_exception_ce, 1, "must be a reference to a state");
++ RETURN_THROWS();
+  }
++ sodium_separate_string(state_zv);
++ state =(unsigned char *)Z_STRVAL(*state_zv);
++ state_len = Z_STRLEN(*state_zv);
++ if (state_len != sizeof(crypto_xof_turboshake256_state)) {
++ zend_argument_error(sodium_exception_ce, 1, "must have a correct state length");
++ RETURN_THROWS();
+  }
++ if (out_len <= 0 || out_len > ZSTR_MAX_LEN) {
++ zend_argument_error(sodium_exception_ce, 2, "must be a positive integer");
++ RETURN_THROWS();
+  }
++ out = zend_string_alloc((size_t)out_len, 0);
++ memcpy(&state_tmp, state, sizeof state_tmp);
++ if (crypto_xof_turboshake256_squeeze(&state_tmp, (unsigned char *)ZSTR_VAL(out), (size_t)out_len)!= 0) {
++ zend_string_efree(out);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ zend_throw_exception(sodium_exception_ce, "internal error", 0);
++ RETURN_THROWS();
+  }
++ memcpy(state, &state_tmp, sizeof state_tmp);
++ sodium_memzero(&state_tmp, sizeof state_tmp);
++ ZSTR_VAL(out)[out_len] = 0;
++ RETURN_NEW_STR(out);
+}
+
+Context for merged statement of old file: ext/sodium/libsodium_arginfo.h with new file: ext/sodium/libsodium_arginfo.h:
++ #if defined(crypto_ipcrypt_KEYBYTES)
++ #define arginfo_sodium_crypto_ipcrypt_nd_keygen arginfo_sodium_crypto_ipcrypt_keygen
++ #define arginfo_sodium_crypto_ipcrypt_nd_encrypt arginfo_sodium_crypto_ipcrypt_encrypt
++ #define arginfo_sodium_crypto_ipcrypt_ndx_keygen arginfo_sodium_crypto_ipcrypt_keygen
++ #define arginfo_sodium_crypto_ipcrypt_ndx_encrypt arginfo_sodium_crypto_ipcrypt_encrypt
++ #define arginfo_sodium_crypto_ipcrypt_ndx_decrypt arginfo_sodium_crypto_ipcrypt_nd_decrypt
++ #define arginfo_sodium_crypto_ipcrypt_pfx_keygen arginfo_sodium_crypto_ipcrypt_keygen
++ #define arginfo_sodium_crypto_ipcrypt_pfx_encrypt arginfo_sodium_crypto_ipcrypt_encrypt
+- #define arginfo_sodium_crypto_scalarmult_base arginfo_sodium_crypto_box_publickey_from_secretkey
++ #define arginfo_sodium_crypto_ipcrypt_pfx_decrypt arginfo_sodium_crypto_ipcrypt_decrypt
+  #endif
++ #if defined(crypto_xof_shake128_STATEBYTES)
++ #define arginfo_sodium_crypto_xof_shake256 arginfo_sodium_crypto_xof_shake128
++ #define arginfo_sodium_crypto_xof_shake256_init arginfo_sodium_crypto_xof_shake128_init
++ #define arginfo_sodium_crypto_xof_shake256_update arginfo_sodium_crypto_xof_shake128_update
++ #define arginfo_sodium_crypto_xof_shake256_squeeze arginfo_sodium_crypto_xof_shake128_squeeze
++ #define arginfo_sodium_crypto_xof_turboshake128 arginfo_sodium_crypto_xof_shake128
++ #define arginfo_sodium_crypto_xof_turboshake128_init arginfo_sodium_crypto_xof_shake128_init
++ #define arginfo_sodium_crypto_xof_turboshake128_update arginfo_sodium_crypto_xof_shake128_update
++ #define arginfo_sodium_crypto_xof_turboshake128_squeeze arginfo_sodium_crypto_xof_shake128_squeeze
++ #define arginfo_sodium_crypto_xof_turboshake256 arginfo_sodium_crypto_xof_shake128
++ #define arginfo_sodium_crypto_xof_turboshake256_init arginfo_sodium_crypto_xof_shake128_init
++ #define arginfo_sodium_crypto_xof_turboshake256_update arginfo_sodium_crypto_xof_shake128_update
++ #define arginfo_sodium_crypto_xof_turboshake256_squeeze arginfo_sodium_crypto_xof_shake128_squeeze
+  #endif
++ #if defined(crypto_ipcrypt_KEYBYTES)
+  #endif
+   #if defined(crypto_xof_shake128_STATEBYTES)
+  #endif
+- static const zend_function_entry ext_functions[] = { ZEND_FE(sodium_crypto_aead_aes256gcm_is_available, arginfo_sodium_crypto_aead_aes256gcm_is_available)#if defined(HAVE_AESGCM)ZEND_FE(sodium_crypto_aead_aes256gcm_decrypt, arginfo_sodium_crypto_aead_aes256gcm_decrypt)ZEND_FE(sodium_crypto_aead_aes256gcm_encrypt, arginfo_sodium_crypto_aead_aes256gcm_encrypt)ZEND_FE(sodium_crypto_aead_aes256gcm_keygen, arginfo_sodium_crypto_aead_aes256gcm_keygen)#endif #if defined(crypto_aead_aegis128l_KEYBYTES)ZEND_FE(sodium_crypto_aead_aegis128l_decrypt, arginfo_sodium_crypto_aead_aegis128l_decrypt)ZEND_FE(sodium_crypto_aead_aegis128l_encrypt, arginfo_sodium_crypto_aead_aegis128l_encrypt)ZEND_FE(sodium_crypto_aead_aegis128l_keygen, arginfo_sodium_crypto_aead_aegis128l_keygen)#endif #if defined(crypto_aead_aegis256_KEYBYTES)ZEND_FE(sodium_crypto_aead_aegis256_decrypt, arginfo_sodium_crypto_aead_aegis256_decrypt)ZEND_FE(sodium_crypto_aead_aegis256_encrypt, arginfo_sodium_crypto_aead_aegis256_encrypt)ZEND_FE(sodium_crypto_aead_aegis256_keygen, arginfo_sodium_crypto_aead_aegis256_keygen)#endif ZEND_FE(sodium_crypto_aead_chacha20poly1305_decrypt, arginfo_sodium_crypto_aead_chacha20poly1305_decrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_encrypt, arginfo_sodium_crypto_aead_chacha20poly1305_encrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_keygen, arginfo_sodium_crypto_aead_chacha20poly1305_keygen)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_decrypt, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_decrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_encrypt, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_encrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_keygen, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_keygen)#if defined(crypto_aead_xchacha20poly1305_IETF_NPUBBYTES)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_decrypt, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_decrypt)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_keygen, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_keygen)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_encrypt, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_encrypt)#endif ZEND_FE(sodium_crypto_auth, arginfo_sodium_crypto_auth)ZEND_FE(sodium_crypto_auth_keygen, arginfo_sodium_crypto_auth_keygen)ZEND_FE(sodium_crypto_auth_verify, arginfo_sodium_crypto_auth_verify)ZEND_FE(sodium_crypto_box, arginfo_sodium_crypto_box)ZEND_FE(sodium_crypto_box_keypair, arginfo_sodium_crypto_box_keypair)ZEND_FE(sodium_crypto_box_seed_keypair, arginfo_sodium_crypto_box_seed_keypair)ZEND_FE(sodium_crypto_box_keypair_from_secretkey_and_publickey, arginfo_sodium_crypto_box_keypair_from_secretkey_and_publickey)ZEND_FE(sodium_crypto_box_open, arginfo_sodium_crypto_box_open)ZEND_FE(sodium_crypto_box_publickey, arginfo_sodium_crypto_box_publickey)ZEND_FE(sodium_crypto_box_publickey_from_secretkey, arginfo_sodium_crypto_box_publickey_from_secretkey)ZEND_FE(sodium_crypto_box_seal, arginfo_sodium_crypto_box_seal)ZEND_FE(sodium_crypto_box_seal_open, arginfo_sodium_crypto_box_seal_open)ZEND_FE(sodium_crypto_box_secretkey, arginfo_sodium_crypto_box_secretkey)#if defined(crypto_core_ristretto255_HASHBYTES)ZEND_FE(sodium_crypto_core_ristretto255_add, arginfo_sodium_crypto_core_ristretto255_add)ZEND_FE(sodium_crypto_core_ristretto255_from_hash, arginfo_sodium_crypto_core_ristretto255_from_hash)ZEND_FE(sodium_crypto_core_ristretto255_is_valid_point, arginfo_sodium_crypto_core_ristretto255_is_valid_point)ZEND_FE(sodium_crypto_core_ristretto255_random, arginfo_sodium_crypto_core_ristretto255_random)ZEND_FE(sodium_crypto_core_ristretto255_scalar_add, arginfo_sodium_crypto_core_ristretto255_scalar_add)ZEND_FE(sodium_crypto_core_ristretto255_scalar_complement, arginfo_sodium_crypto_core_ristretto255_scalar_complement)ZEND_FE(sodium_crypto_core_ristretto255_scalar_invert, arginfo_sodium_crypto_core_ristretto255_scalar_invert)ZEND_FE(sodium_crypto_core_ristretto255_scalar_mul, arginfo_sodium_crypto_core_ristretto255_scalar_mul)ZEND_FE(sodium_crypto_core_ristretto255_scalar_negate, arginfo_sodium_crypto_core_ristretto255_scalar_negate)ZEND_FE(sodium_crypto_core_ristretto255_scalar_random, arginfo_sodium_crypto_core_ristretto255_scalar_random)ZEND_FE(sodium_crypto_core_ristretto255_scalar_reduce, arginfo_sodium_crypto_core_ristretto255_scalar_reduce)ZEND_FE(sodium_crypto_core_ristretto255_scalar_sub, arginfo_sodium_crypto_core_ristretto255_scalar_sub)ZEND_FE(sodium_crypto_core_ristretto255_sub, arginfo_sodium_crypto_core_ristretto255_sub)#endif ZEND_FE(sodium_crypto_kx_keypair, arginfo_sodium_crypto_kx_keypair)ZEND_FE(sodium_crypto_kx_publickey, arginfo_sodium_crypto_kx_publickey)ZEND_FE(sodium_crypto_kx_secretkey, arginfo_sodium_crypto_kx_secretkey)ZEND_FE(sodium_crypto_kx_seed_keypair, arginfo_sodium_crypto_kx_seed_keypair)ZEND_FE(sodium_crypto_kx_client_session_keys, arginfo_sodium_crypto_kx_client_session_keys)ZEND_FE(sodium_crypto_kx_server_session_keys, arginfo_sodium_crypto_kx_server_session_keys)ZEND_FE(sodium_crypto_generichash, arginfo_sodium_crypto_generichash)ZEND_FE(sodium_crypto_generichash_keygen, arginfo_sodium_crypto_generichash_keygen)ZEND_FE(sodium_crypto_generichash_init, arginfo_sodium_crypto_generichash_init)ZEND_FE(sodium_crypto_generichash_update, arginfo_sodium_crypto_generichash_update)ZEND_FE(sodium_crypto_generichash_final, arginfo_sodium_crypto_generichash_final)ZEND_FE(sodium_crypto_kdf_derive_from_key, arginfo_sodium_crypto_kdf_derive_from_key)ZEND_FE(sodium_crypto_kdf_keygen, arginfo_sodium_crypto_kdf_keygen)#if defined(crypto_pwhash_SALTBYTES)ZEND_FE(sodium_crypto_pwhash, arginfo_sodium_crypto_pwhash)ZEND_FE(sodium_crypto_pwhash_str, arginfo_sodium_crypto_pwhash_str)ZEND_FE(sodium_crypto_pwhash_str_verify, arginfo_sodium_crypto_pwhash_str_verify)#endif #if SODIUM_LIBRARY_VERSION_MAJOR > 9 ||(SODIUM_LIBRARY_VERSION_MAJOR == 9 && SODIUM_LIBRARY_VERSION_MINOR >= 6)ZEND_FE(sodium_crypto_pwhash_str_needs_rehash, arginfo_sodium_crypto_pwhash_str_needs_rehash)#endif #if defined(crypto_pwhash_scryptsalsa208sha256_SALTBYTES)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256_str, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256_str)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256_str_verify, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256_str_verify)#endif ZEND_FE(sodium_crypto_scalarmult, arginfo_sodium_crypto_scalarmult)#if defined(crypto_core_ristretto255_HASHBYTES)ZEND_FE(sodium_crypto_scalarmult_ristretto255, arginfo_sodium_crypto_scalarmult_ristretto255)ZEND_FE(sodium_crypto_scalarmult_ristretto255_base, arginfo_sodium_crypto_scalarmult_ristretto255_base)#endif ZEND_FE(sodium_crypto_secretbox, arginfo_sodium_crypto_secretbox)ZEND_FE(sodium_crypto_secretbox_keygen, arginfo_sodium_crypto_secretbox_keygen)ZEND_FE(sodium_crypto_secretbox_open, arginfo_sodium_crypto_secretbox_open)#if defined(crypto_secretstream_xchacha20poly1305_ABYTES)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_keygen, arginfo_sodium_crypto_secretstream_xchacha20poly1305_keygen)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_init_push, arginfo_sodium_crypto_secretstream_xchacha20poly1305_init_push)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_push, arginfo_sodium_crypto_secretstream_xchacha20poly1305_push)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_init_pull, arginfo_sodium_crypto_secretstream_xchacha20poly1305_init_pull)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_pull, arginfo_sodium_crypto_secretstream_xchacha20poly1305_pull)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_rekey, arginfo_sodium_crypto_secretstream_xchacha20poly1305_rekey)#endif ZEND_FE(sodium_crypto_shorthash, arginfo_sodium_crypto_shorthash)ZEND_FE(sodium_crypto_shorthash_keygen, arginfo_sodium_crypto_shorthash_keygen)ZEND_FE(sodium_crypto_sign, arginfo_sodium_crypto_sign)ZEND_FE(sodium_crypto_sign_detached, arginfo_sodium_crypto_sign_detached)ZEND_FE(sodium_crypto_sign_ed25519_pk_to_curve25519, arginfo_sodium_crypto_sign_ed25519_pk_to_curve25519)ZEND_FE(sodium_crypto_sign_ed25519_sk_to_curve25519, arginfo_sodium_crypto_sign_ed25519_sk_to_curve25519)ZEND_FE(sodium_crypto_sign_keypair, arginfo_sodium_crypto_sign_keypair)ZEND_FE(sodium_crypto_sign_keypair_from_secretkey_and_publickey, arginfo_sodium_crypto_sign_keypair_from_secretkey_and_publickey)ZEND_FE(sodium_crypto_sign_open, arginfo_sodium_crypto_sign_open)ZEND_FE(sodium_crypto_sign_publickey, arginfo_sodium_crypto_sign_publickey)ZEND_FE(sodium_crypto_sign_secretkey, arginfo_sodium_crypto_sign_secretkey)ZEND_FE(sodium_crypto_sign_publickey_from_secretkey, arginfo_sodium_crypto_sign_publickey_from_secretkey)ZEND_FE(sodium_crypto_sign_seed_keypair, arginfo_sodium_crypto_sign_seed_keypair)ZEND_FE(sodium_crypto_sign_verify_detached, arginfo_sodium_crypto_sign_verify_detached)ZEND_FE(sodium_crypto_stream, arginfo_sodium_crypto_stream)ZEND_FE(sodium_crypto_stream_keygen, arginfo_sodium_crypto_stream_keygen)ZEND_FE(sodium_crypto_stream_xor, arginfo_sodium_crypto_stream_xor)#if defined(crypto_stream_xchacha20_KEYBYTES)ZEND_FE(sodium_crypto_stream_xchacha20, arginfo_sodium_crypto_stream_xchacha20)ZEND_FE(sodium_crypto_stream_xchacha20_keygen, arginfo_sodium_crypto_stream_xchacha20_keygen)ZEND_FE(sodium_crypto_stream_xchacha20_xor, arginfo_sodium_crypto_stream_xchacha20_xor)ZEND_FE(sodium_crypto_stream_xchacha20_xor_ic, arginfo_sodium_crypto_stream_xchacha20_xor_ic)#endif ZEND_FE(sodium_add, arginfo_sodium_add)ZEND_FE(sodium_compare, arginfo_sodium_compare)ZEND_FE(sodium_increment, arginfo_sodium_increment)ZEND_FE(sodium_memcmp, arginfo_sodium_memcmp)ZEND_FE(sodium_memzero, arginfo_sodium_memzero)ZEND_FE(sodium_pad, arginfo_sodium_pad)ZEND_FE(sodium_unpad, arginfo_sodium_unpad)ZEND_FE(sodium_bin2hex, arginfo_sodium_bin2hex)ZEND_FE(sodium_hex2bin, arginfo_sodium_hex2bin)#if defined(sodium_base64_VARIANT_ORIGINAL)ZEND_FE(sodium_bin2base64, arginfo_sodium_bin2base64)ZEND_FE(sodium_base642bin, arginfo_sodium_base642bin)#endif ZEND_RAW_FENTRY("sodium_crypto_scalarmult_base", zif_sodium_crypto_box_publickey_from_secretkey, arginfo_sodium_crypto_scalarmult_base, 0, NULL, NULL)ZEND_FE_END };
++ static const zend_function_entry ext_functions[] = { ZEND_FE(sodium_crypto_aead_aes256gcm_is_available, arginfo_sodium_crypto_aead_aes256gcm_is_available)#if defined(HAVE_AESGCM)ZEND_FE(sodium_crypto_aead_aes256gcm_decrypt, arginfo_sodium_crypto_aead_aes256gcm_decrypt)ZEND_FE(sodium_crypto_aead_aes256gcm_encrypt, arginfo_sodium_crypto_aead_aes256gcm_encrypt)ZEND_FE(sodium_crypto_aead_aes256gcm_keygen, arginfo_sodium_crypto_aead_aes256gcm_keygen)#endif #if defined(crypto_aead_aegis128l_KEYBYTES)ZEND_FE(sodium_crypto_aead_aegis128l_decrypt, arginfo_sodium_crypto_aead_aegis128l_decrypt)ZEND_FE(sodium_crypto_aead_aegis128l_encrypt, arginfo_sodium_crypto_aead_aegis128l_encrypt)ZEND_FE(sodium_crypto_aead_aegis128l_keygen, arginfo_sodium_crypto_aead_aegis128l_keygen)#endif #if defined(crypto_aead_aegis256_KEYBYTES)ZEND_FE(sodium_crypto_aead_aegis256_decrypt, arginfo_sodium_crypto_aead_aegis256_decrypt)ZEND_FE(sodium_crypto_aead_aegis256_encrypt, arginfo_sodium_crypto_aead_aegis256_encrypt)ZEND_FE(sodium_crypto_aead_aegis256_keygen, arginfo_sodium_crypto_aead_aegis256_keygen)#endif ZEND_FE(sodium_crypto_aead_chacha20poly1305_decrypt, arginfo_sodium_crypto_aead_chacha20poly1305_decrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_encrypt, arginfo_sodium_crypto_aead_chacha20poly1305_encrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_keygen, arginfo_sodium_crypto_aead_chacha20poly1305_keygen)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_decrypt, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_decrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_encrypt, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_encrypt)ZEND_FE(sodium_crypto_aead_chacha20poly1305_ietf_keygen, arginfo_sodium_crypto_aead_chacha20poly1305_ietf_keygen)#if defined(crypto_aead_xchacha20poly1305_IETF_NPUBBYTES)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_decrypt, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_decrypt)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_keygen, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_keygen)ZEND_FE(sodium_crypto_aead_xchacha20poly1305_ietf_encrypt, arginfo_sodium_crypto_aead_xchacha20poly1305_ietf_encrypt)#endif ZEND_FE(sodium_crypto_auth, arginfo_sodium_crypto_auth)ZEND_FE(sodium_crypto_auth_keygen, arginfo_sodium_crypto_auth_keygen)ZEND_FE(sodium_crypto_auth_verify, arginfo_sodium_crypto_auth_verify)ZEND_FE(sodium_crypto_box, arginfo_sodium_crypto_box)ZEND_FE(sodium_crypto_box_keypair, arginfo_sodium_crypto_box_keypair)ZEND_FE(sodium_crypto_box_seed_keypair, arginfo_sodium_crypto_box_seed_keypair)ZEND_FE(sodium_crypto_box_keypair_from_secretkey_and_publickey, arginfo_sodium_crypto_box_keypair_from_secretkey_and_publickey)ZEND_FE(sodium_crypto_box_open, arginfo_sodium_crypto_box_open)ZEND_FE(sodium_crypto_box_publickey, arginfo_sodium_crypto_box_publickey)ZEND_FE(sodium_crypto_box_publickey_from_secretkey, arginfo_sodium_crypto_box_publickey_from_secretkey)ZEND_FE(sodium_crypto_box_seal, arginfo_sodium_crypto_box_seal)ZEND_FE(sodium_crypto_box_seal_open, arginfo_sodium_crypto_box_seal_open)ZEND_FE(sodium_crypto_box_secretkey, arginfo_sodium_crypto_box_secretkey)#if defined(crypto_core_ristretto255_HASHBYTES)ZEND_FE(sodium_crypto_core_ristretto255_add, arginfo_sodium_crypto_core_ristretto255_add)ZEND_FE(sodium_crypto_core_ristretto255_from_hash, arginfo_sodium_crypto_core_ristretto255_from_hash)ZEND_FE(sodium_crypto_core_ristretto255_is_valid_point, arginfo_sodium_crypto_core_ristretto255_is_valid_point)ZEND_FE(sodium_crypto_core_ristretto255_random, arginfo_sodium_crypto_core_ristretto255_random)ZEND_FE(sodium_crypto_core_ristretto255_scalar_add, arginfo_sodium_crypto_core_ristretto255_scalar_add)ZEND_FE(sodium_crypto_core_ristretto255_scalar_complement, arginfo_sodium_crypto_core_ristretto255_scalar_complement)ZEND_FE(sodium_crypto_core_ristretto255_scalar_invert, arginfo_sodium_crypto_core_ristretto255_scalar_invert)ZEND_FE(sodium_crypto_core_ristretto255_scalar_mul, arginfo_sodium_crypto_core_ristretto255_scalar_mul)ZEND_FE(sodium_crypto_core_ristretto255_scalar_negate, arginfo_sodium_crypto_core_ristretto255_scalar_negate)ZEND_FE(sodium_crypto_core_ristretto255_scalar_random, arginfo_sodium_crypto_core_ristretto255_scalar_random)ZEND_FE(sodium_crypto_core_ristretto255_scalar_reduce, arginfo_sodium_crypto_core_ristretto255_scalar_reduce)ZEND_FE(sodium_crypto_core_ristretto255_scalar_sub, arginfo_sodium_crypto_core_ristretto255_scalar_sub)ZEND_FE(sodium_crypto_core_ristretto255_sub, arginfo_sodium_crypto_core_ristretto255_sub)#endif ZEND_FE(sodium_crypto_kx_keypair, arginfo_sodium_crypto_kx_keypair)ZEND_FE(sodium_crypto_kx_publickey, arginfo_sodium_crypto_kx_publickey)ZEND_FE(sodium_crypto_kx_secretkey, arginfo_sodium_crypto_kx_secretkey)ZEND_FE(sodium_crypto_kx_seed_keypair, arginfo_sodium_crypto_kx_seed_keypair)ZEND_FE(sodium_crypto_kx_client_session_keys, arginfo_sodium_crypto_kx_client_session_keys)ZEND_FE(sodium_crypto_kx_server_session_keys, arginfo_sodium_crypto_kx_server_session_keys)ZEND_FE(sodium_crypto_generichash, arginfo_sodium_crypto_generichash)ZEND_FE(sodium_crypto_generichash_keygen, arginfo_sodium_crypto_generichash_keygen)ZEND_FE(sodium_crypto_generichash_init, arginfo_sodium_crypto_generichash_init)ZEND_FE(sodium_crypto_generichash_update, arginfo_sodium_crypto_generichash_update)ZEND_FE(sodium_crypto_generichash_final, arginfo_sodium_crypto_generichash_final)ZEND_FE(sodium_crypto_kdf_derive_from_key, arginfo_sodium_crypto_kdf_derive_from_key)ZEND_FE(sodium_crypto_kdf_keygen, arginfo_sodium_crypto_kdf_keygen)#if defined(crypto_pwhash_SALTBYTES)ZEND_FE(sodium_crypto_pwhash, arginfo_sodium_crypto_pwhash)ZEND_FE(sodium_crypto_pwhash_str, arginfo_sodium_crypto_pwhash_str)ZEND_FE(sodium_crypto_pwhash_str_verify, arginfo_sodium_crypto_pwhash_str_verify)#endif #if SODIUM_LIBRARY_VERSION_MAJOR > 9 ||(SODIUM_LIBRARY_VERSION_MAJOR == 9 && SODIUM_LIBRARY_VERSION_MINOR >= 6)ZEND_FE(sodium_crypto_pwhash_str_needs_rehash, arginfo_sodium_crypto_pwhash_str_needs_rehash)#endif #if defined(crypto_pwhash_scryptsalsa208sha256_SALTBYTES)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256_str, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256_str)ZEND_FE(sodium_crypto_pwhash_scryptsalsa208sha256_str_verify, arginfo_sodium_crypto_pwhash_scryptsalsa208sha256_str_verify)#endif ZEND_FE(sodium_crypto_scalarmult, arginfo_sodium_crypto_scalarmult)#if defined(crypto_core_ristretto255_HASHBYTES)ZEND_FE(sodium_crypto_scalarmult_ristretto255, arginfo_sodium_crypto_scalarmult_ristretto255)ZEND_FE(sodium_crypto_scalarmult_ristretto255_base, arginfo_sodium_crypto_scalarmult_ristretto255_base)#endif ZEND_FE(sodium_crypto_secretbox, arginfo_sodium_crypto_secretbox)ZEND_FE(sodium_crypto_secretbox_keygen, arginfo_sodium_crypto_secretbox_keygen)ZEND_FE(sodium_crypto_secretbox_open, arginfo_sodium_crypto_secretbox_open)#if defined(crypto_secretstream_xchacha20poly1305_ABYTES)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_keygen, arginfo_sodium_crypto_secretstream_xchacha20poly1305_keygen)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_init_push, arginfo_sodium_crypto_secretstream_xchacha20poly1305_init_push)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_push, arginfo_sodium_crypto_secretstream_xchacha20poly1305_push)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_init_pull, arginfo_sodium_crypto_secretstream_xchacha20poly1305_init_pull)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_pull, arginfo_sodium_crypto_secretstream_xchacha20poly1305_pull)ZEND_FE(sodium_crypto_secretstream_xchacha20poly1305_rekey, arginfo_sodium_crypto_secretstream_xchacha20poly1305_rekey)#endif ZEND_FE(sodium_crypto_shorthash, arginfo_sodium_crypto_shorthash)ZEND_FE(sodium_crypto_shorthash_keygen, arginfo_sodium_crypto_shorthash_keygen)ZEND_FE(sodium_crypto_sign, arginfo_sodium_crypto_sign)ZEND_FE(sodium_crypto_sign_detached, arginfo_sodium_crypto_sign_detached)ZEND_FE(sodium_crypto_sign_ed25519_pk_to_curve25519, arginfo_sodium_crypto_sign_ed25519_pk_to_curve25519)ZEND_FE(sodium_crypto_sign_ed25519_sk_to_curve25519, arginfo_sodium_crypto_sign_ed25519_sk_to_curve25519)ZEND_FE(sodium_crypto_sign_keypair, arginfo_sodium_crypto_sign_keypair)ZEND_FE(sodium_crypto_sign_keypair_from_secretkey_and_publickey, arginfo_sodium_crypto_sign_keypair_from_secretkey_and_publickey)ZEND_FE(sodium_crypto_sign_open, arginfo_sodium_crypto_sign_open)ZEND_FE(sodium_crypto_sign_publickey, arginfo_sodium_crypto_sign_publickey)ZEND_FE(sodium_crypto_sign_secretkey, arginfo_sodium_crypto_sign_secretkey)ZEND_FE(sodium_crypto_sign_publickey_from_secretkey, arginfo_sodium_crypto_sign_publickey_from_secretkey)ZEND_FE(sodium_crypto_sign_seed_keypair, arginfo_sodium_crypto_sign_seed_keypair)ZEND_FE(sodium_crypto_sign_verify_detached, arginfo_sodium_crypto_sign_verify_detached)ZEND_FE(sodium_crypto_stream, arginfo_sodium_crypto_stream)ZEND_FE(sodium_crypto_stream_keygen, arginfo_sodium_crypto_stream_keygen)ZEND_FE(sodium_crypto_stream_xor, arginfo_sodium_crypto_stream_xor)#if defined(crypto_stream_xchacha20_KEYBYTES)ZEND_FE(sodium_crypto_stream_xchacha20, arginfo_sodium_crypto_stream_xchacha20)ZEND_FE(sodium_crypto_stream_xchacha20_keygen, arginfo_sodium_crypto_stream_xchacha20_keygen)ZEND_FE(sodium_crypto_stream_xchacha20_xor, arginfo_sodium_crypto_stream_xchacha20_xor)ZEND_FE(sodium_crypto_stream_xchacha20_xor_ic, arginfo_sodium_crypto_stream_xchacha20_xor_ic)#endif ZEND_FE(sodium_add, arginfo_sodium_add)ZEND_FE(sodium_compare, arginfo_sodium_compare)ZEND_FE(sodium_increment, arginfo_sodium_increment)ZEND_FE(sodium_memcmp, arginfo_sodium_memcmp)ZEND_FE(sodium_memzero, arginfo_sodium_memzero)ZEND_FE(sodium_pad, arginfo_sodium_pad)ZEND_FE(sodium_unpad, arginfo_sodium_unpad)ZEND_FE(sodium_bin2hex, arginfo_sodium_bin2hex)ZEND_FE(sodium_hex2bin, arginfo_sodium_hex2bin)#if defined(sodium_base64_VARIANT_ORIGINAL)ZEND_FE(sodium_bin2base64, arginfo_sodium_bin2base64)ZEND_FE(sodium_base642bin, arginfo_sodium_base642bin)#endif ZEND_RAW_FENTRY("sodium_crypto_scalarmult_base", zif_sodium_crypto_box_publickey_from_secretkey, arginfo_sodium_crypto_scalarmult_base, 0, NULL, NULL)#if defined(crypto_ipcrypt_KEYBYTES)ZEND_FE(sodium_crypto_ipcrypt_keygen, arginfo_sodium_crypto_ipcrypt_keygen)ZEND_FE(sodium_crypto_ipcrypt_encrypt, arginfo_sodium_crypto_ipcrypt_encrypt)ZEND_FE(sodium_crypto_ipcrypt_decrypt, arginfo_sodium_crypto_ipcrypt_decrypt)ZEND_FE(sodium_crypto_ipcrypt_nd_keygen, arginfo_sodium_crypto_ipcrypt_nd_keygen)ZEND_FE(sodium_crypto_ipcrypt_nd_encrypt, arginfo_sodium_crypto_ipcrypt_nd_encrypt)ZEND_FE(sodium_crypto_ipcrypt_nd_decrypt, arginfo_sodium_crypto_ipcrypt_nd_decrypt)ZEND_FE(sodium_crypto_ipcrypt_ndx_keygen, arginfo_sodium_crypto_ipcrypt_ndx_keygen)ZEND_FE(sodium_crypto_ipcrypt_ndx_encrypt, arginfo_sodium_crypto_ipcrypt_ndx_encrypt)ZEND_FE(sodium_crypto_ipcrypt_ndx_decrypt, arginfo_sodium_crypto_ipcrypt_ndx_decrypt)ZEND_FE(sodium_crypto_ipcrypt_pfx_keygen, arginfo_sodium_crypto_ipcrypt_pfx_keygen)ZEND_FE(sodium_crypto_ipcrypt_pfx_encrypt, arginfo_sodium_crypto_ipcrypt_pfx_encrypt)ZEND_FE(sodium_crypto_ipcrypt_pfx_decrypt, arginfo_sodium_crypto_ipcrypt_pfx_decrypt)ZEND_FE(sodium_bin2ip, arginfo_sodium_bin2ip)ZEND_FE(sodium_ip2bin, arginfo_sodium_ip2bin)#endif #if defined(crypto_xof_shake128_STATEBYTES)ZEND_FE(sodium_crypto_xof_shake128, arginfo_sodium_crypto_xof_shake128)ZEND_FE(sodium_crypto_xof_shake128_init, arginfo_sodium_crypto_xof_shake128_init)ZEND_FE(sodium_crypto_xof_shake128_update, arginfo_sodium_crypto_xof_shake128_update)ZEND_FE(sodium_crypto_xof_shake128_squeeze, arginfo_sodium_crypto_xof_shake128_squeeze)ZEND_FE(sodium_crypto_xof_shake256, arginfo_sodium_crypto_xof_shake256)ZEND_FE(sodium_crypto_xof_shake256_init, arginfo_sodium_crypto_xof_shake256_init)ZEND_FE(sodium_crypto_xof_shake256_update, arginfo_sodium_crypto_xof_shake256_update)ZEND_FE(sodium_crypto_xof_shake256_squeeze, arginfo_sodium_crypto_xof_shake256_squeeze)ZEND_FE(sodium_crypto_xof_turboshake128, arginfo_sodium_crypto_xof_turboshake128)ZEND_FE(sodium_crypto_xof_turboshake128_init, arginfo_sodium_crypto_xof_turboshake128_init)ZEND_FE(sodium_crypto_xof_turboshake128_update, arginfo_sodium_crypto_xof_turboshake128_update)ZEND_FE(sodium_crypto_xof_turboshake128_squeeze, arginfo_sodium_crypto_xof_turboshake128_squeeze)ZEND_FE(sodium_crypto_xof_turboshake256, arginfo_sodium_crypto_xof_turboshake256)ZEND_FE(sodium_crypto_xof_turboshake256_init, arginfo_sodium_crypto_xof_turboshake256_init)ZEND_FE(sodium_crypto_xof_turboshake256_update, arginfo_sodium_crypto_xof_turboshake256_update)ZEND_FE(sodium_crypto_xof_turboshake256_squeeze, arginfo_sodium_crypto_xof_turboshake256_squeeze)#endif ZEND_FE_END };
+
+Context for merged statement of old file: ext/sodium/libsodium_arginfo.h with new file: ext/sodium/libsodium_arginfo.h:
+void register_libsodium_symbols(int module_number) {
++ #if defined(crypto_ipcrypt_KEYBYTES)
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_BYTES", crypto_ipcrypt_BYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_KEYBYTES", crypto_ipcrypt_KEYBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_ND_KEYBYTES", crypto_ipcrypt_ND_KEYBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_ND_TWEAKBYTES", crypto_ipcrypt_ND_TWEAKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_ND_INPUTBYTES", crypto_ipcrypt_ND_INPUTBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_ND_OUTPUTBYTES", crypto_ipcrypt_ND_OUTPUTBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_NDX_KEYBYTES", crypto_ipcrypt_NDX_KEYBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_NDX_TWEAKBYTES", crypto_ipcrypt_NDX_TWEAKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_NDX_INPUTBYTES", crypto_ipcrypt_NDX_INPUTBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_NDX_OUTPUTBYTES", crypto_ipcrypt_NDX_OUTPUTBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_PFX_KEYBYTES", crypto_ipcrypt_PFX_KEYBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_IPCRYPT_PFX_BYTES", crypto_ipcrypt_PFX_BYTES, CONST_PERSISTENT);
+  #endif
++ #if defined(crypto_xof_shake128_STATEBYTES)
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_SHAKE128_BLOCKBYTES", crypto_xof_shake128_BLOCKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_SHAKE128_STATEBYTES", crypto_xof_shake128_STATEBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_SHAKE256_BLOCKBYTES", crypto_xof_shake256_BLOCKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_SHAKE256_STATEBYTES", crypto_xof_shake256_STATEBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_TURBOSHAKE128_BLOCKBYTES", crypto_xof_turboshake128_BLOCKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_TURBOSHAKE128_STATEBYTES", crypto_xof_turboshake128_STATEBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_TURBOSHAKE256_BLOCKBYTES", crypto_xof_turboshake256_BLOCKBYTES, CONST_PERSISTENT);
++ REGISTER_LONG_CONSTANT("SODIUM_CRYPTO_XOF_TURBOSHAKE256_STATEBYTES", crypto_xof_turboshake256_STATEBYTES, CONST_PERSISTENT);
+  #endif
++ #if defined(crypto_ipcrypt_KEYBYTES)
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_encrypt", sizeof("sodium_crypto_ipcrypt_encrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_decrypt", sizeof("sodium_crypto_ipcrypt_decrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_nd_encrypt", sizeof("sodium_crypto_ipcrypt_nd_encrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_nd_decrypt", sizeof("sodium_crypto_ipcrypt_nd_decrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_ndx_encrypt", sizeof("sodium_crypto_ipcrypt_ndx_encrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_ndx_decrypt", sizeof("sodium_crypto_ipcrypt_ndx_decrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_pfx_encrypt", sizeof("sodium_crypto_ipcrypt_pfx_encrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
++ zend_add_parameter_attribute(zend_hash_str_find_ptr(CG(function_table), "sodium_crypto_ipcrypt_pfx_decrypt", sizeof("sodium_crypto_ipcrypt_pfx_decrypt")- 1), 1, ZSTR_KNOWN(ZEND_STR_SENSITIVEPARAMETER), 0);
+  #endif
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ZEND_FE — Zend/zend_API.h:86 [gtags_unique] --
+#define ZEND_FE(name, arg_info)						ZEND_RAW_FENTRY(#name, zif_##name, arg_info, 0, NULL, NULL)
+
+-- called macro: ZEND_FUNCTION — Zend/zend_API.h:75 [gtags+ts] --
+#define ZEND_FUNCTION(name)				ZEND_NAMED_FUNCTION(zif_##name)
+
+-- called macro: ZEND_RAW_FENTRY — Zend/zend_API.h:80 [gtags_unique, old version] --
+#define ZEND_RAW_FENTRY(zend_name, name, arg_info, flags, frameless_function_infos, doc_comment)   { zend_name, name, arg_info, (uint32_t) (sizeof(arg_info)/sizeof(struct _zend_internal_arg_info)-1), flags, frameless_function_infos, doc_comment },
+
+-- called macro: RETURN_THROWS — Zend/zend_API.h:1058 [gtags_unique, new version] --
+#define RETURN_THROWS()					do { ZEND_ASSERT(EG(exception)); (void) return_value; return; } while (0)
+
+-- called function: zend_argument_error — Zend/zend_API.c:400 [gtags_unique, new version] --
+void zend_argument_error(zend_class_entry *error_ce, uint32_t arg_num, const char *format, ...) /* {
+   va_list va;
+   ...
+   zend_argument_error_variadic(error_ce, arg_num, format, va);
+   ...
+}
+   [reads: arg_num, error_ce, format; writes: -]
+
+-- called function: zend_throw_exception — Zend/zend_exceptions.c:855 [gtags_unique, new version] --
+zend_object *zend_throw_exception(zend_class_entry *exception_ce, const char *message, zend_long code) /* {
+   zend_string *msg_str = message ? zend_string_init(message, strlen(message), 0): NULL;
+   zend_object *ex = zend_throw_exception_zstr(exception_ce, msg_str, code);
+   ...
+   return ex;
+}
+   [reads: code, exception_ce, message; writes: -]
+
+-- called macro: EG — Zend/zend_globals_macros.h:44 [lsp, new version] --
+# define EG(v) ZEND_TSRMG_FAST(executor_globals_offset, zend_executor_globals *, v)
+
+-- called macro: REGISTER_LONG_CONSTANT — Zend/zend_constants.h:64 [gtags_unique, new version] --
+#define REGISTER_LONG_CONSTANT(name, lval, flags)  zend_register_long_constant((name), sizeof(name)-1, (lval), (flags), module_number)
+
+-- called macro: ZSTR_VAL — Zend/zend_string.h:68 [gtags_unique, new version] --
+#define ZSTR_VAL(zstr)  (zstr)->val
+
+-- called function: zend_parse_parameters — Zend/zend_API.c:1281 [gtags_unique, new version] --
+ZEND_API zend_result zend_parse_parameters(uint32_t num_args, const char *type_spec, ...) /* {
+   va_list va;
+   zend_result retval;
+   int flags = 0;
+   va_start(va, type_spec);
+   retval = zend_parse_va_args(num_args, type_spec, &va, flags);
+   ...
+   return retval;
+}
+   [reads: num_args, type_spec; writes: -]
+
+-- caller of PHP_FUNCTION:  — ext/intl/calendar/calendar_methods.cpp:161 --
+class BugStringCharEnumeration : public StringEnumeration {
+   ...
+   int32_t count(UErrorCode& status)const override { return uenum_count(uenum, &status); }
+   ...
+   const UnicodeString* snext(UErrorCode& status)override { int32_t length; const UChar* str = uenum_unext(uenum, &length, &status); if(str == 0 || U_FAILURE(status)){ return 0; } return &unistr.setTo(str, length); }
+   int32_t length;
+   const UChar* str = uenum_unext(uenum, &length, &status);
+   ...
+   const char* next(int32_t *resultLength, UErrorCode &status)override { int32_t length = -1; const char* str = uenum_next(uenum, &length, &status); if(str == 0 || U_FAILURE(status)){ return 0; } if(resultLength){ *resultLength =(length == -1)?(int32_t)strlen(str): length; } return str; }
+   ...
+   void reset(UErrorCode& status)override { uenum_reset(uenum, &status); }
+   ...
+   UClassID getDynamicClassID()const override; static UClassID U_EXPORT2 getStaticClassID(); private: UEnumeration *uenum; }; UOBJECT_DEFINE_RTTI_IMPLEMENTATION(BugStringCharEnumeration)U_CFUNC PHP_FUNCTION(intlcal_get_keyword_values_for_locale){ UErrorCode status = U_ZERO_ERROR; char *key, *locale; size_t key_len, locale_len; bool commonly_used; intl_error_reset(NULL); ZEND_PARSE_PARAMETERS_START(3, 3)Z_PARAM_STRING(key, key_len)Z_PARAM_STRING(locale, locale_len)Z_PARAM_BOOL(commonly_used)ZEND_PARSE_PARAMETERS_END(); StringEnumeration *se = Calendar::getKeywordValuesForLocale(key, Locale::createFromName(locale), (UBool)commonly_used, status); if(se == NULL){ intl_error_set(NULL, status, "error calling underlying method"); RETURN_FALSE; } IntlIterator_from_StringEnumeration(se, return_value); }
+   ...
+   Z_PARAM_STRING(key, key_len)
+   ...
+   StringEnumeration *se = Calendar::getKeywordValuesForLocale(key, Locale::createFromName(locale), (UBool)commonly_used, status);
+   if(se == NULL) {
+   intl_error_set(NULL, status, "error calling underlying method");
+   ...
+   }
+   IntlIterator_from_StringEnumeration(se, return_value);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_get){ _php_intlcal_field_uec_ret_in32t_method(&Calendar::get, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_field_uec_ret_in32t_method(&Calendar::get, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_set_time_zone){ zend_object *timezone_object = nullptr; zend_string *timezone_string = nullptr; CALENDAR_METHOD_INIT_VARS; ZEND_PARSE_PARAMETERS_START(2, 2)Z_PARAM_OBJECT_OF_CLASS(object, Calendar_ce_ptr)Z_PARAM_OBJ_OR_STR_OR_NULL(timezone_object, timezone_string)ZEND_PARSE_PARAMETERS_END(); CALENDAR_METHOD_FETCH_OBJECT; if(timezone_object == nullptr && timezone_string == nullptr){ RETURN_TRUE; } TimeZone *timeZone = timezone_process_timezone_argument(timezone_object, timezone_string, CALENDAR_ERROR_P(co)); if(timeZone == nullptr){ RETURN_FALSE; } co->ucal->adoptTimeZone(timeZone); RETURN_TRUE; }
+   ...
+   Z_PARAM_OBJ_OR_STR_OR_NULL(timezone_object, timezone_string)
+   ZEND_PARSE_PARAMETERS_END();
+   ...
+   if(timezone_object == nullptr && timezone_string == nullptr) {
+   ...
+   }
+   TimeZone *timeZone = timezone_process_timezone_argument(timezone_object, timezone_string, CALENDAR_ERROR_P(co));
+   if(timeZone == nullptr) {
+   ...
+   }
+   co->ucal->adoptTimeZone(timeZone);
+   ...
+   U_CFUNC PHP_METHOD(IntlCalendar, setTimeZone){ zend_object *timezone_object = nullptr; zend_string *timezone_string = nullptr; CALENDAR_METHOD_INIT_VARS; ZEND_PARSE_PARAMETERS_START(1, 1)Z_PARAM_OBJ_OR_STR_OR_NULL(timezone_object, timezone_string)ZEND_PARSE_PARAMETERS_END(); object = ZEND_THIS; CALENDAR_METHOD_FETCH_OBJECT; if(timezone_object == nullptr && timezone_string == nullptr){ RETURN_TRUE; } TimeZone *timeZone = timezone_process_timezone_argument(timezone_object, timezone_string, CALENDAR_ERROR_P(co)); if(timeZone == nullptr){ RETURN_FALSE; } co->ucal->adoptTimeZone(timeZone); RETURN_TRUE; }
+   ...
+   Z_PARAM_OBJ_OR_STR_OR_NULL(timezone_object, timezone_string)
+   ZEND_PARSE_PARAMETERS_END();
+   ...
+   if(timezone_object == nullptr && timezone_string == nullptr) {
+   ...
+   }
+   TimeZone *timeZone = timezone_process_timezone_argument(timezone_object, timezone_string, CALENDAR_ERROR_P(co));
+   if(timeZone == nullptr) {
+   ...
+   }
+   co->ucal->adoptTimeZone(timeZone);
+   ...
+   static void _php_intlcal_before_after(UBool(Calendar::*func)(const Calendar&, UErrorCode&)const, INTERNAL_FUNCTION_PARAMETERS){ zval *when_object; Calendar_object *when_co; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &when_object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; when_co = Z_INTL_CALENDAR_P(when_object); if(when_co->ucal == NULL){ zend_argument_error(NULL, 2, "is uninitialized"); RETURN_THROWS(); } UBool res =(co->ucal->*func)(*when_co->ucal, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Error calling ICU method"); RETURN_BOOL((int)res); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &when_object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   when_co = Z_INTL_CALENDAR_P(when_object);
+   if(when_co->ucal == NULL) {
+   ...
+   }
+   UBool res =(co->ucal->*func)(*when_co->ucal, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_BOOL((int)res);
+   U_CFUNC PHP_FUNCTION(intlcal_after){ _php_intlcal_before_after(&Calendar::after, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_before_after(&Calendar::after, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_before){ _php_intlcal_before_after(&Calendar::before, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_before_after(&Calendar::before, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_set){ zend_long args[6]; CALENDAR_METHOD_INIT_VARS; object = getThis(); int arg_num = ZEND_NUM_ARGS()-(object ? 0 : 1); if(object && arg_num > 2){ zend_error(E_DEPRECATED, "Calling IntlCalendar::set()with more than 2 arguments is deprecated, " "use either IntlCalendar::setDate()or IntlCalendar::setDateTime()instead"); if(UNEXPECTED(EG(exception))){ RETURN_THROWS(); } } if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Oll|llll", &object, Calendar_ce_ptr, &args[0], &args[1], &args[2], &args[3], &args[4], &args[5])== FAILURE){ RETURN_THROWS(); } for(int i = 0; i < arg_num; i++){ ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(args[i], i + 1); } CALENDAR_METHOD_FETCH_OBJECT; if(arg_num == 2){ ZEND_VALUE_ERROR_INVALID_FIELD(args[0], 2); co->ucal->set((UCalendarDateFields)args[0], (int32_t)args[1]); } else if(arg_num == 3){ co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2]); } else if(arg_num == 4){ zend_argument_count_error("IntlCalendar::set()has no variant with exactly 4 parameters"); RETURN_THROWS(); } else if(arg_num == 5){ co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2], (int32_t)args[3], (int32_t)args[4]); } else { co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2], (int32_t)args[3], (int32_t)args[4], (int32_t)args[5]); } RETURN_TRUE; }
+   ...
+   int arg_num = ZEND_NUM_ARGS()-(object ? 0 : 1);
+   if(object && arg_num > 2) {
+   ...
+   }
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Oll|llll", &object, Calendar_ce_ptr, &args[0], &args[1], &args[2], &args[3], &args[4], &args[5])== FAILURE) {
+   ...
+   }
+   for(int i = 0;; i < arg_num; i++) {
+   ...
+   ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(args[i], i + 1);
+   }
+   ...
+   if(arg_num == 2) {
+   ZEND_VALUE_ERROR_INVALID_FIELD(args[0], 2);
+   co->ucal->set((UCalendarDateFields)args[0], (int32_t)args[1]);
+   } else if(arg_num == 3) {
+   co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2]);
+   } else if(arg_num == 4) {
+   ...
+   } else if(arg_num == 5) {
+   co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2], (int32_t)args[3], (int32_t)args[4]);
+   } else {
+   co->ucal->set((int32_t)args[0], (int32_t)args[1], (int32_t)args[2], (int32_t)args[3], (int32_t)args[4], (int32_t)args[5]);
+   }
+   ...
+   U_CFUNC PHP_METHOD(IntlCalendar, setDate){ zend_long year, month, day; CALENDAR_METHOD_INIT_VARS; object = getThis(); if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Olll", &object, Calendar_ce_ptr, &year, &month, &day)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(year, 1); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(month, 2); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(day, 3); CALENDAR_METHOD_FETCH_OBJECT; co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Olll", &object, Calendar_ce_ptr, &year, &month, &day)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(year, 1);
+   ...
+   co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day);
+   U_CFUNC PHP_METHOD(IntlCalendar, setDateTime){ zend_long year, month, day, hour, minute, second = 0; bool second_is_null = true; CALENDAR_METHOD_INIT_VARS; object = getThis(); if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Olllll|l!", &object, Calendar_ce_ptr, &year, &month, &day, &hour, &minute, &second, &second_is_null)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(year, 1); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(month, 2); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(day, 3); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(hour, 4); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(minute, 5); CALENDAR_METHOD_FETCH_OBJECT; if(second_is_null){ co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day, (int32_t)hour, (int32_t)minute); } else { ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(second, 6); co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day, (int32_t)hour, (int32_t)minute, (int32_t)second); } }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), object, "Olllll|l!", &object, Calendar_ce_ptr, &year, &month, &day, &hour, &minute, &second, &second_is_null)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(year, 1);
+   ...
+   if(second_is_null) {
+   co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day, (int32_t)hour, (int32_t)minute);
+   } else {
+   ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(second, 6);
+   co->ucal->set((int32_t)year, (int32_t)month, (int32_t)day, (int32_t)hour, (int32_t)minute, (int32_t)second);
+   }
+   U_CFUNC PHP_FUNCTION(intlcal_roll){ zval *zvalue; zend_long field, value; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Olz", &object, Calendar_ce_ptr, &field, &zvalue)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; ZEND_VALUE_ERROR_INVALID_FIELD(field, 2); if(Z_TYPE_P(zvalue)== IS_FALSE || Z_TYPE_P(zvalue)== IS_TRUE){ value = Z_TYPE_P(zvalue)== IS_TRUE ? 1 : -1; php_error_docref(NULL, E_DEPRECATED, "Passing bool is deprecated, use 1 or -1 instead"); } else { value = zval_get_long(zvalue); ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(value, 3); } co->ucal->roll((UCalendarDateFields)field, (int32_t)value, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Error calling ICU Calendar::roll"); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Olz", &object, Calendar_ce_ptr, &field, &zvalue)== FAILURE) {
+   ...
+   }
+   ...
+   ZEND_VALUE_ERROR_INVALID_FIELD(field, 2);
+   if(Z_TYPE_P(zvalue)== IS_FALSE || Z_TYPE_P(zvalue)== IS_TRUE) {
+   value = Z_TYPE_P(zvalue)== IS_TRUE ? 1 : -1;
+   ...
+   } else {
+   value = zval_get_long(zvalue);
+   ZEND_VALUE_ERROR_OUT_OF_BOUND_VALUE(value, 3);
+   }
+   co->ucal->roll((UCalendarDateFields)field, (int32_t)value, CALENDAR_ERROR_CODE(co));
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_clear){ zend_long field; bool field_is_null = 1; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O|l!", &object, Calendar_ce_ptr, &field, &field_is_null)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; if(field_is_null){ co->ucal->clear(); } else { ZEND_VALUE_ERROR_INVALID_FIELD(field, 2); co->ucal->clear((UCalendarDateFields)field); } RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O|l!", &object, Calendar_ce_ptr, &field, &field_is_null)== FAILURE) {
+   ...
+   }
+   ...
+   if(field_is_null) {
+   ...
+   } else {
+   ZEND_VALUE_ERROR_INVALID_FIELD(field, 2);
+   co->ucal->clear((UCalendarDateFields)field);
+   }
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_field_difference){ zend_long field; double when; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Odl", &object, Calendar_ce_ptr, &when, &field)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_FIELD(field, 3); CALENDAR_METHOD_FETCH_OBJECT; int32_t result = co->ucal->fieldDifference((UDate)when, (UCalendarDateFields)field, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_LONG((zend_long)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Odl", &object, Calendar_ce_ptr, &when, &field)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_FIELD(field, 3);
+   ...
+   int32_t result = co->ucal->fieldDifference((UDate)when, (UCalendarDateFields)field, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_LONG((zend_long)result);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_get_day_of_week_type){ zend_long dow; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2); CALENDAR_METHOD_FETCH_OBJECT; int32_t result = co->ucal->getDayOfWeekType((UCalendarDaysOfWeek)dow, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_LONG((zend_long)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2);
+   ...
+   int32_t result = co->ucal->getDayOfWeekType((UCalendarDaysOfWeek)dow, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_LONG((zend_long)result);
+   U_CFUNC PHP_FUNCTION(intlcal_get_first_day_of_week){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; int32_t result = co->ucal->getFirstDayOfWeek(CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_LONG((zend_long)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   RETURN_LONG((zend_long)result);
+   static void _php_intlcal_field_ret_in32t_method(int32_t(Calendar::*func)(UCalendarDateFields)const, INTERNAL_FUNCTION_PARAMETERS){ zend_long field; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &field)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_FIELD(field, 2); CALENDAR_METHOD_FETCH_OBJECT; int32_t result =(co->ucal->*func)((UCalendarDateFields)field); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_LONG((zend_long)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &field)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_FIELD(field, 2);
+   ...
+   int32_t result =(co->ucal->*func)((UCalendarDateFields)field);
+   ...
+   RETURN_LONG((zend_long)result);
+   U_CFUNC PHP_FUNCTION(intlcal_get_greatest_minimum){ _php_intlcal_field_ret_in32t_method(&Calendar::getGreatestMinimum, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_field_ret_in32t_method(&Calendar::getGreatestMinimum, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_get_least_maximum){ _php_intlcal_field_ret_in32t_method(&Calendar::getLeastMaximum, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_field_ret_in32t_method(&Calendar::getLeastMaximum, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_get_locale){ zend_long locale_type; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &locale_type)== FAILURE){ RETURN_THROWS(); } if(locale_type != ULOC_ACTUAL_LOCALE && locale_type != ULOC_VALID_LOCALE){ zend_argument_value_error(hasThis()? 1 : 2, "must be either Locale::ACTUAL_LOCALE or Locale::VALID_LOCALE"); RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; Locale locale = co->ucal->getLocale((ULocDataLocaleType)locale_type, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_STRING(locale.getName()); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &locale_type)== FAILURE) {
+   ...
+   }
+   if(locale_type != ULOC_ACTUAL_LOCALE && locale_type != ULOC_VALID_LOCALE) {
+   ...
+   }
+   ...
+   Locale locale = co->ucal->getLocale((ULocDataLocaleType)locale_type, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_STRING(locale.getName());
+   U_CFUNC PHP_FUNCTION(intlcal_get_maximum){ _php_intlcal_field_ret_in32t_method(&Calendar::getMaximum, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_field_ret_in32t_method(&Calendar::getMaximum, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_get_minimal_days_in_first_week){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; uint8_t result = co->ucal->getMinimalDaysInFirstWeek(); INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); RETURN_LONG((zend_long)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   RETURN_LONG((zend_long)result);
+   U_CFUNC PHP_FUNCTION(intlcal_get_minimum){ _php_intlcal_field_ret_in32t_method(&Calendar::getMinimum, INTERNAL_FUNCTION_PARAM_PASSTHRU); }
+   _php_intlcal_field_ret_in32t_method(&Calendar::getMinimum, INTERNAL_FUNCTION_PARAM_PASSTHRU);
+   U_CFUNC PHP_FUNCTION(intlcal_get_time_zone){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; TimeZone *tz = co->ucal->getTimeZone().clone(); if(UNEXPECTED(tz == NULL)){ intl_errors_set(CALENDAR_ERROR_P(co), U_MEMORY_ALLOCATION_ERROR, "could not clone TimeZone"); RETURN_FALSE; } timezone_object_construct(tz, return_value, 1); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   if(UNEXPECTED(tz == NULL)) {
+   ...
+   }
+   timezone_object_construct(tz, return_value, 1);
+   U_CFUNC PHP_FUNCTION(intlcal_get_type){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; RETURN_STRING(co->ucal->getType()); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_get_weekend_transition){ zend_long dow; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2); CALENDAR_METHOD_FETCH_OBJECT; int32_t res = co->ucal->getWeekendTransition((UCalendarDaysOfWeek)dow, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Error calling ICU method"); RETURN_LONG((zend_long)res); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2);
+   ...
+   int32_t res = co->ucal->getWeekendTransition((UCalendarDaysOfWeek)dow, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_LONG((zend_long)res);
+   U_CFUNC PHP_FUNCTION(intlcal_in_daylight_time){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; UBool ret = co->ucal->inDaylightTime(CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Error calling ICU method"); RETURN_BOOL((int)ret); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   RETURN_BOOL((int)ret);
+   U_CFUNC PHP_FUNCTION(intlcal_is_equivalent_to){ zval *other_object; Calendar_object *other_co; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &other_object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } other_co = Z_INTL_CALENDAR_P(other_object); if(other_co->ucal == NULL){ zend_argument_error(NULL, 2, "is uninitialized"); RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; RETURN_BOOL((int)co->ucal->isEquivalentTo(*other_co->ucal)); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &other_object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   other_co = Z_INTL_CALENDAR_P(other_object);
+   if(other_co->ucal == NULL) {
+   ...
+   }
+   ...
+   RETURN_BOOL((int)co->ucal->isEquivalentTo(*other_co->ucal));
+   U_CFUNC PHP_FUNCTION(intlcal_is_lenient){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; RETURN_BOOL((int)co->ucal->isLenient()); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_is_set){ zend_long field; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &field)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_FIELD(field, 2); CALENDAR_METHOD_FETCH_OBJECT; RETURN_BOOL((int)co->ucal->isSet((UCalendarDateFields)field)); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &field)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_FIELD(field, 2);
+   ...
+   RETURN_BOOL((int)co->ucal->isSet((UCalendarDateFields)field));
+   U_CFUNC PHP_FUNCTION(intlcal_is_weekend){ double date; bool date_is_null = 1; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O|d!", &object, Calendar_ce_ptr, &date, &date_is_null)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; if(date_is_null){ RETURN_BOOL((int)co->ucal->isWeekend()); } else { UBool ret = co->ucal->isWeekend((UDate)date, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "Error calling ICU method"); RETURN_BOOL((int)ret); } }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O|d!", &object, Calendar_ce_ptr, &date, &date_is_null)== FAILURE) {
+   ...
+   }
+   ...
+   if(date_is_null) {
+   ...
+   } else {
+   UBool ret = co->ucal->isWeekend((UDate)date, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_BOOL((int)ret);
+   }
+   U_CFUNC PHP_FUNCTION(intlcal_set_first_day_of_week){ zend_long dow; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE){ RETURN_THROWS(); } ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2); CALENDAR_METHOD_FETCH_OBJECT; co->ucal->setFirstDayOfWeek((UCalendarDaysOfWeek)dow); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &dow)== FAILURE) {
+   ...
+   }
+   ZEND_VALUE_ERROR_INVALID_DAY_OF_WEEK(dow, 2);
+   ...
+   co->ucal->setFirstDayOfWeek((UCalendarDaysOfWeek)dow);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_set_lenient){ bool is_lenient; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ob", &object, Calendar_ce_ptr, &is_lenient)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; co->ucal->setLenient((UBool)is_lenient); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ob", &object, Calendar_ce_ptr, &is_lenient)== FAILURE) {
+   ...
+   }
+   ...
+   co->ucal->setLenient((UBool)is_lenient);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_set_minimal_days_in_first_week){ zend_long num_days; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &num_days)== FAILURE){ RETURN_THROWS(); } if(num_days < 1 || num_days > 7){ zend_argument_value_error(hasThis()? 1 : 2, "must be between 1 and 7"); RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; co->ucal->setMinimalDaysInFirstWeek((uint8_t)num_days); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &num_days)== FAILURE) {
+   ...
+   }
+   if(num_days < 1 || num_days > 7) {
+   ...
+   }
+   ...
+   co->ucal->setMinimalDaysInFirstWeek((uint8_t)num_days);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_equals){ zval *other_object; Calendar_object *other_co; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &other_object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; other_co = Z_INTL_CALENDAR_P(other_object); if(other_co->ucal == NULL){ zend_argument_error(NULL, 2, "is uninitialized"); RETURN_THROWS(); } UBool result = co->ucal->equals(*other_co->ucal, CALENDAR_ERROR_CODE(co)); INTL_METHOD_CHECK_STATUS(co, "error calling ICU Calendar::equals"); RETURN_BOOL((int)result); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "OO", &object, Calendar_ce_ptr, &other_object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   other_co = Z_INTL_CALENDAR_P(other_object);
+   if(other_co->ucal == NULL) {
+   ...
+   }
+   UBool result = co->ucal->equals(*other_co->ucal, CALENDAR_ERROR_CODE(co));
+   ...
+   RETURN_BOOL((int)result);
+   U_CFUNC PHP_FUNCTION(intlcal_get_repeated_wall_time_option){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; RETURN_LONG(co->ucal->getRepeatedWallTimeOption()); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_get_skipped_wall_time_option){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; RETURN_LONG(co->ucal->getSkippedWallTimeOption()); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_set_repeated_wall_time_option){ zend_long option; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &option)== FAILURE){ RETURN_THROWS(); } if(option != UCAL_WALLTIME_FIRST && option != UCAL_WALLTIME_LAST){ zend_argument_value_error(hasThis()? 1 : 2, "must be either IntlCalendar::WALLTIME_FIRST or " "IntlCalendar::WALLTIME_LAST"); RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; co->ucal->setRepeatedWallTimeOption((UCalendarWallTimeOption)option); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &option)== FAILURE) {
+   ...
+   }
+   if(option != UCAL_WALLTIME_FIRST && option != UCAL_WALLTIME_LAST) {
+   ...
+   }
+   ...
+   co->ucal->setRepeatedWallTimeOption((UCalendarWallTimeOption)option);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_set_skipped_wall_time_option){ zend_long option; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &option)== FAILURE){ RETURN_THROWS(); } if(option != UCAL_WALLTIME_FIRST && option != UCAL_WALLTIME_LAST && option != UCAL_WALLTIME_NEXT_VALID){ zend_argument_value_error(hasThis()? 1 : 2, "must be one of IntlCalendar::WALLTIME_FIRST, " "IntlCalendar::WALLTIME_LAST, or IntlCalendar::WALLTIME_NEXT_VALID"); RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; co->ucal->setSkippedWallTimeOption((UCalendarWallTimeOption)option); RETURN_TRUE; }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Ol", &object, Calendar_ce_ptr, &option)== FAILURE) {
+   ...
+   }
+   if(option != UCAL_WALLTIME_FIRST && option != UCAL_WALLTIME_LAST && option != UCAL_WALLTIME_NEXT_VALID) {
+   ...
+   }
+   ...
+   co->ucal->setSkippedWallTimeOption((UCalendarWallTimeOption)option);
+   ...
+   U_CFUNC PHP_FUNCTION(intlcal_from_date_time){ zend_object *date_obj; zend_string *date_str; zval zv_tmp, zv_arg, zv_timestamp; php_date_obj *datetime; char *locale_str = NULL; size_t locale_str_len; TimeZone *timeZone; UErrorCode status = U_ZERO_ERROR; Calendar *cal; intl_error_reset(NULL); ZEND_PARSE_PARAMETERS_START(1, 2)Z_PARAM_OBJ_OF_CLASS_OR_STR(date_obj, php_date_get_date_ce(), date_str)Z_PARAM_OPTIONAL Z_PARAM_STRING_OR_NULL(locale_str, locale_str_len)ZEND_PARSE_PARAMETERS_END(); if(date_str){ object_init_ex(&zv_tmp, php_date_get_date_ce()); ZVAL_STR(&zv_arg, date_str); zend_call_known_instance_method_with_1_params(Z_OBJCE(zv_tmp)->constructor, Z_OBJ(zv_tmp), NULL, &zv_arg); date_obj = Z_OBJ(zv_tmp); if(EG(exception)){ zend_object_store_ctor_failed(Z_OBJ(zv_tmp)); goto error; } } datetime = php_date_obj_from_obj(date_obj); if(!datetime->time){ intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR, "DateTime object is unconstructed"); goto error; } zend_call_method_with_0_params(date_obj, php_date_get_date_ce(), NULL, "gettimestamp", &zv_timestamp); if(Z_TYPE(zv_timestamp)!= IS_LONG){ intl_error_set(NULL, U_ILLEGAL_ARGUMENT_ERROR, "bad DateTime; call to DateTime::getTimestamp()failed"); zval_ptr_dtor(&zv_timestamp); goto error; } if(!datetime->time->is_localtime){ timeZone = TimeZone::getGMT()->clone(); } else { timeZone = timezone_convert_datetimezone(datetime->time->zone_type, datetime, 1, NULL); if(timeZone == NULL){ goto error; } } if(!locale_str){ locale_str = const_cast<char*>(intl_locale_get_default()); } cal = Calendar::createInstance(timeZone, Locale::createFromName(locale_str), status); if(UNEXPECTED(cal == NULL)){ delete timeZone; intl_error_set(NULL, status, "error creating ICU Calendar object"); goto error; } cal->setTime(((UDate)Z_LVAL(zv_timestamp))* 1000., status); if(U_FAILURE(status)){ delete cal; intl_error_set(NULL, status, "error creating ICU Calendar::setTime()"); goto error; } calendar_object_create(return_value, cal); error: if(date_str){ OBJ_RELEASE(date_obj); } }
+   ...
+   Z_PARAM_OBJ_OF_CLASS_OR_STR(date_obj, php_date_get_date_ce(), date_str)
+   Z_PARAM_OPTIONAL Z_PARAM_STRING_OR_NULL(locale_str, locale_str_len)ZEND_PARSE_PARAMETERS_END(); if(date_str){ object_init_ex(&zv_tmp, php_date_get_date_ce()); ZVAL_STR(&zv_arg, date_str); zend_call_known_instance_method_with_1_params(Z_OBJCE(zv_tmp)->constructor, Z_OBJ(zv_tmp), NULL, &zv_arg); date_obj = Z_OBJ(zv_tmp); if(EG(exception)){ zend_object_store_ctor_failed(Z_OBJ(zv_tmp)); goto error; } }
+   object_init_ex(&zv_tmp, php_date_get_date_ce());
+   ZVAL_STR(&zv_arg, date_str);
+   zend_call_known_instance_method_with_1_params(Z_OBJCE(zv_tmp)->constructor, Z_OBJ(zv_tmp), NULL, &zv_arg);
+   date_obj = Z_OBJ(zv_tmp);
+   if(EG(exception)) {
+   zend_object_store_ctor_failed(Z_OBJ(zv_tmp));
+   ...
+   }
+   datetime = php_date_obj_from_obj(date_obj);
+   if(!datetime->time) {
+   ...
+   }
+   zend_call_method_with_0_params(date_obj, php_date_get_date_ce(), NULL, "gettimestamp", &zv_timestamp);
+   ...
+   if(!datetime->time->is_localtime) {
+   ...
+   } else {
+   timeZone = timezone_convert_datetimezone(datetime->time->zone_type, datetime, 1, NULL);
+   if(timeZone == NULL) {
+   ...
+   }
+   }
+   if(!locale_str) {
+   ...
+   }
+   createInstance(timeZone, Locale::createFromName(locale_str), status);
+   if(UNEXPECTED(cal == NULL)) {
+   ...
+   intl_error_set(NULL, status, "error creating ICU Calendar object");
+   ...
+   }
+   cal->setTime(((UDate)Z_LVAL(zv_timestamp))* 1000., status);
+   if(U_FAILURE(status)) {
+   ...
+   intl_error_set(NULL, status, "error creating ICU Calendar::setTime()");
+   ...
+   }
+   calendar_object_create(return_value, cal);
+   ...
+   if(date_str) {
+   OBJ_RELEASE(date_obj);
+   }
+   U_CFUNC PHP_FUNCTION(intlcal_to_date_time){ zval retval; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } CALENDAR_METHOD_FETCH_OBJECT; double date = co->ucal->getTime(CALENDAR_ERROR_CODE(co))/ 1000.; int64_t ts; char ts_str[sizeof("@-9223372036854775808")]; int ts_str_len; zval ts_zval, tmp; INTL_METHOD_CHECK_STATUS(co, "Call to ICU method has failed"); if(UNEXPECTED(date >(double)U_INT64_MAX || date <(double)U_INT64_MIN)){ intl_errors_set(CALENDAR_ERROR_P(co), U_ILLEGAL_ARGUMENT_ERROR, "The calendar date is out of the range for a 64-bit integer"); RETURN_FALSE; } ZVAL_UNDEF(&retval); ts =(int64_t)date; ts_str_len = slprintf(ts_str, sizeof(ts_str), "@%" PRIi64, ts); ZVAL_STRINGL(&ts_zval, ts_str, ts_str_len); const TimeZone& tz = co->ucal->getTimeZone(); zval *timezone_zval = timezone_convert_to_datetimezone(&tz, CALENDAR_ERROR_P(co), &tmp); if(timezone_zval == NULL){ zval_ptr_dtor(&ts_zval); RETURN_FALSE; } object_init_ex(return_value, php_date_get_date_ce()); zend_call_known_instance_method_with_2_params(Z_OBJCE_P(return_value)->constructor, Z_OBJ_P(return_value), NULL, &ts_zval, timezone_zval); if(EG(exception)){ zend_object_store_ctor_failed(Z_OBJ_P(return_value)); zval_ptr_dtor(return_value); zval_ptr_dtor(&ts_zval); RETVAL_FALSE; goto error; } zval_ptr_dtor(&ts_zval); zend_call_method_with_1_params(Z_OBJ_P(return_value), NULL, NULL, "settimezone", &retval, timezone_zval); if(Z_ISUNDEF(retval)|| Z_TYPE(retval)== IS_FALSE){ intl_errors_set(CALENDAR_ERROR_P(co), U_ILLEGAL_ARGUMENT_ERROR, "call to DateTime::setTimeZone has failed"); zval_ptr_dtor(return_value); RETVAL_FALSE; goto error; } error: zval_ptr_dtor(timezone_zval); zval_ptr_dtor(&retval); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   ...
+   if(UNEXPECTED(date >(double)U_INT64_MAX || date <(double)U_INT64_MIN)) {
+   ...
+   }
+   ZVAL_UNDEF(&retval);
+   ts =(int64_t)date;
+   ts_str_len = slprintf(ts_str, sizeof(ts_str), "@%" PRIi64, ts);
+   ZVAL_STRINGL(&ts_zval, ts_str, ts_str_len);
+   ...
+   zval *timezone_zval = timezone_convert_to_datetimezone(&tz, CALENDAR_ERROR_P(co), &tmp);
+   if(timezone_zval == NULL) {
+   zval_ptr_dtor(&ts_zval);
+   ...
+   }
+   ...
+   zend_call_known_instance_method_with_2_params(Z_OBJCE_P(return_value)->constructor, Z_OBJ_P(return_value), NULL, &ts_zval, timezone_zval);
+   if(EG(exception)) {
+   ...
+   zval_ptr_dtor(&ts_zval);
+   ...
+   }
+   zval_ptr_dtor(&ts_zval);
+   zend_call_method_with_1_params(Z_OBJ_P(return_value), NULL, NULL, "settimezone", &retval, timezone_zval);
+   if(Z_ISUNDEF(retval)|| Z_TYPE(retval)== IS_FALSE) {
+   ...
+   }
+   ...
+   zval_ptr_dtor(timezone_zval);
+   zval_ptr_dtor(&retval);
+   U_CFUNC PHP_FUNCTION(intlcal_get_error_code){ CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } co = Z_INTL_CALENDAR_P(object); if(co == NULL)RETURN_FALSE; RETURN_LONG((zend_long)CALENDAR_ERROR_CODE(co)); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   co = Z_INTL_CALENDAR_P(object);
+   if(co == NULL)
+   ...
+   RETURN_LONG((zend_long)CALENDAR_ERROR_CODE(co));
+   U_CFUNC PHP_FUNCTION(intlcal_get_error_message){ zend_string* message = NULL; CALENDAR_METHOD_INIT_VARS; if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE){ RETURN_THROWS(); } co = Z_INTL_CALENDAR_P(object); if(co == NULL)RETURN_FALSE; message = intl_error_get_message(CALENDAR_ERROR_P(co)); RETURN_STR(message); }
+   ...
+   if(zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "O", &object, Calendar_ce_ptr)== FAILURE) {
+   ...
+   }
+   co = Z_INTL_CALENDAR_P(object);
+   if(co == NULL)
+   ...
+   message = intl_error_get_message(CALENDAR_ERROR_P(co));
+   RETURN_STR(message);
+}
+
+-- caller of register_libsodium_symbols: PHP_MINIT_FUNCTION(sodium) — ext/sodium/libsodium.c:172 --
+PHP_MINIT_FUNCTION(sodium) {
+   ...
+>  register_libsodium_symbols(module_number);
+   ...
+}

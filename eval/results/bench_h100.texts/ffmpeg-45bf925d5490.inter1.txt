@@ -1,0 +1,119 @@
+Context for merged statement of old file: fftools/ffplay_renderer.c with new file: fftools/ffplay_renderer.c:
+#if HAVE_VULKAN_RENDERER
+- static const char *optional_device_exts[] = { VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME, VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME, VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME, VK_EXT_DESCRIPTOR_BUFFER_EXTENSION_NAME, VK_EXT_PHYSICAL_DEVICE_DRM_EXTENSION_NAME, VK_EXT_SHADER_ATOMIC_FLOAT_EXTENSION_NAME, VK_KHR_COOPERATIVE_MATRIX_EXTENSION_NAME, VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_DMA_BUF_EXTENSION_NAME, VK_EXT_IMAGE_DRM_FORMAT_MODIFIER_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME, VK_EXT_EXTERNAL_MEMORY_HOST_EXTENSION_NAME, #ifdef _WIN32 VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME, VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME, #endif VK_KHR_VIDEO_QUEUE_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME, VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME, "VK_MESA_video_decode_av1", };
+  #endif
+
+Context for merged statement of old file: fftools/ffplay_renderer.c with new file: fftools/ffplay_renderer.c:
+int create_vk_by_placebo(VkRenderer *renderer,
+                                const char **ext, unsigned num_ext,
+                                const AVDictionary *opt) {
+  RendererContext *ctx =(RendererContext *)renderer;
+  int decode_index;
+  int decode_count;
+  int ret;
++ const char **dev_exts;
++ int num_dev_exts;
+  ctx->get_proc_addr = SDL_Vulkan_GetVkGetInstanceProcAddr();
+  ctx->placebo_instance = pl_vk_inst_create(ctx->vk_log, pl_vk_inst_params(.get_proc_addr = ctx->get_proc_addr, .debug = enable_debug(opt), .extensions = ext, .num_extensions = num_ext));
++ dev_exts = av_vk_get_optional_device_extensions(&num_dev_exts);
++ if (!dev_exts) {
++ return AVERROR(ENOMEM);
+  }
+- ctx->placebo_vulkan = pl_vulkan_create(ctx->vk_log, pl_vulkan_params(.instance = ctx->placebo_instance->instance, .get_proc_addr = ctx->placebo_instance->get_proc_addr, .surface = ctx->vk_surface, .allow_software = false, .opt_extensions = optional_device_exts, .num_opt_extensions = FF_ARRAY_ELEMS(optional_device_exts), .extra_queues = VK_QUEUE_VIDEO_DECODE_BIT_KHR, .device_name = select_device(opt), ));
++ ctx->placebo_vulkan = pl_vulkan_create(ctx->vk_log, pl_vulkan_params(.instance = ctx->placebo_instance->instance, .get_proc_addr = ctx->placebo_instance->get_proc_addr, .surface = ctx->vk_surface, .allow_software = false, .opt_extensions = dev_exts, .num_opt_extensions = num_dev_exts, .extra_queues = VK_QUEUE_VIDEO_DECODE_BIT_KHR, .device_name = select_device(opt), ));
++ av_free(dev_exts);
+  if (!ctx->placebo_vulkan) {
+  return AVERROR_EXTERNAL;
+  }
+  ctx->hw_device_ref = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VULKAN);
+  device_ctx->user_opaque = ctx;
+  vk_dev_ctx->phys_dev = ctx->placebo_vulkan->phys_device;
+  vk_dev_ctx->act_dev = ctx->placebo_vulkan->device;
+  vk_dev_ctx->device_features = *ctx->placebo_vulkan->features;
+  vk_dev_ctx->enabled_dev_extensions = ctx->placebo_vulkan->extensions;
+  vk_dev_ctx->nb_enabled_dev_extensions = ctx->placebo_vulkan->num_extensions;
+  int nb_qf = 0;
+  vk_dev_ctx->qf[nb_qf] =(AVVulkanDeviceQueueFamily){ .idx = ctx->placebo_vulkan->queue_graphics.index, .num = ctx->placebo_vulkan->queue_graphics.count, .flags = VK_QUEUE_GRAPHICS_BIT, };
+- nb_qf++;
++ nb_qf++;
+  vk_dev_ctx->qf[nb_qf] =(AVVulkanDeviceQueueFamily){ .idx = ctx->placebo_vulkan->queue_transfer.index, .num = ctx->placebo_vulkan->queue_transfer.count, .flags = VK_QUEUE_TRANSFER_BIT, };
+  nb_qf++;
+  vk_dev_ctx->qf[nb_qf] =(AVVulkanDeviceQueueFamily){ .idx = ctx->placebo_vulkan->queue_compute.index, .num = ctx->placebo_vulkan->queue_compute.count, .flags = VK_QUEUE_COMPUTE_BIT, };
+- nb_qf++;
++ nb_qf++;
+  ret = get_decode_queue(renderer, &decode_index, &decode_count);
+- if (ret < 0) {
+- return ret;
+  }
++ if (ret < 0) {
++ return ret;
+  }
+  vk_dev_ctx->qf[nb_qf] =(AVVulkanDeviceQueueFamily){ .idx = decode_index, .num = decode_count, .flags = VK_QUEUE_VIDEO_DECODE_BIT_KHR, };
+- nb_qf++;
++ nb_qf++;
+  vk_dev_ctx->nb_qf = nb_qf;
+  ret = av_hwdevice_ctx_init(ctx->hw_device_ref);
+- if (ret < 0) {
+- return ret;
+  }
++ if (ret < 0) {
++ return ret;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: AVERROR — libavutil/error.h:41 [lsp, new version] --
+#define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+
+-- called macro: HAVE_VULKAN_RENDERER — fftools/ffplay_renderer.c:28 [priority_fallback, new version] --
+#define HAVE_VULKAN_RENDERER (PL_API_VER >= 278)
+
+-- called function: enable_debug — fftools/ffplay_renderer.c:107 [gtags_unique, new version] --
+static inline int enable_debug(const AVDictionary *opt) {
+   AVDictionaryEntry *entry = av_dict_get(opt, "debug", NULL, 0);
+   int debug = entry && strtol(entry->value, NULL, 10);
+   return debug;
+}
+   [reads: opt; writes: -]
+
+-- called function: av_vk_get_optional_device_extensions — libavutil/hwcontext_vulkan.c:710 [gtags_unique, new version] --
+const char **av_vk_get_optional_device_extensions(int *count) {
+   const char **exts = av_malloc_array(sizeof(*exts), FF_ARRAY_ELEMS(optional_device_exts));
+   if(!exts)
+     return NULL;
+   for(int i = 0;; i < FF_ARRAY_ELEMS(optional_device_exts); i++)
+     int i = 0;
+   exts[i] = optional_device_exts[i].name;
+   *count = FF_ARRAY_ELEMS(optional_device_exts);
+   return exts;
+}
+   [reads: count; writes: count*]
+
+-- called function: select_device — fftools/ffplay_renderer.c:183 [gtags_unique, new version] --
+static const char *select_device(const AVDictionary *opt) {
+   const AVDictionaryEntry *entry;
+   entry = av_dict_get(opt, "device", NULL, 0);
+   if(entry)
+     return entry->value;
+   return NULL;
+}
+   [reads: opt; writes: -]
+
+-- caller of create_vk_by_placebo: create — fftools/ffplay_renderer.c:478 --
+static int create(VkRenderer *renderer, SDL_Window *window, AVDictionary *opt) {
+   ...
+   unsigned num_ext = 0;
+   const char **ext = NULL;
+   ...
+   ext = av_calloc(num_ext, sizeof(*ext));
+   ...
+   if(entry && strtol(entry->value, NULL, 10))
+>    ret = create_vk_by_placebo(renderer, ext, num_ext, opt);
+   else
+   ...
+     if(ret < 0)
+   ...
+     return ret;
+}

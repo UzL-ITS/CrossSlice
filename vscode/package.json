@@ -1,0 +1,184 @@
+{
+  "name": "crossslice",
+  "displayName": "CrossSlice",
+  "description": "Commit and code context for C: def-use slices, callees, callers and macros, in an interactive call-graph explorer.",
+  "version": "0.1.0",
+  "publisher": "crossslice",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UzL-ITS/CrossSlice"
+  },
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "C",
+    "call graph",
+    "program slicing",
+    "commit",
+    "code comprehension"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onLanguage:c"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "crossslice.openExplorer",
+        "title": "Open Explorer",
+        "category": "CrossSlice",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "crossslice.contextAtCursor",
+        "title": "Context for Symbol Under Cursor",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.showInExplorer",
+        "title": "Show Symbol Under Cursor in Explorer",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.commitContext",
+        "title": "Commit Context",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.addMcp",
+        "title": "Add MCP Server for Agents…",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.start",
+        "title": "Start Backend",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.stop",
+        "title": "Stop Backend",
+        "category": "CrossSlice"
+      },
+      {
+        "command": "crossslice.showLog",
+        "title": "Show Backend Log",
+        "category": "CrossSlice"
+      }
+    ],
+    "mcpServerDefinitionProviders": [
+      {
+        "id": "crossslice.mcp",
+        "label": "CrossSlice"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "crossslice.contextAtCursor",
+          "group": "navigation@9",
+          "when": "resourceLangId == c"
+        },
+        {
+          "command": "crossslice.showInExplorer",
+          "group": "navigation@9",
+          "when": "resourceLangId == c"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "crossslice.openExplorer",
+          "group": "navigation",
+          "when": "resourceLangId == c"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CrossSlice",
+      "properties": {
+        "crossslice.backend": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "local",
+            "docker"
+          ],
+          "default": "auto",
+          "markdownEnumDescriptions": [
+            "Use the local `crossslice` command when it is installed, otherwise Docker.",
+            "Run the `crossslice` command installed on this machine (`uv tool install`).",
+            "Run the CrossSlice Docker image with the workspace folder mounted; nothing else needs to be installed."
+          ],
+          "description": "How the analysis backend is started."
+        },
+        "crossslice.localCommand": {
+          "type": "string",
+          "default": "crossslice",
+          "markdownDescription": "Command for the local backend, e.g. `crossslice` or `uv run --project /path/to/crossslice crossslice`."
+        },
+        "crossslice.gumtreePath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Local backend: path to GumTree's `bin/gumtree`. Empty: `GUMTREE_PATH`, `gumtree` on PATH, or a release unpacked under `/opt/gumtree`, `~/gumtree` or similar is found automatically."
+        },
+        "crossslice.env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "markdownDescription": "Extra environment variables for the backend process, e.g. `{\"PATH\": \"/opt/global/bin:${env:PATH}\"}`."
+        },
+        "crossslice.dockerCommand": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Container CLI: `docker` or `podman`. Empty: `docker` if available, else `podman`."
+        },
+        "crossslice.dockerImage": {
+          "type": "string",
+          "default": "crossslice",
+          "markdownDescription": "Image to run, e.g. `crossslice` (built locally with `docker build -t crossslice .`) or `ghcr.io/<org>/crossslice:0.1.0`."
+        },
+        "crossslice.dockerCacheVolume": {
+          "type": "string",
+          "default": "crossslice-cache",
+          "description": "Named volume that keeps indexes and graph stores between runs."
+        },
+        "crossslice.dockerExtraArgs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "markdownDescription": "Extra arguments for `docker run`, e.g. `[\"--security-opt\", \"label=disable\"]` on SELinux hosts."
+        },
+        "crossslice.codeLens": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a CrossSlice CodeLens above every C function definition while the backend runs."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "esbuild src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --target=node18 --sourcemap",
+    "watch": "npm run build -- --watch",
+    "package": "npm run check && npm run build && vsce package --allow-missing-repository --no-dependencies",
+    "vscode:prepublish": "npm run check && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.101.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.6.0"
+  }
+}

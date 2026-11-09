@@ -1,0 +1,9 @@
+Context for merged statement of old file: libavformat/dump.c with new file: libavformat/dump.c:
+void dump_stream_group(const AVFormatContext *ic, uint8_t *printed,
+                              int i, int index, int is_output) {
+  switch ((stg->type)) {
+  case AV_STREAM_GROUP_PARAMS_TREF:
+- const AVStreamGroupTREF *tref = stg->params.tref;
+  }
+}
+

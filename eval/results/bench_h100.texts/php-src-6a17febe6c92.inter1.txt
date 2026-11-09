@@ -1,0 +1,196 @@
+Context for merged statement of old file: Zend/zend_compile.c with new file: Zend/zend_compile.c:
+zend_result zend_compile_func_array_map(znode *result, zend_ast_list *args, zend_string *lcname, uint32_t lineno) {
+  zend_ast *callback = args->child[0];
+  zend_ast *args_ast;
+  switch ((callback->kind)) {
+  args_ast = zend_ast_call_get_args(callback);
+  }
+- if (callback->kind == ZEND_AST_CALL && zend_string_equals_literal_ci(zend_ast_get_str(callback->child[0]), "assert")) {
++ if (callback->kind == ZEND_AST_CALL && callback->child[0]->kind == ZEND_AST_ZVAL && Z_TYPE_P(zend_ast_get_zval(callback->child[0]))== IS_STRING && zend_string_equals_literal_ci(zend_ast_get_str(callback->child[0]), "assert")) {
+  return FAILURE;
+  }
++ zend_ast_list *callback_args = zend_ast_get_list(((zend_ast_fcc*)args_ast)->args);
+- if (child->kind == ZEND_AST_PLACEHOLDER_ARG) {
++ if (callback_args->children != 1 || callback_args->child[0]->attr != ZEND_PLACEHOLDER_VARIADIC) {
+- call_args = zend_ast_list_add(call_args, zend_ast_create_znode(&value));
++ return FAILURE;
+  }
+- else { ZEND_ASSERT(0 && "not implemented"); call_args = zend_ast_list_add(call_args, child); }
+  znode value;
+  value.op_type = IS_TMP_VAR;
+  value.u.op.var = get_temporary_variable();
+- zend_ast_list *callback_args = zend_ast_get_list(((zend_ast_fcc*)args_ast)->args);
+- zend_ast *call_args = zend_ast_create_list(0, ZEND_AST_ARG_LIST);
++ zend_ast *call_args = zend_ast_create_list(1, ZEND_AST_ARG_LIST, zend_ast_create_znode(&value));
+  for (uint32_t i = 0;; i < callback_args->children; i++) {
+  }
+  switch ((callback->kind)) {
+  zend_compile_expr(&call_result, zend_ast_create(ZEND_AST_CALL, callback->child[0], call_args));
+  zend_compile_expr(&call_result, zend_ast_create(ZEND_AST_STATIC_CALL, callback->child[0], callback->child[1], call_args));
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: zend_ast_get_list — Zend/zend_ast.h:377 [gtags_unique] --
+static zend_always_inline zend_ast_list *zend_ast_get_list(zend_ast *ast) {
+   ZEND_ASSERT(zend_ast_is_list(ast));
+   return(zend_ast_list *)ast;
+}
+   [reads: ast; writes: -]
+
+-- called macro: zend_string_equals_literal_ci — Zend/zend_string.h:388 [gtags_unique] --
+#define zend_string_equals_literal_ci(str, c) \
+	(ZSTR_LEN(str) == sizeof("" c) - 1 && !zend_binary_strcasecmp(ZSTR_VAL(str), ZSTR_LEN(str), (c), sizeof(c) - 1))
+
+-- called function: zend_ast_get_str — Zend/zend_ast.h:386 [gtags_unique] --
+static zend_always_inline zend_string *zend_ast_get_str(zend_ast *ast) {
+   const zval *zv = zend_ast_get_zval(ast);
+   ZEND_ASSERT(Z_TYPE_P(zv)== IS_STRING);
+   return Z_STR_P(zv);
+}
+   [reads: ast; writes: -]
+
+-- called function: zend_compile_expr — Zend/zend_compile.c:12150 [gtags_unique, old version] --
+static void zend_compile_expr(znode *result, zend_ast *ast) {
+   ...
+   uint32_t checkpoint = zend_short_circuiting_checkpoint();
+   zend_compile_expr_inner(result, ast);
+   zend_short_circuiting_commit(checkpoint, result, ast);
+}
+   [reads: ast, result; writes: -]
+
+-- called function: zend_ast_create — Zend/zend_ast.c:472 [priority_fallback, old version] --
+ZEND_API zend_ast *zend_ast_create(zend_ast_kind kind, ...) {
+   va_list va;
+   zend_ast *ast;
+   va_start(va, kind);
+   ast = zend_ast_create_from_va_list(kind, 0, va);
+   ...
+   return ast;
+}
+   [reads: kind; writes: -]
+
+-- called function: zend_ast_create_znode — Zend/zend_ast.c:46 [gtags_unique, old version] --
+ZEND_API zend_ast * ZEND_FASTCALL zend_ast_create_znode(const znode *node) {
+   zend_ast_znode *ast;
+   ast = zend_ast_alloc(sizeof(zend_ast_znode));
+   ast->kind = ZEND_AST_ZNODE;
+   ast->attr = 0;
+   ast->lineno = CG(zend_lineno);
+   ast->node = *node;
+   return(zend_ast *)ast;
+}
+   [reads: node; writes: -]
+
+-- called macro: ZEND_ASSERT — Zend/zend_portability.h:110 [lsp, old version] --
+# define ZEND_ASSERT(c)	assert(c)
+
+-- called function: get_temporary_variable — Zend/zend_compile.c:534 [gtags_unique, old version] --
+static zend_always_inline uint32_t get_temporary_variable(void) /* {
+   return(uint32_t)CG(active_op_array)->T++;
+}
+
+-- called macro: zend_ast_create_list — Zend/zend_ast.h:321 [lsp, old version] --
+# define zend_ast_create_list(init_children, ...) \
+	ZEND_AST_SPEC_CALL(zend_ast_create_list, __VA_ARGS__)
+
+-- called function: zend_compile_expr — Zend/zend_compile.c:12148 [gtags_unique, new version] --
+static void zend_compile_expr(znode *result, zend_ast *ast) {
+   ...
+   uint32_t checkpoint = zend_short_circuiting_checkpoint();
+   zend_compile_expr_inner(result, ast);
+   zend_short_circuiting_commit(checkpoint, result, ast);
+}
+   [reads: ast, result; writes: -]
+
+-- called macro: zend_ast_create — Zend/zend_ast.h:317 [lsp, new version] --
+# define zend_ast_create(...) \
+	ZEND_AST_SPEC_CALL(zend_ast_create, __VA_ARGS__)
+
+-- called macro: Z_TYPE_P — Zend/zend_types.h:672 [gtags_unique, new version] --
+#define Z_TYPE_P(zval_p)			Z_TYPE(*(zval_p))
+
+-- called function: zend_ast_get_zval — Zend/zend_ast.h:382 [gtags_unique, new version] --
+static zend_always_inline zval *zend_ast_get_zval(zend_ast *ast) {
+   ZEND_ASSERT(ast->kind == ZEND_AST_ZVAL);
+   return &((zend_ast_zval *)ast)->val;
+}
+   [reads: ast; writes: -]
+
+-- called macro: IS_STRING — Zend/zend_types.h:615 [gtags_unique, new version] --
+#define IS_STRING					6
+
+-- called macro: ZEND_PLACEHOLDER_VARIADIC — Zend/zend_compile.h:1240 [gtags_unique, new version] --
+#define ZEND_PLACEHOLDER_VARIADIC (1<<0)
+
+-- caller of zend_compile_func_array_map: zend_try_compile_special_func_ex — Zend/zend_compile.c:5209 --
+static zend_result zend_try_compile_special_func_ex(znode *result, zend_string *lcname, zend_ast_list *args, uint32_t type, uint32_t lineno) /* {
+   if(zend_string_equals_literal(lcname, "strlen")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_null")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_bool")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_long")|| zend_string_equals_literal(lcname, "is_int")|| zend_string_equals_literal(lcname, "is_integer")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_float")|| zend_string_equals_literal(lcname, "is_double")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_string")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_array")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_object")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_resource")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "is_scalar")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "boolval")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "intval")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "floatval")|| zend_string_equals_literal(lcname, "doubleval")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "strval")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "defined")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "chr")&& type == BP_VAR_R) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "ord")&& type == BP_VAR_R) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "call_user_func_array")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "call_user_func")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "in_array")) {
+   ...
+   } else if(zend_string_equals(lcname, ZSTR_KNOWN(ZEND_STR_COUNT))|| zend_string_equals_literal(lcname, "sizeof")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "get_class")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "get_called_class")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "gettype")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "func_num_args")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "func_get_args")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "array_slice")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "array_key_exists")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "sprintf")) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "printf")) {
+   ...
+   } else if(zend_string_equals(lcname, ZSTR_KNOWN(ZEND_STR_CLONE))) {
+   ...
+   } else if(zend_string_equals_literal(lcname, "array_map")) {
+>    return zend_compile_func_array_map(result, args, lcname, lineno);
+   ...
+   }
+}

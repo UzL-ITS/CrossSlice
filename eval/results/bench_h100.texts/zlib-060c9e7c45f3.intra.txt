@@ -1,0 +1,24 @@
+Context for merged statement of old file: contrib/minizip/crypt.h with new file: contrib/minizip/crypt.h:
+int update_keys(unsigned long* pkeys, const z_crc_t* pcrc_32_tab, int c) {
+- register int keyshift =(int)((*(pkeys+1))>> 24);
++ int keyshift =(int)((*(pkeys+1))>> 24);
+}
+
+Context for merged statement of old file: deflate.c with new file: deflate.c:
+local longest_match(deflate_state *s, IPos cur_match) {
+- register Bytef *scan = s->window + s->strstart;
++ Bytef *scan = s->window + s->strstart;
+- register Bytef *match;
++ Bytef *match;
+- register int len;
++ int len;
+- register Bytef *strend = s->window + s->strstart + MAX_MATCH;
++ Bytef *strend = s->window + s->strstart + MAX_MATCH;
+}
+
+Context for merged statement of old file: trees.c with new file: trees.c:
+local unsigned bi_reverse(unsigned code, int len) {
+- register unsigned res = 0;
++ unsigned res = 0;
+}
+

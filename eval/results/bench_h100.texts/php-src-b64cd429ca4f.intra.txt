@@ -1,0 +1,9 @@
+Context for merged statement of old file: ext/reflection/php_reflection.c with new file: ext/reflection/php_reflection.c:
+void reflection_method_invoke(INTERNAL_FUNCTION_PARAMETERS, int variadic) {
+  zval retval;
+  if (variadic) {
+- ZVAL_COPY_VALUE(return_value, &retval);
++ RETURN_COPY_VALUE(&retval);
+  }
+}
+

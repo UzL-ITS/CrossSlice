@@ -1,0 +1,22 @@
+Context for merged statement of old file: Zend/zend_lazy_objects.c with new file: Zend/zend_lazy_objects.c:
+zend_object *zend_lazy_object_clone(zend_object *old_obj) {
+  zend_class_entry *ce = old_obj->ce;
+  zend_object *new_proxy = zend_objects_new(ce);
+- OBJ_EXTRA_FLAGS(new_proxy)= OBJ_EXTRA_FLAGS(old_obj);
++ OBJ_EXTRA_FLAGS(new_proxy)= OBJ_EXTRA_FLAGS(old_obj);
+}
+
+
+==== Cross-function context ====
+
+-- called macro: OBJ_EXTRA_FLAGS — Zend/zend_types.h:850 [gtags_unique] --
+#define OBJ_EXTRA_FLAGS(obj)		((obj)->extra_flags)
+
+-- caller of zend_lazy_object_clone: zend_objects_clone_obj — Zend/zend_objects.c:316 --
+ZEND_API zend_object *zend_objects_clone_obj(zend_object *old_object) {
+   ...
+   if(UNEXPECTED(zend_object_is_lazy(old_object))) {
+>    return zend_lazy_object_clone(old_object);
+   ...
+   }
+}

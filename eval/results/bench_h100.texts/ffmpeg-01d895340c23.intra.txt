@@ -1,0 +1,28 @@
+Context for merged statement of old file: libavcodec/sanm.c with new file: libavcodec/sanm.c:
+av_cold decode_init(AVCodecContext *avctx) {
+  SANMVideoContext *ctx = avctx->priv_data;
+  ctx->version = !avctx->extradata_size;
++ if (!ctx->version) {
+- if (!ctx->version) {
++ if (avctx->width != 0 || avctx->height != 0) {
++ if ((avctx->width < 2)||(avctx->height < 2)) {
+  }
++ if ((avctx->width <= 640)&&(avctx->height <= 480)) {
+- ctx->have_dimensions = 0;
++ ctx->have_dimensions = 1;
+  }
++ else {
++ return AVERROR_INVALIDDATA;
++ }
+  }
+- else if(avctx->width > 800 || avctx->height > 600 || avctx->width < 8 || avctx->height < 8){ // BL16 valid range is 8x8 - 800x600 return AVERROR_INVALIDDATA; }
+  }
++ else {
+  return AVERROR_INVALIDDATA;
++ }
+  init_sizes(ctx, avctx->width, avctx->height);
+  if (init_buffers(ctx)) {
+  return AVERROR(ENOMEM);
+  }
+}
+

@@ -1,0 +1,10 @@
+Impact task, Claude agents, run 1 (ANALYSIS_VERSION 2026-11-03.7), 18 cases, budget 20k, truth eval/cases_impact_all_v2.jsonl
+run 2026-11-03; cost Haiku $0.13, Sonnet $1.19; every turn served by the requested model, no refusals
+
+model        arm        prec recall    F1  exact  mean tok   median  calls   cost
+Haiku 5.5    self       0.99   0.97  0.97  16/18    29,042   24,166    8.8   0.06
+Haiku 5.5    tool       1.00   1.00  1.00  18/18    15,190   13,806    4.3   0.03
+Haiku 5.5    semantic   1.00   1.00  1.00  18/18    25,508   20,523    6.8   0.04
+Sonnet 5.5   self       0.99   0.99  0.99  16/18    16,635   10,959    5.8   0.58
+Sonnet 5.5   tool       1.00   1.00  1.00  18/18     9,241    8,912    3.0   0.32
+Sonnet 5.5   semantic   1.00   1.00  1.00  18/18     9,005    7,676    2.6   0.29

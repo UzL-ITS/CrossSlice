@@ -1,0 +1,377 @@
+Context for merged statement of old file: Zend/zend_execute.h with new file: Zend/zend_execute.h:
+#ifndef ZEND_EXECUTE_H
+  ZEND_API extern zend_class_entry
+- ZEND_API bool zend_is_valid_class_name(zend_string *name);
++ ZEND_API bool zend_is_valid_class_name(const zend_string *name);
+  ZEND_API zend_class_entry
+- ZEND_API zend_class_entry
++ ZEND_API zend_class_entry *zend_get_called_scope(const zend_execute_data *ex);
+- ZEND_API zend_object
++ ZEND_API zend_object *zend_get_this_object(const zend_execute_data *ex);
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+  ZEND_API ZEND_COLD
+- ZEND_API bool
++ ZEND_API bool
+- ZEND_API bool
++ ZEND_API bool
+- ZEND_API bool
++ ZEND_API bool
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+  ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+  ZEND_API bool zend_verify_scalar_type_hint(uint32_t type_mask, zval *arg, bool strict, bool is_internal_arg);
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+- ZEND_API ZEND_COLD
++ ZEND_API ZEND_COLD
+  ZEND_API bool zend_verify_ref_array_assignable(zend_reference *ref);
+  ZEND_API bool zend_check_user_type_slow(const zend_type *type, zval *arg, const zend_reference *ref, bool is_return_type);
+   #if ZEND_DEBUG
+  ZEND_API bool zend_internal_call_should_throw(const zend_function *fbc, zend_execute_data *call);
+  ZEND_API bool zend_verify_internal_return_type(const zend_function *zf, zval *ret);
+  #endif
+  #define ZEND_REF_TYPE_SOURCES(ref)\(ref)->sources
+  #define ZEND_REF_HAS_TYPE_SOURCES(ref)\(ZEND_REF_TYPE_SOURCES(ref).ptr != NULL)
+  #define ZEND_REF_FIRST_SOURCE(ref)\(ZEND_PROPERTY_INFO_SOURCE_IS_LIST((ref)->sources.list)\ ? ZEND_PROPERTY_INFO_SOURCE_TO_LIST((ref)->sources.list)->ptr[0] \ :(ref)->sources.ptr)
+- ZEND_API void
+- ZEND_FASTCALL zend_ref_add_type_source(zend_property_info_source_list *source_list, zend_property_info *prop);
+  ZEND_API void
++ ZEND_FASTCALL zend_ref_add_type_source(zend_property_info_source_list *source_list, zend_property_info *prop);
++ ZEND_API void
+- ZEND_API zend_result
++ ZEND_API zend_result
+- ZEND_API zend_result
++ ZEND_API zend_result
+- ZEND_API zend_result
++ ZEND_API zend_result
+  ZEND_API void zend_vm_stack_init(void);
+  ZEND_API void zend_vm_stack_init_ex(size_t page_size);
+  ZEND_API void zend_vm_stack_destroy(void);
+  ZEND_API void* zend_vm_stack_extend(size_t size);
+- ZEND_API zend_function
++ ZEND_API zend_function *zend_active_function_ex(const zend_execute_data *execute_data);
+- ZEND_API zend_string
++ ZEND_API zend_string
+  ZEND_API zend_string *get_function_or_method_name(const zend_function *func);
+- ZEND_API zend_string
++ ZEND_API zend_string
+  ZEND_API bool zend_is_executing(void);
+  ZEND_API void zend_set_timeout(zend_long seconds, bool reset_signals);
+  ZEND_API void zend_unset_timeout(void);
+- ZEND_API zend_function
+  ZEND_API zend_function
++ ZEND_API zend_function
+  ZEND_API void zend_fetch_dimension_const(zval *result, zval *container, zval *dim, int type);
+  ZEND_API bool zend_gcc_global_regs(void);
+  ZEND_API zend_result zend_set_user_opcode_handler(uint8_t opcode, user_opcode_handler_t handler);
+  ZEND_API void zend_clean_and_cache_symbol_table(zend_array *symbol_table);
+  ZEND_API void zend_unfinished_calls_gc(zend_execute_data *execute_data, zend_execute_data *call, uint32_t op_num, zend_get_gc_buffer *buf);
+  ZEND_API void zend_cleanup_unfinished_execution(zend_execute_data *execute_data, uint32_t op_num, uint32_t catch_op_num);
+  ZEND_API void zend_frameless_observed_call(zend_execute_data *execute_data);
+  ZEND_API bool zend_verify_class_constant_type(const zend_class_constant *c, const zend_string *name, zval *constant);
+  ZEND_COLD void zend_verify_class_constant_type_error(const zend_class_constant *c, const zend_string *name, const zval *constant);
+  ZEND_API bool zend_verify_property_type(const zend_property_info *info, zval *property, bool strict);
+  ZEND_COLD void zend_verify_property_type_error(const zend_property_info *info, const zval *property);
+  ZEND_COLD void zend_magic_get_property_type_inconsistency_error(const zend_property_info *info, const zval *property);
+  #define ZEND_REF_ADD_TYPE_SOURCE(ref, source)\ zend_ref_add_type_source(&ZEND_REF_TYPE_SOURCES(ref), source)
+  #define ZEND_REF_DEL_TYPE_SOURCE(ref, source)\ zend_ref_del_type_source(&ZEND_REF_TYPE_SOURCES(ref), source)
+  #define ZEND_REF_FOREACH_TYPE_SOURCES(ref, prop)do { \ zend_property_info_source_list *_source_list = &ZEND_REF_TYPE_SOURCES(ref); \ zend_property_info **_prop, **_end; \ zend_property_info_list *_list; \ if(_source_list->ptr){ \ if(ZEND_PROPERTY_INFO_SOURCE_IS_LIST(_source_list->list)){ \ _list = ZEND_PROPERTY_INFO_SOURCE_TO_LIST(_source_list->list); \ _prop = _list->ptr; \ _end = _list->ptr + _list->num; \ } else { \ _prop = &_source_list->ptr; \ _end = _prop + 1; \ } \ for(; _prop < _end; _prop++){ \ prop = *_prop; \
+  ZEND_COLD void zend_match_unhandled_error(const zval *value);
+  #endif
+}
+}
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- void zend_extension_activator(zend_extension *extension) {
++ void zend_extension_activator(const zend_extension *extension) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- void zend_extension_deactivator(zend_extension *extension) {
++ void zend_extension_deactivator(const zend_extension *extension) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+int clean_non_persistent_function_full(zval *zv) {
+- zend_function *function = Z_PTR_P(zv);
++ const zend_function *function = Z_PTR_P(zv);
+  return(function->type == ZEND_INTERNAL_FUNCTION)? ZEND_HASH_APPLY_KEEP : ZEND_HASH_APPLY_REMOVE;
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+int clean_non_persistent_class_full(zval *zv) {
+- zend_class_entry *ce = Z_PTR_P(zv);
++ const zend_class_entry *ce = Z_PTR_P(zv);
+  return(ce->type == ZEND_INTERNAL_CLASS)? ZEND_HASH_APPLY_KEEP : ZEND_HASH_APPLY_REMOVE;
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API *get_active_class_name(const char **space) {
+- zend_function *func;
++ const zend_function *func;
+  func = zend_active_function();
+  switch ((func->type)) {
+  case ZEND_INTERNAL_FUNCTION:
+- zend_class_entry *ce = func->common.scope;
++ const zend_class_entry *ce = func->common.scope;
+  if (space) {
+  *space = ce ? "::" : "";
+  }
+  return ce ? ZSTR_VAL(ce->name): "";
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API *get_active_function_name(void) {
+- zend_function *func;
++ const zend_function *func;
+  func = zend_active_function();
+  switch ((func->type)) {
+  case ZEND_USER_FUNCTION:
+- zend_string *function_name = func->common.function_name;
++ const zend_string *function_name = func->common.function_name;
+  if (function_name) {
+  return ZSTR_VAL(function_name);
+  }
+  else {
+  return "main";
+  }
+  return ZSTR_VAL(func->common.function_name);
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- ZEND_API *zend_active_function_ex(zend_execute_data *execute_data) {
++ ZEND_API *zend_active_function_ex(const zend_execute_data *execute_data) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API *get_active_function_arg_name(uint32_t arg_num) {
+- zend_function *func = zend_active_function();
++ const zend_function *func = zend_active_function();
+  return get_function_arg_name(func, arg_num);
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API *zend_get_executed_filename(void) {
+- zend_string *filename = zend_get_executed_filename_ex();
++ const zend_string *filename = zend_get_executed_filename_ex();
+  return filename != NULL ? ZSTR_VAL(filename): "[no active file]";
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API *zend_get_executed_filename_ex(void) {
+- zend_execute_data *ex = EG(current_execute_data);
++ const zend_execute_data *ex = EG(current_execute_data);
+  while ((ex &&(!ex->func || !ZEND_USER_CODE(ex->func->type)))) {
+  ex = ex->prev_execute_data;
+  }
+  if (ex) {
+  return ex->func->op_array.filename;
+  }
+  else {
+  return NULL;
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API zend_get_executed_lineno(void) {
+- zend_execute_data *ex = EG(current_execute_data);
++ const zend_execute_data *ex = EG(current_execute_data);
+  while ((ex &&(!ex->func || !ZEND_USER_CODE(ex->func->type)))) {
+  ex = ex->prev_execute_data;
+  }
+  if (ex) {
+  if (!ex->opline) {
+  return ex->func->op_array.opcodes[0].lineno;
+  }
+  if (EG(exception)&& ex->opline->opcode == ZEND_HANDLE_EXCEPTION && ex->opline->lineno == 0 && EG(opline_before_exception)) {
+  return EG(opline_before_exception)->lineno;
+  }
+  return ex->opline->lineno;
+  }
+  else {
+  return 0;
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_FASTCALL zval_update_constant_with_ctx(zval *p, zend_class_entry *scope, zend_ast_evaluate_ctx *ctx) {
+  if (Z_TYPE_P(p)== IS_CONSTANT_AST) {
+  zend_ast *ast = Z_ASTVAL_P(p);
+  if (ast->kind == ZEND_AST_CONSTANT) {
+  zend_string *name = zend_ast_get_constant_name(ast);
+- zval *zv = zend_get_constant_ex(name, scope, ast->attr);
++ const zval *zv = zend_get_constant_ex(name, scope, ast->attr);
+  if (UNEXPECTED(zv == NULL)) {
+  return FAILURE;
+  }
+  ZVAL_COPY_OR_DUP(p, zv);
+  }
+  else {
+  return FAILURE;
+  }
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- ZEND_API zend_is_valid_class_name(zend_string *name) {
++ ZEND_API zend_is_valid_class_name(const zend_string *name) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- ZEND_API *zend_get_called_scope(zend_execute_data *ex) {
++ ZEND_API *zend_get_called_scope(const zend_execute_data *ex) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- ZEND_API *zend_get_this_object(zend_execute_data *ex) {
++ ZEND_API *zend_get_this_object(const zend_execute_data *ex) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+- ZEND_COLD report_class_fetch_error(zend_string *class_name, uint32_t fetch_type) {
++ ZEND_COLD report_class_fetch_error(const zend_string *class_name, uint32_t fetch_type) {
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API zend_attach_symbol_table(zend_execute_data *execute_data) {
+- zend_op_array *op_array = &execute_data->func->op_array;
++ const zend_op_array *op_array = &execute_data->func->op_array;
+  HashTable *ht = execute_data->symbol_table;
+  if (EXPECTED(op_array->last_var)) {
+  zend_string **str = op_array->vars;
+  zend_string **end = str + op_array->last_var;
+  do {
+  zval *zv = zend_hash_find_known_hash(ht, *str);
+  if (zv) {
+  if (Z_TYPE_P(zv)== IS_INDIRECT) {
+- zval *val = Z_INDIRECT_P(zv);
++ const zval *val = Z_INDIRECT_P(zv);
+  ZVAL_COPY_VALUE(var, val);
+  }
+  else {
+  ZVAL_COPY_VALUE(var, zv);
+  }
+  }
+  else {
+  zv = zend_hash_add_new(ht, *str, var);
+  }
+  ZVAL_INDIRECT(zv, var);
+  str++;
+  } while ((str != end));
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API zend_detach_symbol_table(zend_execute_data *execute_data) {
+- zend_op_array *op_array = &execute_data->func->op_array;
++ const zend_op_array *op_array = &execute_data->func->op_array;
+  if (EXPECTED(op_array->last_var)) {
+  zend_string **str = op_array->vars;
+  zend_string **end = str + op_array->last_var;
+  do {
+  if (Z_TYPE_P(var)== IS_UNDEF) {
+  zend_hash_del(ht, *str);
+  }
+  else {
+  zend_hash_update(ht, *str, var);
+  }
+  str++;
+  } while ((str != end));
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API zend_set_local_var(zend_string *name, zval *value, bool force) {
+  zend_execute_data *execute_data = EG(current_execute_data);
+  while ((execute_data &&(!execute_data->func || !ZEND_USER_CODE(execute_data->func->common.type)))) {
+  execute_data = execute_data->prev_execute_data;
+  }
+  if (execute_data) {
+  if (!(EX_CALL_INFO()& ZEND_CALL_HAS_SYMBOL_TABLE)) {
+- zend_op_array *op_array = &execute_data->func->op_array;
++ const zend_op_array *op_array = &execute_data->func->op_array;
+  if (EXPECTED(op_array->last_var)) {
+  zend_string **str = op_array->vars;
+  zend_string **end = str + op_array->last_var;
+  do {
+  if (ZSTR_H(*str)== h && zend_string_equal_content(*str, name)) {
+  zval *var = EX_VAR_NUM(str - op_array->vars);
+  ZVAL_COPY_VALUE(var, value);
+  }
+  str++;
+  } while ((str != end));
+  }
+  }
+  else {
+  return SUCCESS;
+  }
+  }
+}
+
+Context for merged statement of old file: Zend/zend_execute_API.c with new file: Zend/zend_execute_API.c:
+ZEND_API zend_set_local_var_str(const char *name, size_t len, zval *value, bool force) {
+  zend_execute_data *execute_data = EG(current_execute_data);
+  while ((execute_data &&(!execute_data->func || !ZEND_USER_CODE(execute_data->func->common.type)))) {
+  execute_data = execute_data->prev_execute_data;
+  }
+  if (execute_data) {
+  if (!(EX_CALL_INFO()& ZEND_CALL_HAS_SYMBOL_TABLE)) {
+- zend_op_array *op_array = &execute_data->func->op_array;
++ const zend_op_array *op_array = &execute_data->func->op_array;
+  if (EXPECTED(op_array->last_var)) {
+  zend_string **str = op_array->vars;
+  zend_string **end = str + op_array->last_var;
+  do {
+  if (ZSTR_H(*str)== h && zend_string_equals_cstr(*str, name, len)) {
+  zval *var = EX_VAR_NUM(str - op_array->vars);
+  zval_ptr_dtor(var);
+  ZVAL_COPY_VALUE(var, value);
+  }
+  str++;
+  } while ((str != end));
+  }
+  }
+  else {
+  return SUCCESS;
+  }
+  }
+}
+

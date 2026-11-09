@@ -1,0 +1,21 @@
+Context for merged statement of old file: test/infcover.c with new file: test/infcover.c:
+local cover_support(void) {
+  z_stream strm;
+  strm.avail_in = 0;
+  strm.next_in = Z_NULL;
+  strm.avail_in = 0;
+  strm.next_in = Z_NULL;
+- ret = inflateInit_(&strm, ZLIB_VERSION - 1, (int)sizeof(z_stream));
++ ret = inflateInit_(&strm, "!", (int)sizeof(z_stream));
+  assert(ret == Z_VERSION_ERROR);
+  assert(ret == Z_OK);
+  assert(ret == Z_OK);
+}
+
+Context for merged statement of old file: test/infcover.c with new file: test/infcover.c:
+local push(void *desc, unsigned char *buf, unsigned len) {
++ (void)buf;
+- buf += len;
++ (void)len;
+}
+

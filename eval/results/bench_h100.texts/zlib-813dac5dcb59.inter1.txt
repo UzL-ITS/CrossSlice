@@ -1,0 +1,465 @@
+Context for merged statement of old file: gzguts.h with new file: gzguts.h:
++ #ifdef EAGAIN
++ #ifdef EWOULDBLOCK
++ # define BLOCKED(e)((e)== EAGAIN ||(e)== EWOULDBLOCK)
+  #else
++ # define BLOCKED(e)((e)== EAGAIN)
+  #endif
+  #else
++ #ifdef EWOULDBLOCK
++ # define BLOCKED(e)((e)== EWOULDBLOCK)
+  #else
++ # define BLOCKED(e)(0)
+  #endif
+  #endif
+
+Context for merged statement of old file: gzread.c with new file: gzread.c:
+local gz_load(gz_statep state, unsigned char *buf, unsigned len,
+                  unsigned *have) {
+  errno = 0;
+  if (ret < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  return 0;
+  }
+  }
+}
+
+Context for merged statement of old file: gzwrite.c with new file: gzwrite.c:
+local gz_comp(gz_statep state, int flush) {
+  if (state->direct) {
+  while ((strm->avail_in)) {
+  errno = 0;
+  if (writ < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  }
+  }
+  }
+  }
+  do {
+  if (strm->avail_out == 0 ||(flush != Z_NO_FLUSH &&(flush != Z_FINISH || ret == Z_STREAM_END))) {
+  while ((strm->next_out > state->x.next)) {
+  errno = 0;
+  if (writ < 0) {
+- if (errno == EAGAIN || errno == EWOULDBLOCK) {
++ if (BLOCKED(errno)) {
+  }
+  }
+  }
+  }
+  } while ((have));
+}
+
+
+==== Cross-function context ====
+
+-- called function: gz_error — gzlib.c:555 [priority_fallback] --
+void ZLIB_INTERNAL gz_error(gz_statep state, int err, const char *msg) {
+   if(state->msg != NULL) {
+     if(state->err != Z_MEM_ERROR)
+       free(state->msg);
+     state->msg = NULL;
+   }
+   if(err != Z_OK && err != Z_BUF_ERROR && !state->again)
+     state->x.have = 0;
+   state->err = err;
+   if(msg == NULL)
+     return;
+   if(err == Z_MEM_ERROR)
+     return;
+   if((state->msg =(char *)malloc(strlen(state->path)+ strlen(msg)+ 3))== NULL) {
+     state->err = Z_MEM_ERROR;
+     return;
+   }
+   #if !defined(NO_snprintf)&& !defined(NO_vsnprintf)
+   (void)snprintf(state->msg, strlen(state->path)+ strlen(msg)+ 3, "%s%s%s", state->path, ": ", msg);
+   ...
+   strcpy(state->msg, state->path);
+   strcat(state->msg, ": ");
+   strcat(state->msg, msg);
+   #endif
+}
+   [reads: err, msg, state; writes: state*]
+
+-- called function: deflate — deflate.c:981 [priority_fallback] --
+int ZEXPORT deflate(z_streamp strm, int flush) {
+   int old_flush;
+   deflate_state *s;
+   if(deflateStateCheck(strm)|| flush > Z_BLOCK || flush < 0) {
+     return Z_STREAM_ERROR;
+   }
+   s = strm->state;
+   if(strm->next_out == Z_NULL ||(strm->avail_in != 0 && strm->next_in == Z_NULL)||(s->status == FINISH_STATE && flush != Z_FINISH)) {
+     ERR_RETURN(strm, Z_STREAM_ERROR);
+   }
+   if(strm->avail_out == 0)
+     ERR_RETURN(strm, Z_BUF_ERROR);
+   old_flush = s->last_flush;
+   s->last_flush = flush;
+   if(s->pending != 0) {
+     flush_pending(strm);
+     if(strm->avail_out == 0) {
+       s->last_flush = -1;
+       return Z_OK;
+     }
+   } else if(strm->avail_in == 0 && RANK(flush)<= RANK(old_flush)&& flush != Z_FINISH) {
+     ERR_RETURN(strm, Z_BUF_ERROR);
+   }
+   if(s->status == FINISH_STATE && strm->avail_in != 0) {
+     ERR_RETURN(strm, Z_BUF_ERROR);
+   }
+   if(s->status == INIT_STATE && s->wrap == 0)
+     s->status = BUSY_STATE;
+   if(s->status == INIT_STATE) {
+     uInt header =(Z_DEFLATED +((s->w_bits - 8)<< 4))<< 8;
+   ...
+     if(s->strategy >= Z_HUFFMAN_ONLY || s->level < 2)
+   ...
+     else if(s->level < 6)
+   ...
+     else if(s->level == 6)
+   ...
+     else
+   ...
+       header |=(level_flags << 6);
+     if(s->strstart != 0)
+       header |= PRESET_DICT;
+     header += 31 -(header % 31);
+     putShortMSB(s, header);
+     if(s->strstart != 0) {
+       putShortMSB(s, (uInt)(strm->adler >> 16));
+       putShortMSB(s, (uInt)(strm->adler & 0xffff));
+     }
+     strm->adler = adler32(0L, Z_NULL, 0);
+     s->status = BUSY_STATE;
+     flush_pending(strm);
+     if(s->pending != 0) {
+       s->last_flush = -1;
+       return Z_OK;
+     }
+   }
+   #ifdef ...
+   if(s->status == GZIP_STATE) {
+     strm->adler = crc32(0L, Z_NULL, 0);
+     put_byte(s, 31);
+     put_byte(s, 139);
+     put_byte(s, 8);
+     if(s->gzhead == Z_NULL) {
+       put_byte(s, 0);
+       put_byte(s, 0);
+       put_byte(s, 0);
+       put_byte(s, 0);
+       put_byte(s, 0);
+       put_byte(s, s->level == 9 ? 2 :(s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ? 4 : 0));
+       put_byte(s, OS_CODE);
+       s->status = BUSY_STATE;
+       flush_pending(strm);
+       if(s->pending != 0) {
+         s->last_flush = -1;
+         return Z_OK;
+       }
+     } else {
+       put_byte(s, (s->gzhead->text ? 1 : 0)+(s->gzhead->hcrc ? 2 : 0)+(s->gzhead->extra == Z_NULL ? 0 : 4)+(s->gzhead->name == Z_NULL ? 0 : 8)+(s->gzhead->comment == Z_NULL ? 0 : 16));
+       put_byte(s, (Byte)(s->gzhead->time & 0xff));
+       put_byte(s, (Byte)((s->gzhead->time >> 8)& 0xff));
+       put_byte(s, (Byte)((s->gzhead->time >> 16)& 0xff));
+       put_byte(s, (Byte)((s->gzhead->time >> 24)& 0xff));
+       put_byte(s, s->level == 9 ? 2 :(s->strategy >= Z_HUFFMAN_ONLY || s->level < 2 ? 4 : 0));
+       put_byte(s, s->gzhead->os & 0xff);
+       if(s->gzhead->extra != Z_NULL) {
+         put_byte(s, s->gzhead->extra_len & 0xff);
+         put_byte(s, (s->gzhead->extra_len >> 8)& 0xff);
+       }
+       if(s->gzhead->hcrc)
+         strm->adler = crc32_z(strm->adler, s->pending_buf, s->pending);
+       s->gzindex = 0;
+       s->status = EXTRA_STATE;
+     }
+   }
+   if(s->status == EXTRA_STATE) {
+     if(s->gzhead->extra != Z_NULL) {
+       ulg beg = s->pending;
+       ulg left =(s->gzhead->extra_len & 0xffff)- s->gzindex;
+       while(s->pending + left > s->pending_buf_size) {
+         ulg copy = s->pending_buf_size - s->pending;
+         zmemcpy(s->pending_buf + s->pending, s->gzhead->extra + s->gzindex, copy);
+         s->pending = s->pending_buf_size;
+         HCRC_UPDATE(beg);
+         s->gzindex += copy;
+         flush_pending(strm);
+         if(s->pending != 0) {
+           s->last_flush = -1;
+           return Z_OK;
+         }
+   ...
+         left -= copy;
+       }
+       zmemcpy(s->pending_buf + s->pending, s->gzhead->extra + s->gzindex, left);
+       s->pending += left;
+       HCRC_UPDATE(beg);
+       s->gzindex = 0;
+     }
+     s->status = NAME_STATE;
+   }
+   if(s->status == NAME_STATE) {
+     if(s->gzhead->name != Z_NULL) {
+       ulg beg = s->pending;
+   ...
+       do {
+         if(s->pending == s->pending_buf_size) {
+           HCRC_UPDATE(beg);
+           flush_pending(strm);
+           if(s->pending != 0) {
+             s->last_flush = -1;
+             return Z_OK;
+   ...
+           }
+         }
+         val = s->gzhead->name[s->gzindex++];
+         put_byte(s, val);
+       } while(val != 0);
+       HCRC_UPDATE(beg);
+       s->gzindex = 0;
+     }
+     s->status = COMMENT_STATE;
+   }
+   if(s->status == COMMENT_STATE) {
+     if(s->gzhead->comment != Z_NULL) {
+       ulg beg = s->pending;
+   ...
+       do {
+         if(s->pending == s->pending_buf_size) {
+           HCRC_UPDATE(beg);
+           flush_pending(strm);
+           if(s->pending != 0) {
+             s->last_flush = -1;
+             return Z_OK;
+   ...
+           }
+         }
+         val = s->gzhead->comment[s->gzindex++];
+         put_byte(s, val);
+       } while(val != 0);
+       HCRC_UPDATE(beg);
+     }
+     s->status = HCRC_STATE;
+   }
+   if(s->status == HCRC_STATE) {
+     if(s->gzhead->hcrc) {
+       if(s->pending + 2 > s->pending_buf_size) {
+         flush_pending(strm);
+         if(s->pending != 0) {
+           s->last_flush = -1;
+           return Z_OK;
+         }
+       }
+       put_byte(s, (Byte)(strm->adler & 0xff));
+       put_byte(s, (Byte)((strm->adler >> 8)& 0xff));
+       strm->adler = crc32(0L, Z_NULL, 0);
+     }
+     s->status = BUSY_STATE;
+     flush_pending(strm);
+     if(s->pending != 0) {
+       s->last_flush = -1;
+       return Z_OK;
+     }
+   }
+   #endif
+   if(strm->avail_in != 0 || s->lookahead != 0 ||(flush != Z_NO_FLUSH && s->status != FINISH_STATE)) {
+   ...
+     bstate = s->level == 0 ? deflate_stored(s, flush): s->strategy == Z_HUFFMAN_ONLY ? deflate_huff(s, flush): s->strategy == Z_RLE ? deflate_rle(s, flush):(*(configuration_table[s->level].func))(s, flush);
+     if(bstate == finish_started || bstate == finish_done) {
+       s->status = FINISH_STATE;
+     }
+     if(bstate == need_more || bstate == finish_started) {
+       if(strm->avail_out == 0) {
+         s->last_flush = -1;
+       }
+       return Z_OK;
+     }
+     if(bstate == block_done) {
+       if(flush == Z_PARTIAL_FLUSH) {
+         _tr_align(s);
+       } else if(flush != Z_BLOCK) {
+         _tr_stored_block(s, (char*)0, 0L, 0);
+         if(flush == Z_FULL_FLUSH) {
+           CLEAR_HASH(s);
+           if(s->lookahead == 0) {
+             s->strstart = 0;
+             s->block_start = 0L;
+             s->insert = 0;
+           }
+         }
+       }
+       flush_pending(strm);
+       if(strm->avail_out == 0) {
+         s->last_flush = -1;
+         return Z_OK;
+       }
+     }
+   }
+   if(flush != Z_FINISH)
+     return Z_OK;
+   if(s->wrap <= 0)
+     return Z_STREAM_END;
+   #ifdef ...
+   if(s->wrap == 2) {
+     put_byte(s, (Byte)(strm->adler & 0xff));
+     put_byte(s, (Byte)((strm->adler >> 8)& 0xff));
+     put_byte(s, (Byte)((strm->adler >> 16)& 0xff));
+     put_byte(s, (Byte)((strm->adler >> 24)& 0xff));
+     put_byte(s, (Byte)(strm->total_in & 0xff));
+     put_byte(s, (Byte)((strm->total_in >> 8)& 0xff));
+     put_byte(s, (Byte)((strm->total_in >> 16)& 0xff));
+     put_byte(s, (Byte)((strm->total_in >> 24)& 0xff));
+   }
+   #endif
+     putShortMSB(s, (uInt)(strm->adler >> 16));
+     putShortMSB(s, (uInt)(strm->adler & 0xffff));
+   flush_pending(strm);
+   if(s->wrap > 0)
+     s->wrap = -s->wrap;
+   return s->pending != 0 ? Z_OK : Z_STREAM_END;
+}
+   [reads: flush, strm; writes: strm*]
+
+-- called macro: zstrerror — gzguts.h:133 [lsp, old version] --
+#    define zstrerror() strerror(errno)
+
+-- called macro: zstrerror — gzguts.h:147 [lsp, new version] --
+#    define zstrerror() strerror(errno)
+
+-- called macro: BLOCKED — gzguts.h:116 [priority_fallback, new version] --
+#    define BLOCKED(e) (0)
+
+-- called macro: Z_NO_FLUSH — zlib.h:172 [gtags_unique, new version] --
+#define Z_NO_FLUSH      0
+
+-- called macro: Z_FINISH — zlib.h:176 [gtags_unique, new version] --
+#define Z_FINISH        4
+
+-- called macro: Z_STREAM_END — zlib.h:182 [gtags_unique, new version] --
+#define Z_STREAM_END    1
+
+-- caller of gz_load: gz_avail — gzread.c:75 --
+local int gz_avail(gz_statep state) {
+   unsigned got;
+   z_streamp strm = &(state->strm);
+   ...
+   if(state->eof == 0) {
+   ...
+>    if(gz_load(state, state->in + strm->avail_in, state->size - strm->avail_in, &got)== -1)
+   ...
+   }
+}
+
+-- caller of gz_load: gz_fetch — gzread.c:260 --
+local int gz_fetch(gz_statep state) {
+   ...
+   do {
+     switch(state->how) {
+   ...
+>      if(gz_load(state, state->out, state->size << 1, &(state->x.have))== -1)
+   ...
+     }
+   } while(state->x.have == 0 &&(!state->eof || strm->avail_in));
+}
+
+-- caller of gz_load: gz_read — gzread.c:369 --
+local z_size_t gz_read(gz_statep state, voidp buf, z_size_t len) {
+   ...
+   unsigned n;
+   ...
+   do {
+     n =(unsigned)-1;
+     if(n > len)
+       n =(unsigned)len;
+     if(state->x.have) {
+       if(state->x.have < n)
+         n = state->x.have;
+       memcpy(buf, state->x.next, n);
+       state->x.next += n;
+       state->x.have -= n;
+   ...
+     } else if(state->eof && state->strm.avail_in == 0)
+   ...
+     else if(state->how == LOOK || n <(state->size << 1)) {
+   ...
+     } else if(state->how == COPY)
+>      err = gz_load(state, (unsigned char *)buf, n, &n);
+   ...
+   } while(len && !err);
+}
+
+-- caller of gz_comp: gz_zero — gzwrite.c:160 --
+local int gz_zero(gz_statep state) {
+   ...
+   z_streamp strm = &(state->strm);
+>  if(strm->avail_in && gz_comp(state, Z_NO_FLUSH)== -1)
+   ...
+}
+
+-- caller of gz_comp: gz_zero — gzwrite.c:174 --
+local int gz_zero(gz_statep state) {
+   ...
+   unsigned n;
+   ...
+   do {
+     n = GT_OFF(state->size)||(z_off64_t)state->size > state->skip ?(unsigned)state->skip : state->size;
+     if(first) {
+       memset(state->in, 0, n);
+   ...
+     }
+   ...
+>    ret = gz_comp(state, Z_NO_FLUSH);
+   ...
+     if(ret == -1)
+   ...
+   } while(state->skip);
+}
+
+-- caller of gz_comp: gz_write — gzwrite.c:224 --
+local z_size_t gz_write(gz_statep state, voidpc buf, z_size_t len) {
+   ...
+   if(len < state->size) {
+     for(; ; ) {
+       unsigned have, copy;
+       if(state->strm.avail_in == 0)
+         state->strm.next_in = state->in;
+       have =(unsigned)((state->strm.next_in + state->strm.avail_in)- state->in);
+       copy = state->size - have;
+       if(copy > len)
+         copy =(unsigned)len;
+       memcpy(state->in + have, buf, copy);
+       state->strm.avail_in += copy;
+       state->x.pos += copy;
+   ...
+>      if(gz_comp(state, Z_NO_FLUSH)== -1)
+   ...
+     }
+   }
+}
+
+-- caller of gz_comp: gz_write — gzwrite.c:230 --
+local z_size_t gz_write(gz_statep state, voidpc buf, z_size_t len) {
+   ...
+   if(len < state->size) {
+     for(; ; ) {
+       unsigned have, copy;
+       if(state->strm.avail_in == 0)
+         state->strm.next_in = state->in;
+       have =(unsigned)((state->strm.next_in + state->strm.avail_in)- state->in);
+       copy = state->size - have;
+       if(copy > len)
+         copy =(unsigned)len;
+       memcpy(state->in + have, buf, copy);
+       state->strm.avail_in += copy;
+       state->x.pos += copy;
+   ...
+     }
+   } else {
+>    if(state->strm.avail_in && gz_comp(state, Z_NO_FLUSH)== -1)
+   ...
+   }
+}

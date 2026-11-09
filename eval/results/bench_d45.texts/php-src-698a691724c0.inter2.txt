@@ -1,0 +1,94 @@
+Context for merged statement of old file: ext/wddx/wddx.c with new file: ext/wddx/wddx.c:
+void php_wddx_pop_element(void *user_data, const XML_Char *name) {
+  st_entry *ent1, *ent2;
+  if (!strcmp(name, EL_STRING)|| !strcmp(name, EL_NUMBER)|| !strcmp(name, EL_BOOLEAN)|| !strcmp(name, EL_NULL)|| !strcmp(name, EL_ARRAY)|| !strcmp(name, EL_STRUCT)|| !strcmp(name, EL_RECORDSET)|| !strcmp(name, EL_BINARY)|| !strcmp(name, EL_DATETIME)) {
+  if (!strcmp(name, EL_BINARY)) {
+  int new_len=0;
+  unsigned char *new_str;
+  new_str = php_base64_decode(Z_STRVAL_P(ent1->data), Z_STRLEN_P(ent1->data), &new_len);
++ if (new_str) {
++ Z_STRVAL_P(ent1->data)= new_str;
++ Z_STRLEN_P(ent1->data)= new_len;
+  }
++ else {
++ ZVAL_EMPTY_STRING(ent1->data);
++ }
+  }
+  }
+- Z_STRLEN_P(ent1->data)= new_len;
+- Z_STRVAL_P(ent1->data)= new_str;
+}
+
+
+==== Cross-function context ====
+
+-- called macro: Z_STRVAL_P — Zend/zend_operators.h:460 [gtags_unique] --
+#define Z_STRVAL_P(zval_p)		Z_STRVAL(*zval_p)
+
+-- called macro: Z_STRLEN_P — Zend/zend_operators.h:461 [gtags_unique] --
+#define Z_STRLEN_P(zval_p)		Z_STRLEN(*zval_p)
+
+-- called macro: efree — Zend/zend_alloc.h:72 [lsp] --
+#define efree(ptr)							_efree((ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called macro: Z_TYPE_P — Zend/zend_operators.h:490 [gtags_unique] --
+#define Z_TYPE_P(zval_p)	Z_TYPE(*zval_p)
+
+-- called macro: EG — Zend/zend_globals_macros.h:45 [lsp] --
+# define EG(v) TSRMG(executor_globals_id, zend_executor_globals *, v)
+
+-- called macro: zval_ptr_dtor — Zend/zend_variables.h:57 [lsp] --
+#define zval_ptr_dtor(zval_ptr) _zval_ptr_dtor((zval_ptr) ZEND_FILE_LINE_CC)
+
+-- called function: wddx_stack_top — ext/wddx/wddx.c:201 [gtags_unique] --
+static int wddx_stack_top(wddx_stack *stack, void **element) {
+   if(stack->top > 0) {
+     *element = stack->elements[stack->top - 1];
+     return SUCCESS;
+   } else {
+     *element = NULL;
+     return FAILURE;
+   }
+}
+   [reads: element, stack; writes: element*]
+
+-- called function: php_base64_decode — ext/standard/base64.c:137 [gtags_unique] --
+PHPAPI unsigned char *php_base64_decode(const unsigned char *str, int length, int *ret_length) /* {
+   return php_base64_decode_ex(str, length, ret_length, 0);
+}
+   [reads: length, ret_length, str; writes: -]
+
+-- called macro: MAKE_STD_ZVAL — Zend/zend.h:760 [gtags_unique] --
+#define MAKE_STD_ZVAL(zv)				 \
+	ALLOC_ZVAL(zv); \
+	INIT_PZVAL(zv);
+
+-- called macro: STR_FREE — Zend/zend.h:678 [gtags_unique] --
+#define STR_FREE(ptr) if (ptr) { str_efree(ptr); }
+
+-- called macro: zend_hash_next_index_insert — Zend/zend_hash.h:123 [gtags_unique, old version] --
+#define zend_hash_next_index_insert(ht, pData, nDataSize, pDest) \
+		_zend_hash_index_update_or_next_insert(ht, 0, pData, nDataSize, pDest, HASH_NEXT_INSERT ZEND_FILE_LINE_CC)
+
+-- called macro: ZVAL_EMPTY_STRING — Zend/zend_API.h:593 [gtags_unique, new version] --
+#define ZVAL_EMPTY_STRING(z) do {	\
+		zval *__z = (z);			\
+		Z_STRLEN_P(__z) = 0;		\
+		Z_STRVAL_P(__z) = STR_EMPTY_ALLOC();\
+		Z_TYPE_P(__z) = IS_STRING;	\
+	} while (0)
+
+-- caller of php_wddx_pop_element: php_wddx_deserialize_ex — ext/wddx/wddx.c:1173 --
+int php_wddx_deserialize_ex(char *value, int vallen, zval *return_value) {
+   ...
+   XML_Parser parser;
+   ...
+   parser = XML_ParserCreate("UTF-8");
+   ...
+>  XML_SetElementHandler(parser, php_wddx_push_element, php_wddx_pop_element);
+   ...
+}
+
+-- 2nd-level context (summaries) --
+  php_base64_decode_ex — ext/standard/base64.c:143 [gtags_unique]: PHPAPI unsigned char *php_base64_decode_ex(const unsigned char *str, int length, int *ret_length, zend_bool strict) /*
+    reads: length, ret_length, str, strict; writes: ret_length*

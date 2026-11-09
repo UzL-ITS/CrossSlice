@@ -1,0 +1,20 @@
+Context for merged statement of old file: libavcodec/mace.c with new file: libavcodec/mace.c:
+int mace_decode_frame(AVCodecContext *avctx, AVFrame *frame,
+                             int *got_frame_ptr, AVPacket *avpkt) {
+  int buf_size = avpkt->size;
+  int channels = avctx->ch_layout.nb_channels;
+  int is_mace3 =(avctx->codec_id == AV_CODEC_ID_MACE3);
+  if (buf_size %(channels << is_mace3)) {
+  buf_size -= buf_size %(channels << is_mace3);
+  }
++ int64_t nb_samples = 3 *((int64_t)buf_size <<(1 - is_mace3))/ channels;
++ if (nb_samples > INT_MAX) {
++ return AVERROR_INVALIDDATA;
+  }
+- frame->nb_samples = 3 *(buf_size <<(1 - is_mace3))/ channels;
++ frame->nb_samples = nb_samples;
+  if ((ret = ff_get_buffer(avctx, frame, 0))< 0) {
+  return ret;
+  }
+}
+

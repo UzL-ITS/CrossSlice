@@ -1,0 +1,61 @@
+Context for merged statement of old file: source/tools/examples/examples.c with new file: source/tools/examples/examples.c:
+ACPI_STATUS InitializeFullAcpica (void) {
+  ACPI_STATUS Status;
++ AcpiGbl_OverrideDefaultRegionHandlers = TRUE;
+  Status = AcpiInitializeSubsystem();
+  Status = AcpiInitializeTables(NULL, 16, FALSE);
+- if (ACPI_FAILURE(Status)) {
+- ACPI_EXCEPTION((AE_INFO, Status, "While loading ACPI tables"));
+- return(Status);
+  }
+- Status = AcpiLoadTables();
+  Status = InstallHandlers();
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While installing handlers"));
+  return(Status);
+  }
+  Status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While enabling ACPICA"));
+  return(Status);
+  }
++ Status = AcpiLoadTables();
++ if (ACPI_FAILURE(Status)) {
++ ACPI_EXCEPTION((AE_INFO, Status, "While loading ACPI tables"));
++ return(Status);
+  }
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While initializing ACPICA objects"));
+  return(Status);
+  }
+}
+
+Context for merged statement of old file: source/tools/examples/examples.c with new file: source/tools/examples/examples.c:
+ACPI_STATUS InitializeAcpi (
+    void) {
+  ACPI_STATUS Status;
++ AcpiGbl_OverrideDefaultRegionHandlers = TRUE;
+  Status = AcpiInitializeSubsystem();
+  Status = AcpiReallocateRootTable();
+- Status = AcpiLoadTables();
+- if (ACPI_FAILURE(Status)) {
+- return(Status);
+  }
+  Status = InstallHandlers();
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While installing handlers"));
+  return(Status);
+  }
+  Status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
++ Status = AcpiLoadTables();
+  if (ACPI_FAILURE(Status)) {
+  return(Status);
+  }
+  if (ACPI_FAILURE(Status)) {
+  return(Status);
+  }
+}
+

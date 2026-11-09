@@ -1,0 +1,239 @@
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
+#ifndef _ACPI_EXEC_APP
++ CHAR s[500];
+  #endif
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ ACPI_TABLE_HEADER *
+OsGetTable (
+    char                *TableName) {
++ HKEY Handle = NULL;
++ ULONG i;
++ LONG Status;
++ ULONG Type;
++ ULONG NameSize;
++ ULONG DataSize;
++ HKEY SubKey;
++ ACPI_TABLE_HEADER *Buffer;
++ char *Signature = TableName;
++ while ((1)) {
++ ACPI_STRCPY(s, "HARDWARE\\ACPI\\");
++ ACPI_STRCAT(s, Signature);
++ Status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, s, 0L, KEY_ALL_ACCESS, &Handle);
++ if (Status != ERROR_SUCCESS) {
++ if (!ACPI_STRNCMP(Signature, "FACP", 4)) {
++ Signature = "FADT";
+  }
++ else {
++ AcpiOsPrintf("Could not find %s in registry at %s\n", TableName, s);
++ return(NULL);
++ }
+  }
++ else {
++ break;
++ }
+  }
+  for (i = 0; ; ) {
++ Status = RegEnumKey(Handle, i, s, sizeof(s));
++ i += 1;
++ if (Status == ERROR_NO_MORE_ITEMS) {
++ break;
+  }
++ Status = RegOpenKey(Handle, s, &SubKey);
++ if (Status != ERROR_SUCCESS) {
++ AcpiOsPrintf("Could not open %s entry\n", TableName);
++ return(NULL);
+  }
++ RegCloseKey(Handle);
++ Handle = SubKey;
++ i = 0;
+  }
+  for (i = 0; ; ) {
++ NameSize = sizeof(s);
++ Status = RegEnumValue(Handle, i, s, &NameSize, NULL, &Type, NULL, 0);
++ if (Status != ERROR_SUCCESS) {
++ AcpiOsPrintf("Could not get %s registry entry\n", TableName);
++ return(NULL);
+  }
++ if (Type == REG_BINARY) {
++ break;
+  }
++ i += 1;
+  }
++ Status = RegQueryValueEx(Handle, s, NULL, NULL, NULL, &DataSize);
++ if (Status != ERROR_SUCCESS) {
++ AcpiOsPrintf("Could not read the %s table size\n", TableName);
++ return(NULL);
+  }
++ Buffer = AcpiOsAllocate(DataSize);
++ if (!Buffer) {
++ goto Cleanup;
+  }
++ Status = RegQueryValueEx(Handle, s, NULL, NULL, (UCHAR *)Buffer, &DataSize);
++ if (Status != ERROR_SUCCESS) {
++ AcpiOsPrintf("Could not read %s data\n", TableName);
++ return(NULL);
+  }
++ Cleanup: RegCloseKey(Handle);
++ RegCloseKey(Handle);
++ return(Buffer);
+- ACPI_TABLE_HEADER *
+OsGetTable (
+    char                *TableName) {
+- HKEY Handle;
+- CHAR s[500];
+- ULONG i;
+- LONG Status;
+- ULONG Type;
+- ULONG NameSize;
+- ULONG DataSize;
+- HKEY SubKey;
+- ACPI_TABLE_HEADER *Buffer;
+- ACPI_STRCPY(s, "HARDWARE\\ACPI\\");
+- ACPI_STRCAT(s, TableName);
+- Status = RegOpenKeyEx(HKEY_LOCAL_MACHINE, s, 0L, KEY_ALL_ACCESS, &Handle);
+- if (Status != ERROR_SUCCESS) {
+  }
+  for (i = 0; ; ) {
+  }
+  for (i = 0; ; ) {
+  }
+- Status = RegQueryValueEx(Handle, s, NULL, NULL, NULL, &DataSize);
+- if (Status != ERROR_SUCCESS) {
+  }
+- Buffer = AcpiOsAllocate(DataSize);
+- if (!Buffer) {
+  }
+- Status = RegQueryValueEx(Handle, s, NULL, NULL, (UCHAR *)Buffer, &DataSize);
+- if (Status != ERROR_SUCCESS) {
+  }
+- Cleanup: RegCloseKey(Handle);
+- RegCloseKey(Handle);
+- return(Buffer);
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ ACPI_STATUS AcpiOsPredefinedOverride (
+    const ACPI_PREDEFINED_NAMES *InitVal,
+    ACPI_STRING                 *NewVal) {
++ if (!InitVal || !NewVal) {
++ return(AE_BAD_PARAMETER);
+  }
++ *NewVal = NULL;
++ return(AE_OK);
+- ACPI_STATUS AcpiOsPredefinedOverride (
+	const ACPI_PREDEFINED_NAMES *InitVal,
+	ACPI_STRING                 *NewVal) {
+- if (!InitVal || !NewVal) {
+  }
+- *NewVal = NULL;
+- return(AE_OK);
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ BOOLEAN AcpiOsReadable (
+    void                    *Pointer,
+    ACPI_SIZE               Length) {
++ return((BOOLEAN)!IsBadReadPtr(Pointer, Length));
+- BOOLEAN AcpiOsReadable (
+    void                    *Pointer,
+    UINT32                  Length) {
+- return((BOOLEAN)!IsBadReadPtr(Pointer, Length));
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ BOOLEAN AcpiOsWritable (
+    void                    *Pointer,
+    ACPI_SIZE               Length) {
++ return((BOOLEAN)!IsBadWritePtr(Pointer, Length));
+- BOOLEAN AcpiOsWritable (
+    void                    *Pointer,
+    UINT32                  Length) {
+- return((BOOLEAN)!IsBadWritePtr(Pointer, Length));
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ ACPI_STATUS AcpiOsReadPort (
+    ACPI_IO_ADDRESS         Address,
+    UINT32                  *Value,
+    UINT32                  Width) {
++ switch ((Width)) {
++ case 8:
++ *Value = 0xFF;
++ break;
++ case 16:
++ *Value = 0xFFFF;
++ break;
++ case 32:
++ *Value = 0xFFFFFFFF;
++ break;
++ default:
++ return(AE_BAD_PARAMETER);
+  }
++ return(AE_OK);
+- ACPI_STATUS AcpiOsReadPort (
+    ACPI_IO_ADDRESS         Address,
+    void                    *Value,
+    UINT32                  Width) {
+- switch ((Width)) {
+  }
+- return(AE_OK);
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
++ ACPI_STATUS AcpiOsWritePort (
+    ACPI_IO_ADDRESS         Address,
+    UINT32                  Value,
+    UINT32                  Width) {
++ return(AE_OK);
+- ACPI_STATUS AcpiOsWritePort (
+    ACPI_IO_ADDRESS         Address,
+    ACPI_INTEGER            Value,
+    UINT32                  Width) {
+- return(AE_OK);
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
+- ACPI_STATUS AcpiOsReadMemory (
+    ACPI_PHYSICAL_ADDRESS   Address,
+    void                    *Value,
+    UINT32                  Width) {
++ ACPI_STATUS AcpiOsReadMemory (
+    ACPI_PHYSICAL_ADDRESS   Address,
+    UINT32                  *Value,
+    UINT32                  Width) {
+  switch ((Width)) {
+  case 8:
+- *((UINT8 *)Value)= 0;
+- break;
+  case 16:
+- *((UINT16 *)Value)= 0;
+- break;
+  case 32:
+- *((UINT32 *)Value)= 0;
++ *Value = 0;
+   default:
+- *((UINT64 *)Value)= 0;
++ return(AE_BAD_PARAMETER);
+  }
+}
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oswinxf.c with new file: source/os_specific/service_layers/oswinxf.c:
+- ACPI_STATUS AcpiOsWriteMemory (
+    ACPI_PHYSICAL_ADDRESS   Address,
+    ACPI_INTEGER            Value,
+    UINT32                  Width) {
++ ACPI_STATUS AcpiOsWriteMemory (
+    ACPI_PHYSICAL_ADDRESS   Address,
+    UINT32                  Value,
+    UINT32                  Width) {
+}
+}
+

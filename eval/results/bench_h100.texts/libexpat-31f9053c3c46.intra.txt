@@ -1,0 +1,121 @@
+Context for merged statement of old file: expat/lib/internal.h with new file: expat/lib/internal.h:
+#ifdef __cplusplus
+- extern "C" { #endif void _INTERNAL_trim_to_complete_utf8_characters(const char *from, const char **fromLimRef); #if defined(XML_GE)&& XML_GE == 1 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser); unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser); const char *unsignedCharToPrintable(unsigned char c); #endif extern #if ! defined(XML_TESTING)const #endif XML_Bool g_reparseDeferralEnabledDefault; #if defined(XML_TESTING)extern unsigned int g_bytesScanned; #endif #ifdef __cplusplus }
++ extern "C" { #endif void _INTERNAL_trim_to_complete_utf8_characters(const char *from, const char **fromLimRef); #if defined(XML_GE)&& XML_GE == 1 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser); unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser); const char *unsignedCharToPrintable(unsigned char c); #endif extern #if ! defined(XML_TESTING)const #endif XML_Bool g_reparseDeferralEnabledDefault; #if defined(XML_TESTING)void *expat_malloc(XML_Parser parser, size_t size, int sourceLine); void expat_free(XML_Parser parser, void *ptr, int sourceLine); void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine); extern unsigned int g_bytesScanned; #endif #ifdef __cplusplus }
+   #if defined(XML_TESTING)
++ void *expat_malloc(XML_Parser parser, size_t size, int sourceLine);
++ void expat_free(XML_Parser parser, void *ptr, int sourceLine);
++ void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine);
+  #endif
+  #endif
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+#if defined(XML_TESTING)
+  #endif
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+- void *
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
++ void *
+#  endif
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+}
+}
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
++ void expat_free(XML_Parser parser, void *ptr, int sourceLine) {
++ assert(parser != NULL);
++ if (ptr == NULL) {
++ return;
+  }
++ const XML_Parser rootParser = getRootParserOf(parser, NULL);
++ assert(rootParser->m_parentParser == NULL);
++ void *const mallocedPtr =(char *)ptr - sizeof(size_t);
++ const size_t bytesAllocated = sizeof(size_t)+ *(size_t *)mallocedPtr;
++ assert(rootParser->m_alloc_tracker.bytesAllocated >= bytesAllocated);
++ rootParser->m_alloc_tracker.bytesAllocated -= bytesAllocated;
++ if (rootParser->m_alloc_tracker.debugLevel >= 2) {
++ expat_heap_stat(rootParser, '-', bytesAllocated, rootParser->m_alloc_tracker.bytesAllocated, rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
+  }
++ parser->m_mem.free_fcn(mallocedPtr);
+- void expat_free(XML_Parser parser, void *ptr, int sourceLine) {
+- assert(parser != NULL);
+- if (ptr == NULL) {
+  }
+- const XML_Parser rootParser = getRootParserOf(parser, NULL);
+- assert(rootParser->m_parentParser == NULL);
+- void *const mallocedPtr =(char *)ptr - sizeof(size_t);
+- const size_t bytesAllocated = sizeof(size_t)+ *(size_t *)mallocedPtr;
+- assert(rootParser->m_alloc_tracker.bytesAllocated >= bytesAllocated);
+- rootParser->m_alloc_tracker.bytesAllocated -= bytesAllocated;
+- if (rootParser->m_alloc_tracker.debugLevel >= 2) {
+  }
+- parser->m_mem.free_fcn(mallocedPtr);
+}
+}
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
++ void *
+#  endif
+expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
++ if (SIZE_MAX - size < sizeof(size_t)) {
++ return NULL;
+  }
++ const XML_Parser rootParser = getRootParserOf(parser, NULL);
++ assert(rootParser->m_parentParser == NULL);
++ const size_t bytesToAllocate = sizeof(size_t)+ size;
++ if ((XmlBigCount)-1 - rootParser->m_alloc_tracker.bytesAllocated < bytesToAllocate) {
++ return NULL;
+  }
++ if (! expat_heap_increase_tolerable(rootParser, bytesToAllocate, sourceLine)) {
++ return NULL;
+  }
++ void *const mallocedPtr = parser->m_mem.malloc_fcn(bytesToAllocate);
++ if (mallocedPtr == NULL) {
++ return NULL;
+  }
++ *(size_t *)mallocedPtr = size;
++ rootParser->m_alloc_tracker.bytesAllocated += bytesToAllocate;
++ if (rootParser->m_alloc_tracker.debugLevel >= 2) {
++ if (rootParser->m_alloc_tracker.bytesAllocated > rootParser->m_alloc_tracker.peakBytesAllocated) {
++ rootParser->m_alloc_tracker.peakBytesAllocated = rootParser->m_alloc_tracker.bytesAllocated;
+  }
++ expat_heap_stat(rootParser, '+', bytesToAllocate, rootParser->m_alloc_tracker.bytesAllocated, rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
+  }
++ return(char *)mallocedPtr + sizeof(size_t);
+}
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
++ #include <math.h>
++ #include <stdbool.h>
+- #include <assert.h>
++ #include <stdint.h>
++ #include "expat_config.h"
++ #include "internal.h"
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
+END_TEST make_alloc_test_case(Suite *s) {
+  TCase *tc_alloc = tcase_create("allocation tests");
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_size_recorded);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_maximum_amplification);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_threshold);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_getbuffer_unlimited);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_api);
++ tcase_add_test(tc_alloc, test_mem_api_cycle);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_mem_api_unlimited);
+}
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
++ END_TEST START_TEST(test_mem_api_unlimited) {
++ XML_Parser parser = XML_ParserCreate(NULL);
++ #if XML_GE == 1
++ assert_true(XML_SetAllocTrackerActivationThreshold(parser, 0)== XML_TRUE);
+  #endif
++ void *ptr = XML_MemMalloc(parser, 1000);
++ assert_true(ptr != NULL);
++ ptr = XML_MemRealloc(parser, ptr, 2000);
++ assert_true(ptr != NULL);
++ XML_MemFree(parser, ptr);
++ XML_ParserFree(parser);
+}
+

@@ -1,0 +1,95 @@
+Context for merged statement of old file: libavcodec/apedec.c with new file: libavcodec/apedec.c:
+void decode_array_0000(APEContext *ctx, GetBitContext *gb,
+                              int32_t *out, APERice *rice, int blockstodecode) {
+  int i;
+- for (i = 0; i < 5; i++) {
++ for (i = 0; i < FFMIN(blockstodecode, 5); i++) {
+  out[i] = get_rice_ook(&ctx->gb, 10);
+  rice->ksum += out[i];
+  }
+  rice->k = av_log2(rice->ksum / 10)+ 1;
+  if (rice->k >= 24) {
+  return;
+  }
+- for (; i < 64; i++) {
++ for (; i < FFMIN(blockstodecode, 64); i++) {
+  out[i] = get_rice_ook(&ctx->gb, rice->k);
+  rice->ksum += out[i];
+  rice->k = av_log2(rice->ksum /((i + 1)* 2))+ 1;
+  if (rice->k >= 24) {
+  return;
+  }
+  }
+  ksummax = 1 << rice->k + 7;
+  ksummin = rice->k ?(1 << rice->k + 6): 0;
+  for (; i < blockstodecode; i++) {
+  out[i] = get_rice_ook(&ctx->gb, rice->k);
+  rice->ksum += out[i] - out[i - 64];
+  while ((rice->ksum < ksummin)) {
+  rice->k--;
+  ksummin = rice->k ? ksummin >> 1 : 0;
+  ksummax >>= 1;
+  }
+  while ((rice->ksum >= ksummax)) {
+  rice->k++;
+  if (rice->k > 24) {
+  return;
+  }
+  ksummax <<= 1;
+  ksummin = ksummin ? ksummin << 1 : 128;
+  }
+  }
+  for (i = 0; i < blockstodecode; i++) {
+  out[i] =((out[i] >> 1)^((out[i] & 1)- 1))+ 1;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: get_rice_ook — libavcodec/apedec.c:467 [gtags_unique] --
+static inline int get_rice_ook(GetBitContext *gb, int k) {
+   unsigned int x;
+   x = get_unary(gb, 1, get_bits_left(gb));
+   if(k)
+     x =(x << k)| get_bits(gb, k);
+   return x;
+}
+   [reads: gb, k; writes: -]
+
+-- called function: av_log2 — libavcodec/cabac_tablegen.c:28 [priority_fallback] --
+av_const int av_log2(unsigned v) {
+   int r = 0;
+   while(v >>= 1)
+     r++;
+   return r;
+}
+   [reads: v; writes: -]
+
+-- called macro: FFMIN — libavutil/common.h:66 [lsp, new version] --
+#define FFMIN(a,b) ((a) > (b) ? (b) : (a))
+
+-- caller of decode_array_0000: entropy_decode_mono_0000 — libavcodec/apedec.c:634 --
+static void entropy_decode_mono_0000(APEContext *ctx, int blockstodecode) {
+>  decode_array_0000(ctx, &ctx->gb, ctx->decoded[0], &ctx->riceY, blockstodecode);
+}
+
+-- caller of decode_array_0000: entropy_decode_stereo_0000 — libavcodec/apedec.c:640 --
+static void entropy_decode_stereo_0000(APEContext *ctx, int blockstodecode) {
+>  decode_array_0000(ctx, &ctx->gb, ctx->decoded[0], &ctx->riceY, blockstodecode);
+   ...
+}
+
+-- caller of decode_array_0000: entropy_decode_stereo_0000 — libavcodec/apedec.c:642 --
+static void entropy_decode_stereo_0000(APEContext *ctx, int blockstodecode) {
+   ...
+>  decode_array_0000(ctx, &ctx->gb, ctx->decoded[1], &ctx->riceX, blockstodecode);
+}
+
+-- 2nd-level context (summaries) --
+  get_unary — libavcodec/unary.h:33 [gtags_unique]: static inline int get_unary(GetBitContext *gb, int stop, int len)
+    reads: gb, len, stop; writes: -
+  get_bits_left — libavcodec/get_bits.h:588 [gtags_unique]: static inline int get_bits_left(GetBitContext *gb)
+    reads: gb; writes: -
+  get_bits — libavcodec/get_bits.h:260 [lsp]: static inline unsigned int get_bits(GetBitContext *s, int n)
+    reads: n, s; writes: s*

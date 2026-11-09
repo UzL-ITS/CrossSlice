@@ -1,0 +1,30 @@
+Context for merged statement of old file: libavformat/apetag.c with new file: libavformat/apetag.c:
+int ape_tag_read_field(AVFormatContext *s) {
+  AVIOContext *pb = s->pb;
+  int64_t size, flags;
+  size = avio_rl32(pb);
+  if (flags & APE_TAG_FLAG_IS_BINARY) {
+  uint8_t filename[1024];
+  int ret;
+  AVStream *st = avformat_new_stream(s, NULL);
+  ret = avio_get_str(pb, size, filename, sizeof(filename));
+  size -= ret;
+  if ((id = ff_guess_image2_codec(filename))!= AV_CODEC_ID_NONE) {
+- int ret = ff_add_attached_pic(s, st, s->pb, NULL, size);
++ ret = ff_add_attached_pic(s, st, s->pb, NULL, size);
+  if (ret < 0) {
+  return ret;
+  }
+  }
+  else {
+  if ((ret = ff_get_extradata(s, st->codecpar, s->pb, size))< 0) {
+  return ret;
+  }
+  }
+  }
+  else {
+  return AVERROR(ENOMEM);
+  return c;
+  }
+}
+

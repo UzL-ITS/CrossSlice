@@ -1,0 +1,154 @@
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void counting_start_element_handler(void *userData, const XML_Char *name,
+                               const XML_Char **atts) {
+  ParserAndElementInfo *const parserAndElementInfos =(ParserAndElementInfo *)userData;
+  ElementInfo *info = parserAndElementInfos->info;
+  AttrInfo *attr;
+  while ((info->name != NULL)) {
+  info++;
+  }
+  id = XML_GetIdAttributeIndex(parserAndElementInfos->parser);
+- if (id != -1 && xcstrcmp(atts[id], info->id_name)) {
++ if (id != -1 && xcstrcmp(atts[id], info->id_name)!= 0) {
+  return;
+  }
+  for (i = 0; i < info->attr_count; i++) {
+  attr = info->attributes;
+  while ((attr->name != NULL)) {
+  attr++;
+  }
+- if (xcstrcmp(atts[1], attr->value)) {
++ if (xcstrcmp(atts[1], attr->value)!= 0) {
+  return;
+  }
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+int external_entity_devaluer(XML_Parser parser, const XML_Char *context,
+                         const XML_Char *base, const XML_Char *systemId,
+                         const XML_Char *publicId) {
+- if (xcstrcmp(systemId, XCS("foo"))) {
++ if (xcstrcmp(systemId, XCS("foo"))!= 0) {
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void verify_attlist_decl_handler(void *userData, const XML_Char *element_name,
+                            const XML_Char *attr_name,
+                            const XML_Char *attr_type,
+                            const XML_Char *default_value, int is_required) {
+  AttTest *at =(AttTest *)userData;
+- if (xcstrcmp(element_name, at->element_name)) {
++ if (xcstrcmp(element_name, at->element_name)!= 0) {
+  }
+- if (xcstrcmp(attr_name, at->attr_name)) {
++ if (xcstrcmp(attr_name, at->attr_name)!= 0) {
+  }
+- if (xcstrcmp(attr_type, at->attr_type)) {
++ if (xcstrcmp(attr_type, at->attr_type)!= 0) {
+  }
+- if ((default_value == NULL && at->default_value != NULL)||(default_value != NULL && at->default_value == NULL)||(default_value != NULL && xcstrcmp(default_value, at->default_value))) {
++ if ((default_value == NULL && at->default_value != NULL)||(default_value != NULL && at->default_value == NULL)||(default_value != NULL && xcstrcmp(default_value, at->default_value)!= 0)) {
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void param_entity_match_handler(void *userData, const XML_Char *entityName,
+                           int is_parameter_entity, const XML_Char *value,
+                           int value_length, const XML_Char *base,
+                           const XML_Char *systemId, const XML_Char *publicId,
+                           const XML_Char *notationName) {
+  if (! xcstrcmp(entityName, entity_name_to_match)) {
+- if (value_length !=(int)xcstrlen(entity_value_to_match)|| xcstrncmp(value, entity_value_to_match, value_length)) {
++ if (value_length !=(int)xcstrlen(entity_value_to_match)|| xcstrncmp(value, entity_value_to_match, value_length)!= 0) {
+  }
+  }
+}
+
+Context for merged statement of old file: expat/tests/misc_tests.c with new file: expat/tests/misc_tests.c:
+START_TEST (test_misc_version) {
+  const XML_LChar *version_text = XML_ExpatVersion();
+- if (xcstrcmp(version_text, XCS("expat_2.7.1"))) {
++ if (xcstrcmp(version_text, XCS("expat_2.7.1"))!= 0) {
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: xcstrcmp — expat/tests/common.h:75 [lsp] --
+#      define xcstrcmp(s, t) strcmp((s), (t))
+
+-- called macro: XCS — expat/tests/common.h:77 [lsp] --
+#      define XCS(s) s
+
+-- called macro: xcstrncmp — expat/tests/common.h:76 [lsp] --
+#      define xcstrncmp(s, t, n) strncmp((s), (t), (n))
+
+-- called macro: xcstrlen — expat/tests/common.h:74 [lsp] --
+#      define xcstrlen(s) strlen(s)
+
+-- called function: XML_GetIdAttributeIndex — expat/lib/xmlparse.c:1777 [gtags_unique] --
+int XMLCALL XML_GetIdAttributeIndex(XML_Parser parser) {
+   if(parser == NULL)
+     return -1;
+   return parser->m_idAttIndex;
+}
+   [reads: parser; writes: -]
+
+-- called function: XML_ExpatVersion — expat/lib/xmlparse.c:2642 [gtags_unique] --
+const XML_LChar *XMLCALL XML_ExpatVersion(void) {
+   ...
+   #define ...
+   return V2(XML_MAJOR_VERSION, XML_MINOR_VERSION, XML_MICRO_VERSION);
+}
+
+-- caller of counting_start_element_handler: START_TEST — expat/tests/basic_tests.c:2482 --
+END_TEST START_TEST(test_attributes) {
+   ...
+   XML_Parser parser = XML_ParserCreate(NULL);
+   ...
+>  XML_SetStartElementHandler(parser, counting_start_element_handler);
+   ...
+}
+
+-- caller of counting_start_element_handler: START_TEST — expat/tests/basic_tests.c:5504 --
+END_TEST START_TEST(test_deep_nested_attribute_entity) {
+   ...
+   XML_Parser parser = XML_ParserCreate(NULL);
+   ...
+>  XML_SetStartElementHandler(parser, counting_start_element_handler);
+   ...
+}
+
+-- caller of external_entity_devaluer: START_TEST — expat/tests/basic_tests.c:3733 --
+END_TEST START_TEST(test_undefined_ext_entity_in_external_dtd) {
+   ...
+>  XML_SetExternalEntityRefHandler(g_parser, external_entity_devaluer);
+   ...
+}
+
+-- caller of external_entity_devaluer: START_TEST — expat/tests/basic_tests.c:3744 --
+END_TEST START_TEST(test_undefined_ext_entity_in_external_dtd) {
+   ...
+>  XML_SetExternalEntityRefHandler(g_parser, external_entity_devaluer);
+   ...
+}
+
+-- caller of verify_attlist_decl_handler: START_TEST(test_dtd_attr_handling) — expat/tests/basic_tests.c:1441 --
+START_TEST(test_dtd_attr_handling) {
+   ...
+   for(test = attr_data; test->definition != NULL; test++) {
+   ...
+>    XML_SetAttlistDeclHandler(g_parser, verify_attlist_decl_handler);
+   ...
+   }
+}
+
+-- caller of param_entity_match_handler: START_TEST(test_param_entity_with_trailing_cr) — expat/tests/basic_tests.c:4139 --
+START_TEST(test_param_entity_with_trailing_cr) {
+   ...
+>  XML_SetEntityDeclHandler(g_parser, param_entity_match_handler);
+   ...
+}

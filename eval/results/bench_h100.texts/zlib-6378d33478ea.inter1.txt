@@ -1,0 +1,1169 @@
+Context for merged statement of old file: examples/zran.c with new file: examples/zran.c:
+void deflate_index_free(struct deflate_index *index) {
+  if (index != NULL) {
++ inflateEnd(&index->strm);
+  }
+}
+
+Context for merged statement of old file: examples/zran.c with new file: examples/zran.c:
+struct deflate_index *add_point(struct deflate_index *index, int bits,
+                                       off_t in, off_t out, unsigned left,
+                                       unsigned char *window) {
+- if (index == NULL) {
+  }
+- else if(index->have == index->mode){ // The list is full. Make it bigger. index->mode <<= 1; point_t *next = realloc(index->list, sizeof(point_t)* index->mode); if(next == NULL){ deflate_index_free(index); return NULL; } index->list = next; }
+  if (index->have == index->mode) {
+- index->mode <<= 1;
++ index->mode = index->mode ? index->mode << 1 : 8;
+  point_t *next = realloc(index->list, sizeof(point_t)* index->mode);
+  if (next == NULL) {
+  deflate_index_free(index);
+  }
+  index->list = next;
+  }
+  point_t *next =(point_t *)(index->list)+ index->have++;
+  if (index->have < 0) {
+  deflate_index_free(index);
+  }
+  next->out = out;
+  next->in = in;
+  next->bits = bits;
+  if (left) {
+  memcpy(next->window, window + WINSIZE - left, left);
+  }
+  if (left < WINSIZE) {
+  memcpy(next->window + left, window, WINSIZE - left);
+  }
+  return index;
+}
+
+Context for merged statement of old file: examples/zran.c with new file: examples/zran.c:
+int deflate_index_build(FILE *in, off_t span, struct deflate_index **built) {
+- struct deflate_index *index = NULL;
++ struct deflate_index *index = malloc(sizeof(struct deflate_index));
++ if (index == NULL) {
++ return Z_MEM_ERROR;
+  }
++ index->have = 0;
++ index->mode = 0;
++ index->list = NULL;
++ index->strm.state = Z_NULL;
++ index->strm.avail_in = 0;
++ index->strm.avail_out = 0;
+- z_stream strm = {0};
+  unsigned char buf[CHUNK];
+  unsigned char win[WINSIZE] = {0};
+  off_t totin = 0;
+  off_t totout = 0;
+  int mode = 0;
+  int ret;
+  off_t last;
+  do {
+- if (strm.avail_in == 0) {
++ if (index->strm.avail_in == 0) {
+- strm.avail_in = fread(buf, 1, sizeof(buf), in);
++ index->strm.avail_in = fread(buf, 1, sizeof(buf), in);
+- totin += strm.avail_in;
++ totin += index->strm.avail_in;
+- strm.next_in = buf;
++ index->strm.next_in = buf;
+- if (strm.avail_in < sizeof(buf)&& ferror(in)) {
++ if (index->strm.avail_in < sizeof(buf)&& ferror(in)) {
+  ret = Z_ERRNO;
+  }
+  if (mode == 0) {
+- mode = strm.avail_in == 0 ? RAW :(strm.next_in[0] & 0xf)== 8 ? ZLIB : strm.next_in[0] == 0x1f ? GZIP : RAW;
++ mode = index->strm.avail_in == 0 ? RAW :(index->strm.next_in[0] & 0xf)== 8 ? ZLIB : index->strm.next_in[0] == 0x1f ? GZIP : RAW;
++ index->strm.zalloc = Z_NULL;
++ index->strm.zfree = Z_NULL;
++ index->strm.opaque = Z_NULL;
+- ret = inflateInit2(&strm, mode);
++ ret = inflateInit2(&index->strm, mode);
+  if (ret != Z_OK) {
+  }
+  }
+  }
+- if (strm.avail_out == 0) {
++ if (index->strm.avail_out == 0) {
+- strm.avail_out = sizeof(win);
++ index->strm.avail_out = sizeof(win);
+- strm.next_out = win;
++ index->strm.next_out = win;
+  }
+- if (mode == RAW && index == NULL) {
++ if (mode == RAW && index->have == 0) {
+- strm.data_type = 0x80;
++ index->strm.data_type = 0x80;
+  }
+  else {
+- unsigned before = strm.avail_out;
++ unsigned before = index->strm.avail_out;
+- ret = inflate(&strm, Z_BLOCK);
++ ret = inflate(&index->strm, Z_BLOCK);
+- totout += before - strm.avail_out;
++ totout += before - index->strm.avail_out;
+  }
+- if ((strm.data_type & 0xc0)== 0x80 &&(index == NULL || totout - last >= span)) {
++ if ((index->strm.data_type & 0xc0)== 0x80 &&(index->have == 0 || totout - last >= span)) {
+- index = add_point(index, strm.data_type & 7, totin - strm.avail_in, totout, strm.avail_out, win);
++ index = add_point(index, index->strm.data_type & 7, totin - index->strm.avail_in, totout, index->strm.avail_out, win);
+  if (index == NULL) {
+  ret = Z_MEM_ERROR;
+  }
+  last = totout;
+  }
+- if (ret == Z_STREAM_END && mode == GZIP &&(strm.avail_in || ungetc(getc(in), in)!= EOF)) {
++ if (ret == Z_STREAM_END && mode == GZIP &&(index->strm.avail_in || ungetc(getc(in), in)!= EOF)) {
+- ret = inflateReset2(&strm, GZIP);
++ ret = inflateReset2(&index->strm, GZIP);
+  }
+  } while ((ret == Z_OK));
+- inflateEnd(&strm);
+  if (ret != Z_STREAM_END) {
+  deflate_index_free(index);
+  return ret == Z_NEED_DICT ? Z_DATA_ERROR : ret;
+  }
+  index->mode = mode;
+  index->length = totout;
+  point_t *list = realloc(index->list, sizeof(point_t)* index->have);
+  if (list == NULL) {
+  deflate_index_free(index);
+  }
+  index->list = list;
+  *built = index;
+  return index->have;
+}
+
+Context for merged statement of old file: examples/zran.c with new file: examples/zran.c:
+ptrdiff_t deflate_index_extract(FILE *in, struct deflate_index *index,
+                                off_t offset, unsigned char *buf, size_t len) {
+- if (index == NULL || index->have < 1 || index->list[0].out != 0) {
++ if (index == NULL || index->have < 1 || index->list[0].out != 0 || index->strm.state == Z_NULL) {
+  return Z_STREAM_ERROR;
+  }
+  int lo = -1, hi = index->have;
+  point_t *point = index->list;
+  while ((hi - lo > 1)) {
+  int mid =(lo + hi)>> 1;
+  if (offset < point[mid].out) {
+  }
+  else {
+  lo = mid;
+  }
+  }
+  point += lo;
+  int ret = fseeko(in, point->in -(point->bits ? 1 : 0), SEEK_SET);
+  int ch = 0;
+  if (point->bits &&(ch = getc(in))== EOF) {
+  return ferror(in)? Z_ERRNO : Z_BUF_ERROR;
+  }
+- z_stream strm = {0};
++ index->strm.avail_in = 0;
+- ret = inflateInit2(&strm, RAW);
++ ret = inflateReset2(&index->strm, RAW);
+  if (ret != Z_OK) {
+  return ret;
+  }
+  if (point->bits) {
+- INFLATEPRIME(&strm, point->bits, ch >>(8 - point->bits));
++ INFLATEPRIME(&index->strm, point->bits, ch >>(8 - point->bits));
+  }
+- inflateSetDictionary(&strm, point->window, WINSIZE);
++ inflateSetDictionary(&index->strm, point->window, WINSIZE);
+  unsigned char input[CHUNK];
+  unsigned char discard[WINSIZE];
+  offset -= point->out;
+  size_t left = len;
+  do {
+  if (offset) {
+- strm.avail_out = offset < WINSIZE ?(unsigned)offset : WINSIZE;
++ index->strm.avail_out = offset < WINSIZE ?(unsigned)offset : WINSIZE;
+- strm.next_out = discard;
++ index->strm.next_out = discard;
+  }
+  else {
+- strm.avail_out = left < UINT_MAX ?(unsigned)left : UINT_MAX;
++ index->strm.avail_out = left < UINT_MAX ?(unsigned)left : UINT_MAX;
+- strm.next_out = buf + len - left;
++ index->strm.next_out = buf + len - left;
+  }
+- if (strm.avail_in == 0) {
++ if (index->strm.avail_in == 0) {
+- strm.avail_in = fread(input, 1, CHUNK, in);
++ index->strm.avail_in = fread(input, 1, CHUNK, in);
+- if (strm.avail_in < CHUNK && ferror(in)) {
++ if (index->strm.avail_in < CHUNK && ferror(in)) {
+  ret = Z_ERRNO;
+  }
+- strm.next_in = input;
++ index->strm.next_in = input;
+  }
+- unsigned got = strm.avail_out;
++ unsigned got = index->strm.avail_out;
+- ret = inflate(&strm, Z_NO_FLUSH);
++ ret = inflate(&index->strm, Z_NO_FLUSH);
+- got -= strm.avail_out;
++ got -= index->strm.avail_out;
+  if (offset) {
+  offset -= got;
+  }
+  else {
+  left -= got;
+  if (left == 0) {
+  }
+  }
+  if (ret == Z_STREAM_END && index->mode == GZIP) {
+  unsigned drop = 8;
+- if (strm.avail_in >= drop) {
++ if (index->strm.avail_in >= drop) {
+- strm.avail_in -= drop;
++ index->strm.avail_in -= drop;
+- strm.next_in += drop;
++ index->strm.next_in += drop;
+  }
+  else {
+- drop -= strm.avail_in;
++ drop -= index->strm.avail_in;
+- strm.avail_in = 0;
++ index->strm.avail_in = 0;
+  do {
+  }
+  } while ((--drop));
+  }
+- if (strm.avail_in || ungetc(getc(in), in)!= EOF) {
++ if (index->strm.avail_in || ungetc(getc(in), in)!= EOF) {
+- inflateReset2(&strm, GZIP);
++ inflateReset2(&index->strm, GZIP);
+  do {
+- if (strm.avail_in == 0) {
++ if (index->strm.avail_in == 0) {
+- strm.avail_in = fread(input, 1, CHUNK, in);
++ index->strm.avail_in = fread(input, 1, CHUNK, in);
+- if (strm.avail_in < CHUNK && ferror(in)) {
++ if (index->strm.avail_in < CHUNK && ferror(in)) {
+  }
+- strm.next_in = input;
++ index->strm.next_in = input;
+  }
+- strm.avail_out = WINSIZE;
++ index->strm.avail_out = WINSIZE;
+- strm.next_out = discard;
++ index->strm.next_out = discard;
+- ret = inflate(&strm, Z_BLOCK);
++ ret = inflate(&index->strm, Z_BLOCK);
+- } while ((ret == Z_OK &&(strm.data_type & 0x80)== 0));
++ } while ((ret == Z_OK &&(index->strm.data_type & 0x80)== 0));
+  if (ret != Z_OK) {
+  }
+- inflateReset2(&strm, RAW);
++ inflateReset2(&index->strm, RAW);
+  }
+  }
+  } while ((ret == Z_OK));
+- inflateEnd(&strm);
+  return ret == Z_OK || ret == Z_STREAM_END ? len - left : ret;
+
+Context for merged statement of old file: examples/zran.h with new file: examples/zran.h:
+- struct deflate_index {
++ struct deflate_index {
++ z_stream strm;
+  }
+
+
+==== Cross-function context ====
+
+-- called function: inflateReset2 — inflate.c:141 [priority_fallback] --
+int ZEXPORT inflateReset2(z_streamp strm, int windowBits) {
+   ...
+   struct inflate_state FAR *state;
+   if(inflateStateCheck(strm))
+     return Z_STREAM_ERROR;
+   state =(struct inflate_state FAR *)strm->state;
+   if(windowBits < 0) {
+     if(windowBits < -15)
+       return Z_STREAM_ERROR;
+   ...
+     windowBits = -windowBits;
+   } else {
+     wrap =(windowBits >> 4)+ 5;
+     #ifdef ...
+     if(windowBits < 48)
+       windowBits &= 15;
+     #endif
+   }
+   if(windowBits &&(windowBits < 8 || windowBits > 15))
+     return Z_STREAM_ERROR;
+   if(state->window != Z_NULL && state->wbits !=(unsigned)windowBits) {
+     ZFREE(strm, state->window);
+     state->window = Z_NULL;
+   }
+   state->wrap = wrap;
+   state->wbits =(unsigned)windowBits;
+   return inflateReset(strm);
+}
+   [reads: strm, windowBits; writes: strm*]
+
+-- called function: inflate — inflate.c:590 [priority_fallback] --
+int ZEXPORT inflate(z_streamp strm, int flush) {
+   struct inflate_state FAR *state;
+   ...
+   FAR *next;
+   unsigned char FAR *put;
+   unsigned have, left;
+   unsigned long hold;
+   ...
+   unsigned in, out;
+   unsigned copy;
+   unsigned char FAR *from;
+   code here;
+   code last;
+   unsigned len;
+   int ret;
+   ...
+   static const unsigned short order[19] = {16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
+   if(inflateStateCheck(strm)|| strm->next_out == Z_NULL ||(strm->next_in == Z_NULL && strm->avail_in != 0))
+     return Z_STREAM_ERROR;
+   state =(struct inflate_state FAR *)strm->state;
+   if(state->mode == TYPE)
+     state->mode = TYPEDO;
+   ...
+   in = have;
+   out = left;
+   ret = Z_OK;
+   for(; ; )
+     switch(state->mode) {
+   ...
+       if(state->wrap == 0) {
+         state->mode = TYPEDO;
+   ...
+       }
+   ...
+       #ifdef ...
+       if((state->wrap & 2)&& hold == 0x8b1f) {
+         if(state->wbits == 0)
+           state->wbits = 15;
+         state->check = crc32(0L, Z_NULL, 0);
+         CRC2(state->check, hold);
+   ...
+         state->mode = FLAGS;
+   ...
+       }
+       if(state->head != Z_NULL)
+         state->head->done = -1;
+       if(!(state->wrap & 1)|| /* check if zlib header allowed */ #else if(#endif((BITS(8)<< 8)+(hold >> 8))% 31){ strm->msg =(char *)"incorrect header check"
+   ...
+       state->mode = BAD;
+   ...
+       if(BITS(4)!= Z_DEFLATED) {
+         strm->msg =(char *)"unknown compression method";
+         state->mode = BAD;
+   ...
+       }
+   ...
+       len = BITS(4)+ 8;
+       if(state->wbits == 0)
+         state->wbits = len;
+       if(len > 15 || len > state->wbits) {
+         strm->msg =(char *)"invalid window size";
+         state->mode = BAD;
+   ...
+       }
+       state->dmax = 1U << len;
+       state->flags = 0;
+   ...
+       strm->adler = state->check = adler32(0L, Z_NULL, 0);
+       state->mode = hold & 0x200 ? DICTID : TYPE;
+   ...
+       #ifdef ...
+   ...
+       state->flags =(int)(hold);
+       if((state->flags & 0xff)!= Z_DEFLATED) {
+         strm->msg =(char *)"unknown compression method";
+         state->mode = BAD;
+   ...
+       }
+       if(state->flags & 0xe000) {
+         strm->msg =(char *)"unknown header flags set";
+         state->mode = BAD;
+   ...
+       }
+       if(state->head != Z_NULL)
+         state->head->text =(int)((hold >> 8)& 1);
+       if((state->flags & 0x0200)&&(state->wrap & 4))
+         CRC2(state->check, hold);
+   ...
+       state->mode = TIME;
+   ...
+       if(state->head != Z_NULL)
+         state->head->time = hold;
+       if((state->flags & 0x0200)&&(state->wrap & 4))
+         CRC4(state->check, hold);
+   ...
+       state->mode = OS;
+   ...
+       if(state->head != Z_NULL) {
+         state->head->xflags =(int)(hold & 0xff);
+         state->head->os =(int)(hold >> 8);
+       }
+       if((state->flags & 0x0200)&&(state->wrap & 4))
+         CRC2(state->check, hold);
+   ...
+       state->mode = EXLEN;
+   ...
+       if(state->flags & 0x0400) {
+   ...
+         state->length =(unsigned)(hold);
+         if(state->head != Z_NULL)
+           state->head->extra_len =(unsigned)hold;
+         if((state->flags & 0x0200)&&(state->wrap & 4))
+           CRC2(state->check, hold);
+   ...
+       } else if(state->head != Z_NULL)
+         state->head->extra = Z_NULL;
+       state->mode = EXTRA;
+   ...
+       if(state->flags & 0x0400) {
+         copy = state->length;
+         if(copy > have)
+           copy = have;
+         if(copy) {
+           if(state->head != Z_NULL && state->head->extra != Z_NULL &&(len = state->head->extra_len - state->length)< state->head->extra_max) {
+             zmemcpy(state->head->extra + len, next, len + copy > state->head->extra_max ? state->head->extra_max - len : copy);
+           }
+           if((state->flags & 0x0200)&&(state->wrap & 4))
+             state->check = crc32(state->check, next, copy);
+           have -= copy;
+           next += copy;
+           state->length -= copy;
+         }
+         if(state->length)
+   ...
+       }
+       state->length = 0;
+       state->mode = NAME;
+   ...
+       if(state->flags & 0x0800) {
+         if(have == 0)
+   ...
+         copy = 0;
+         do {
+           len =(unsigned)(next[copy++]);
+           if(state->head != Z_NULL && state->head->name != Z_NULL && state->length < state->head->name_max)
+             state->head->name[state->length++] =(Bytef)len;
+         } while(len && copy < have);
+         if((state->flags & 0x0200)&&(state->wrap & 4))
+           state->check = crc32(state->check, next, copy);
+         have -= copy;
+         next += copy;
+         if(len)
+   ...
+       } else if(state->head != Z_NULL)
+         state->head->name = Z_NULL;
+       state->length = 0;
+       state->mode = COMMENT;
+   ...
+       if(state->flags & 0x1000) {
+         if(have == 0)
+   ...
+         copy = 0;
+         do {
+           len =(unsigned)(next[copy++]);
+           if(state->head != Z_NULL && state->head->comment != Z_NULL && state->length < state->head->comm_max)
+             state->head->comment[state->length++] =(Bytef)len;
+         } while(len && copy < have);
+         if((state->flags & 0x0200)&&(state->wrap & 4))
+           state->check = crc32(state->check, next, copy);
+         have -= copy;
+         next += copy;
+         if(len)
+   ...
+       } else if(state->head != Z_NULL)
+         state->head->comment = Z_NULL;
+       state->mode = HCRC;
+   ...
+       if(state->flags & 0x0200) {
+   ...
+         if((state->wrap & 4)&& hold !=(state->check & 0xffff)) {
+           strm->msg =(char *)"header crc mismatch";
+           state->mode = BAD;
+   ...
+         }
+       }
+       if(state->head != Z_NULL) {
+         state->head->hcrc =(int)((state->flags >> 9)& 1);
+         state->head->done = 1;
+       }
+       strm->adler = state->check = crc32(0L, Z_NULL, 0);
+       state->mode = TYPE;
+   ...
+       #endif
+   ...
+       strm->adler = state->check = ZSWAP32(hold);
+   ...
+       state->mode = DICT;
+   ...
+       if(state->havedict == 0) {
+   ...
+         return Z_NEED_DICT;
+       }
+       strm->adler = state->check = adler32(0L, Z_NULL, 0);
+       state->mode = TYPE;
+   ...
+       if(flush == Z_BLOCK || flush == Z_TREES)
+   ...
+       if(state->last) {
+   ...
+         state->mode = CHECK;
+   ...
+       }
+   ...
+       state->last = BITS(1);
+   ...
+       switch(BITS(2)) {
+   ...
+         Tracev((stderr, "inflate: stored block%s\n", state->last ? "(last)" : ""));
+         state->mode = STORED;
+   ...
+         fixedtables(state);
+         Tracev((stderr, "inflate: fixed codes block%s\n", state->last ? "(last)" : ""));
+         state->mode = LEN_;
+         if(flush == Z_TREES) {
+   ...
+         }
+   ...
+         Tracev((stderr, "inflate: dynamic codes block%s\n", state->last ? "(last)" : ""));
+         state->mode = TABLE;
+   ...
+         strm->msg =(char *)"invalid block type";
+         state->mode = BAD;
+       }
+   ...
+       if((hold & 0xffff)!=((hold >> 16)^ 0xffff)) {
+         strm->msg =(char *)"invalid stored block lengths";
+         state->mode = BAD;
+   ...
+       }
+       state->length =(unsigned)hold & 0xffff;
+       Tracev((stderr, "inflate: stored length %u\n", state->length));
+   ...
+       state->mode = COPY_;
+       if(flush == Z_TREES)
+   ...
+       state->mode = COPY;
+   ...
+       copy = state->length;
+       if(copy) {
+         if(copy > have)
+           copy = have;
+         if(copy > left)
+           copy = left;
+         if(copy == 0)
+   ...
+         zmemcpy(put, next, copy);
+         have -= copy;
+         next += copy;
+         left -= copy;
+         put += copy;
+         state->length -= copy;
+   ...
+       }
+   ...
+       state->mode = TYPE;
+   ...
+       state->nlen = BITS(5)+ 257;
+   ...
+       state->ndist = BITS(5)+ 1;
+   ...
+       state->ncode = BITS(4)+ 4;
+   ...
+       #ifndef ...
+       if(state->nlen > 286 || state->ndist > 30) {
+         strm->msg =(char *)"too many length or distance symbols";
+         state->mode = BAD;
+   ...
+       }
+       #endif
+   ...
+       state->have = 0;
+       state->mode = LENLENS;
+   ...
+       while(state->have < state->ncode) {
+   ...
+         state->lens[order[state->have++]] =(unsigned short)BITS(3);
+   ...
+       }
+       while(state->have < 19)
+         state->lens[order[state->have++]] = 0;
+       state->next = state->codes;
+       state->lencode =(const code FAR *)(state->next);
+       state->lenbits = 7;
+       ret = inflate_table(CODES, state->lens, 19, &(state->next), &(state->lenbits), state->work);
+       if(ret) {
+         strm->msg =(char *)"invalid code lengths set";
+         state->mode = BAD;
+   ...
+       }
+   ...
+       state->have = 0;
+       state->mode = CODELENS;
+   ...
+       while(state->have < state->nlen + state->ndist) {
+         for(; ; ) {
+           here = state->lencode[BITS(state->lenbits)];
+           if((unsigned)(here.bits)<= bits)
+   ...
+         }
+         if(here.val < 16) {
+           DROPBITS(here.bits);
+           state->lens[state->have++] = here.val;
+         } else {
+           if(here.val == 16) {
+             NEEDBITS(here.bits + 2);
+             DROPBITS(here.bits);
+             if(state->have == 0) {
+               strm->msg =(char *)"invalid bit length repeat";
+               state->mode = BAD;
+   ...
+             }
+             len = state->lens[state->have - 1];
+             copy = 3 + BITS(2);
+   ...
+           } else if(here.val == 17) {
+             NEEDBITS(here.bits + 3);
+             DROPBITS(here.bits);
+             len = 0;
+             copy = 3 + BITS(3);
+   ...
+           } else {
+             NEEDBITS(here.bits + 7);
+             DROPBITS(here.bits);
+             len = 0;
+             copy = 11 + BITS(7);
+   ...
+           }
+           if(state->have + copy > state->nlen + state->ndist) {
+             strm->msg =(char *)"invalid bit length repeat";
+             state->mode = BAD;
+   ...
+           }
+           while(copy--)
+             state->lens[state->have++] =(unsigned short)len;
+         }
+       }
+       if(state->mode == BAD)
+   ...
+       if(state->lens[256] == 0) {
+         strm->msg =(char *)"invalid code -- missing end-of-block";
+         state->mode = BAD;
+   ...
+       }
+       state->next = state->codes;
+       state->lencode =(const code FAR *)(state->next);
+       state->lenbits = 9;
+       ret = inflate_table(LENS, state->lens, state->nlen, &(state->next), &(state->lenbits), state->work);
+       if(ret) {
+         strm->msg =(char *)"invalid literal/lengths set";
+         state->mode = BAD;
+   ...
+       }
+       state->distcode =(const code FAR *)(state->next);
+       state->distbits = 6;
+       ret = inflate_table(DISTS, state->lens + state->nlen, state->ndist, &(state->next), &(state->distbits), state->work);
+       if(ret) {
+         strm->msg =(char *)"invalid distances set";
+         state->mode = BAD;
+   ...
+       }
+   ...
+       state->mode = LEN_;
+       if(flush == Z_TREES)
+   ...
+       state->mode = LEN;
+   ...
+       if(have >= 6 && left >= 258) {
+   ...
+         inflate_fast(strm, out);
+   ...
+         if(state->mode == TYPE)
+           state->back = -1;
+   ...
+       }
+       state->back = 0;
+       for(; ; ) {
+         here = state->lencode[BITS(state->lenbits)];
+         if((unsigned)(here.bits)<= bits)
+   ...
+       }
+       if(here.op &&(here.op & 0xf0)== 0) {
+         last = here;
+         for(; ; ) {
+           here = state->lencode[last.val +(BITS(last.bits + last.op)>> last.bits)];
+           if((unsigned)(last.bits + here.bits)<= bits)
+   ...
+         }
+         DROPBITS(last.bits);
+         state->back += last.bits;
+       }
+       DROPBITS(here.bits);
+       state->back += here.bits;
+       state->length =(unsigned)here.val;
+       if((int)(here.op)== 0) {
+         Tracevv((stderr, here.val >= 0x20 && here.val < 0x7f ? "inflate: literal '%c'\n" : "inflate: literal 0x%02x\n", here.val));
+         state->mode = LIT;
+   ...
+       }
+       if(here.op & 32) {
+   ...
+         state->back = -1;
+         state->mode = TYPE;
+   ...
+       }
+       if(here.op & 64) {
+         strm->msg =(char *)"invalid literal/length code";
+         state->mode = BAD;
+   ...
+       }
+       state->extra =(unsigned)(here.op)& 15;
+       state->mode = LENEXT;
+   ...
+       if(state->extra) {
+         NEEDBITS(state->extra);
+         state->length += BITS(state->extra);
+         DROPBITS(state->extra);
+         state->back += state->extra;
+       }
+       Tracevv((stderr, "inflate: length %u\n", state->length));
+       state->was = state->length;
+       state->mode = DIST;
+   ...
+       for(; ; ) {
+         here = state->distcode[BITS(state->distbits)];
+         if((unsigned)(here.bits)<= bits)
+   ...
+       }
+       if((here.op & 0xf0)== 0) {
+         last = here;
+         for(; ; ) {
+           here = state->distcode[last.val +(BITS(last.bits + last.op)>> last.bits)];
+           if((unsigned)(last.bits + here.bits)<= bits)
+   ...
+         }
+         DROPBITS(last.bits);
+         state->back += last.bits;
+       }
+       DROPBITS(here.bits);
+       state->back += here.bits;
+       if(here.op & 64) {
+         strm->msg =(char *)"invalid distance code";
+         state->mode = BAD;
+   ...
+       }
+       state->offset =(unsigned)here.val;
+       state->extra =(unsigned)(here.op)& 15;
+       state->mode = DISTEXT;
+   ...
+       if(state->extra) {
+         NEEDBITS(state->extra);
+         state->offset += BITS(state->extra);
+         DROPBITS(state->extra);
+         state->back += state->extra;
+       }
+       #ifdef ...
+       if(state->offset > state->dmax) {
+         strm->msg =(char *)"invalid distance too far back";
+         state->mode = BAD;
+   ...
+       }
+       #endif
+       Tracevv((stderr, "inflate: distance %u\n", state->offset));
+       state->mode = MATCH;
+   ...
+       if(left == 0)
+   ...
+       copy = out - left;
+       if(state->offset > copy) {
+         copy = state->offset - copy;
+         if(copy > state->whave) {
+           if(state->sane) {
+             strm->msg =(char *)"invalid distance too far back";
+             state->mode = BAD;
+   ...
+           }
+           #ifdef ...
+   ...
+           copy -= state->whave;
+           if(copy > state->length)
+             copy = state->length;
+           if(copy > left)
+             copy = left;
+           left -= copy;
+           state->length -= copy;
+           do {
+             *put++ = 0;
+           } while(--copy);
+           if(state->length == 0)
+             state->mode = LEN;
+   ...
+           #endif
+         }
+         if(copy > state->wnext) {
+           copy -= state->wnext;
+           from = state->window +(state->wsize - copy);
+         } else
+           from = state->window +(state->wnext - copy);
+         if(copy > state->length)
+           copy = state->length;
+       } else {
+         from = put - state->offset;
+         copy = state->length;
+       }
+       if(copy > left)
+         copy = left;
+       left -= copy;
+       state->length -= copy;
+       do {
+         *put++ = *from++;
+       } while(--copy);
+       if(state->length == 0)
+         state->mode = LEN;
+   ...
+       if(left == 0)
+   ...
+       *put++ =(unsigned char)(state->length);
+       left--;
+       state->mode = LEN;
+   ...
+       if(state->wrap) {
+   ...
+         out -= left;
+         strm->total_out += out;
+         state->total += out;
+         if((state->wrap & 4)&& out)
+           strm->adler = state->check = UPDATE_CHECK(state->check, put - out, out);
+         out = left;
+         if((state->wrap & 4)&&(#ifdef GUNZIP state->flags ? hold : #endif ZSWAP32(hold))!= state->check) {
+           strm->msg =(char *)"incorrect data check";
+           state->mode = BAD;
+   ...
+         }
+       }
+       #ifdef ...
+       state->mode = LENGTH;
+   ...
+       if(state->wrap && state->flags) {
+   ...
+         if((state->wrap & 4)&& hold !=(state->total & 0xffffffff)) {
+           strm->msg =(char *)"incorrect length check";
+           state->mode = BAD;
+   ...
+         }
+       }
+       #endif
+       state->mode = DONE;
+   ...
+       ret = Z_STREAM_END;
+   ...
+       ret = Z_DATA_ERROR;
+   ...
+       return Z_MEM_ERROR;
+   ...
+       return Z_STREAM_ERROR;
+       #endif
+     }
+   ...
+   if(state->wsize ||(out != strm->avail_out && state->mode < BAD &&(state->mode < CHECK || flush != Z_FINISH)))
+     if(updatewindow(strm, strm->next_out, out - strm->avail_out)) {
+       state->mode = MEM;
+       return Z_MEM_ERROR;
+     }
+   in -= strm->avail_in;
+   out -= strm->avail_out;
+   strm->total_in += in;
+   strm->total_out += out;
+   state->total += out;
+   if((state->wrap & 4)&& out)
+     strm->adler = state->check = UPDATE_CHECK(state->check, strm->next_out - out, out);
+   strm->data_type =(int)state->bits +(state->last ? 64 : 0)+(state->mode == TYPE ? 128 : 0)+(state->mode == LEN_ || state->mode == COPY_ ? 256 : 0);
+   if(((in == 0 && out == 0)|| flush == Z_FINISH)&& ret == Z_OK)
+     ret = Z_BUF_ERROR;
+   return ret;
+}
+   [reads: flush, strm; writes: strm*]
+
+-- called macro: inflateInit2 — zlib.h:1820 [lsp] --
+#  define inflateInit2(strm, windowBits) \
+          inflateInit2_((strm), (windowBits), ZLIB_VERSION, \
+                        (int)sizeof(z_stream))
+
+-- called function: inflateEnd — inflate.c:1266 [priority_fallback, old version] --
+int ZEXPORT inflateEnd(z_streamp strm) {
+   struct inflate_state FAR *state;
+   if(inflateStateCheck(strm))
+   ...
+   state =(struct inflate_state FAR *)strm->state;
+   if(state->window != Z_NULL)
+     ZFREE(strm, state->window);
+   ZFREE(strm, strm->state);
+   strm->state = Z_NULL;
+   ...
+}
+   [reads: strm; writes: strm*]
+
+-- called macro: Z_NULL — zlib.h:212 [gtags_unique, new version] --
+#define Z_NULL  0  /* for initializing zalloc, zfree, opaque */
+
+-- called macro: RAW — examples/zran.c:114 [gtags_unique, new version] --
+#define RAW -15
+
+-- called macro: GZIP — examples/zran.c:116 [lsp, new version] --
+#define GZIP 31
+
+-- called macro: WINSIZE — examples/zran.c:64 [gtags_unique, new version] --
+#define WINSIZE 32768U      // sliding window size
+
+-- caller of deflate_index_free: add_point — examples/zran.c:88 --
+static struct deflate_index *add_point(struct deflate_index *index, int bits, off_t in, off_t out, unsigned left, unsigned char *window) {
+   if(index->have == index->mode) {
+     index->mode = index->mode ? index->mode << 1 : 8;
+   ...
+     if(next == NULL) {
+>      deflate_index_free(index);
+   ...
+     }
+   }
+}
+
+-- caller of deflate_index_free: add_point — examples/zran.c:98 --
+static struct deflate_index *add_point(struct deflate_index *index, int bits, off_t in, off_t out, unsigned left, unsigned char *window) {
+   if(index->have == index->mode) {
+     index->mode = index->mode ? index->mode << 1 : 8;
+     point_t *next = realloc(index->list, sizeof(point_t)* index->mode);
+   ...
+     index->list = next;
+   }
+   point_t *next =(point_t *)(index->list)+ index->have++;
+   if(index->have < 0) {
+>    deflate_index_free(index);
+   ...
+   }
+}
+
+-- caller of deflate_index_free: deflate_index_build — examples/zran.c:225 --
+int deflate_index_build(FILE *in, off_t span, struct deflate_index **built) {
+   ...
+   struct deflate_index *index = malloc(sizeof(struct deflate_index));
+   ...
+   index->have = 0;
+   index->mode = 0;
+   index->list = NULL;
+   index->strm.state = Z_NULL;
+   index->strm.avail_in = 0;
+   index->strm.avail_out = 0;
+   unsigned char buf[CHUNK];
+   unsigned char win[WINSIZE] = {0};
+   off_t totin = 0;
+   off_t totout = 0;
+   ...
+   do {
+     if(index->strm.avail_in == 0) {
+       index->strm.avail_in = fread(buf, 1, sizeof(buf), in);
+       totin += index->strm.avail_in;
+       index->strm.next_in = buf;
+   ...
+       if(mode == 0) {
+   ...
+         index->strm.zalloc = Z_NULL;
+         index->strm.zfree = Z_NULL;
+         index->strm.opaque = Z_NULL;
+   ...
+       }
+     }
+     if(index->strm.avail_out == 0) {
+       index->strm.avail_out = sizeof(win);
+       index->strm.next_out = win;
+     }
+     if(mode == RAW && index->have == 0)
+       index->strm.data_type = 0x80;
+     else {
+       unsigned before = index->strm.avail_out;
+   ...
+       totout += before - index->strm.avail_out;
+     }
+     if((index->strm.data_type & 0xc0)== 0x80 &&(index->have == 0 || totout - last >= span)) {
+       index = add_point(index, index->strm.data_type & 7, totin - index->strm.avail_in, totout, index->strm.avail_out, win);
+   ...
+     }
+   } while(ret == Z_OK);
+   if(ret != Z_STREAM_END) {
+>    deflate_index_free(index);
+   ...
+   }
+}
+
+-- caller of deflate_index_free: deflate_index_build — examples/zran.c:236 --
+int deflate_index_build(FILE *in, off_t span, struct deflate_index **built) {
+   ...
+   struct deflate_index *index = malloc(sizeof(struct deflate_index));
+   ...
+   index->have = 0;
+   index->mode = 0;
+   index->list = NULL;
+   index->strm.state = Z_NULL;
+   index->strm.avail_in = 0;
+   index->strm.avail_out = 0;
+   unsigned char buf[CHUNK];
+   unsigned char win[WINSIZE] = {0};
+   off_t totin = 0;
+   off_t totout = 0;
+   int mode = 0;
+   ...
+   do {
+     if(index->strm.avail_in == 0) {
+       index->strm.avail_in = fread(buf, 1, sizeof(buf), in);
+       totin += index->strm.avail_in;
+       index->strm.next_in = buf;
+   ...
+       if(mode == 0) {
+         mode = index->strm.avail_in == 0 ? RAW :(index->strm.next_in[0] & 0xf)== 8 ? ZLIB : index->strm.next_in[0] == 0x1f ? GZIP : RAW;
+         index->strm.zalloc = Z_NULL;
+         index->strm.zfree = Z_NULL;
+         index->strm.opaque = Z_NULL;
+   ...
+       }
+     }
+     if(index->strm.avail_out == 0) {
+       index->strm.avail_out = sizeof(win);
+       index->strm.next_out = win;
+     }
+     if(mode == RAW && index->have == 0)
+       index->strm.data_type = 0x80;
+     else {
+       unsigned before = index->strm.avail_out;
+   ...
+       totout += before - index->strm.avail_out;
+     }
+     if((index->strm.data_type & 0xc0)== 0x80 &&(index->have == 0 || totout - last >= span)) {
+       index = add_point(index, index->strm.data_type & 7, totin - index->strm.avail_in, totout, index->strm.avail_out, win);
+   ...
+     }
+   } while(ret == Z_OK);
+   ...
+   index->mode = mode;
+   index->length = totout;
+   ...
+   if(list == NULL) {
+>    deflate_index_free(index);
+   ...
+   }
+}
+
+-- caller of add_point: deflate_index_build — examples/zran.c:201 --
+int deflate_index_build(FILE *in, off_t span, struct deflate_index **built) {
+   ...
+   struct deflate_index *index = malloc(sizeof(struct deflate_index));
+   ...
+   index->have = 0;
+   index->mode = 0;
+   index->list = NULL;
+   index->strm.state = Z_NULL;
+   index->strm.avail_in = 0;
+   index->strm.avail_out = 0;
+   unsigned char buf[CHUNK];
+   unsigned char win[WINSIZE] = {0};
+   off_t totin = 0;
+   off_t totout = 0;
+   ...
+   do {
+     if(index->strm.avail_in == 0) {
+       index->strm.avail_in = fread(buf, 1, sizeof(buf), in);
+       totin += index->strm.avail_in;
+       index->strm.next_in = buf;
+   ...
+       if(mode == 0) {
+   ...
+         index->strm.zalloc = Z_NULL;
+         index->strm.zfree = Z_NULL;
+         index->strm.opaque = Z_NULL;
+   ...
+       }
+     }
+     if(index->strm.avail_out == 0) {
+       index->strm.avail_out = sizeof(win);
+       index->strm.next_out = win;
+     }
+     if(mode == RAW && index->have == 0)
+       index->strm.data_type = 0x80;
+     else {
+       unsigned before = index->strm.avail_out;
+   ...
+       totout += before - index->strm.avail_out;
+     }
+     if((index->strm.data_type & 0xc0)== 0x80 &&(index->have == 0 || totout - last >= span)) {
+>      index = add_point(index, index->strm.data_type & 7, totin - index->strm.avail_in, totout, index->strm.avail_out, win);
+       if(index == NULL) {
+   ...
+       }
+     }
+     if(ret == Z_STREAM_END && mode == GZIP &&(index->strm.avail_in || ungetc(getc(in), in)!= EOF))
+       ret = inflateReset2(&index->strm, GZIP);
+   } while(ret == Z_OK);
+   if(ret != Z_STREAM_END) {
+     deflate_index_free(index);
+     return ret == Z_NEED_DICT ? Z_DATA_ERROR : ret;
+   }
+   index->mode = mode;
+   index->length = totout;
+   point_t *list = realloc(index->list, sizeof(point_t)* index->have);
+   if(list == NULL) {
+     deflate_index_free(index);
+   ...
+   }
+   index->list = list;
+   *built = index;
+   return index->have;
+}
+
+-- caller of deflate_index_build: main — examples/zran.c:500 --
+int main(int argc, char **argv) {
+   ...
+   FILE *in = fopen(argv[1], "rb");
+   ...
+   struct deflate_index *index = NULL;
+>  int len = deflate_index_build(in, SPAN, &index);
+   if(len < 0) {
+   ...
+     switch(len) {
+   ...
+       fprintf(stderr, "zran: error %d while building index\n", len);
+   ...
+     }
+   }
+   fprintf(stderr, "zran: built index with %d access points\n", len);
+   ...
+}
+
+-- caller of deflate_index_extract: main — examples/zran.c:527 --
+int main(int argc, char **argv) {
+   ...
+   FILE *in = fopen(argv[1], "rb");
+   ...
+   off_t offset = -1;
+   if(argc == 3) {
+   ...
+     offset = strtoll(argv[2], &end, 10);
+   ...
+   }
+   struct deflate_index *index = NULL;
+   ...
+   unsigned char buf[LEN];
+   if(offset == -1)
+     offset =((index->length + 1)<< 1)/ 3;
+>  ptrdiff_t got = deflate_index_extract(in, index, offset, buf, LEN);
+   if(got < 0)
+     fprintf(stderr, "zran: extraction failed: %s error\n", got == Z_MEM_ERROR ? "out of memory" : "input corrupted");
+   else {
+     fwrite(buf, 1, got, stdout);
+     fprintf(stderr, "zran: extracted %ld bytes at %lld\n", got, offset);
+   ...
+   }
+}

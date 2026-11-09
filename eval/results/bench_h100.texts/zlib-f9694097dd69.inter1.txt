@@ -1,0 +1,208 @@
+Context for merged statement of old file: deflate.c with new file: deflate.c:
+int deflateParams(strm, level, strategy) {
+  deflate_state *s;
+  compress_func func;
+  s = strm->state;
+   #ifdef FASTEST
+  if (level != 0) {
+  level = 1;
+  }
+  #else
+  if (level == Z_DEFAULT_COMPRESSION) {
+  level = 6;
+  }
+  #endif
+  func = configuration_table[s->level].func;
+- if ((strategy != s->strategy || func != configuration_table[level].func)&& s->high_water) {
++ if ((strategy != s->strategy || func != configuration_table[level].func)&& s->last_flush != -2) {
+- if (strm->avail_out == 0) {
++ if (strm->avail_in ||(s->strstart - s->block_start)+ s->lookahead) {
+  return Z_BUF_ERROR;
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: deflate — deflate.c:763 [lsp] --
+int ZEXPORT deflate (strm, flush) z_streamp strm; int flush; {
+   ...
+   deflate_state *s;
+   if(deflateStateCheck(strm)|| flush > Z_BLOCK || flush < 0) {
+     return Z_STREAM_ERROR;
+   }
+   s = strm->state;
+   ...
+   if(s->pending != 0) {
+   ...
+     if(strm->avail_out == 0) {
+   ...
+       return Z_OK;
+     }
+   } else
+   ...
+     if(s->status == INIT_STATE) {
+   ...
+       if(s->pending != 0) {
+   ...
+         return Z_OK;
+       }
+     }
+   #ifdef ...
+   if(s->status == GZIP_STATE) {
+   ...
+     if(s->gzhead == Z_NULL) {
+   ...
+       if(s->pending != 0) {
+   ...
+         return Z_OK;
+       }
+     } else {
+   ...
+       s->gzindex = 0;
+   ...
+     }
+   }
+   if(s->status == EXTRA_STATE) {
+     if(s->gzhead->extra != Z_NULL) {
+   ...
+       uInt left =(s->gzhead->extra_len & 0xffff)- s->gzindex;
+       while(s->pending + left > s->pending_buf_size) {
+         uInt copy = s->pending_buf_size - s->pending;
+   ...
+         s->pending = s->pending_buf_size;
+   ...
+         if(s->pending != 0) {
+   ...
+           return Z_OK;
+         }
+   ...
+         left -= copy;
+       }
+   ...
+       s->pending += left;
+   ...
+     }
+   }
+   if(s->status == NAME_STATE) {
+     if(s->gzhead->name != Z_NULL) {
+   ...
+       do {
+         if(s->pending == s->pending_buf_size) {
+   ...
+           if(s->pending != 0) {
+   ...
+             return Z_OK;
+   ...
+           }
+         }
+       } while(val != 0);
+     }
+   }
+   if(s->status == COMMENT_STATE) {
+     if(s->gzhead->comment != Z_NULL) {
+   ...
+       do {
+         if(s->pending == s->pending_buf_size) {
+   ...
+           if(s->pending != 0) {
+   ...
+             return Z_OK;
+   ...
+           }
+         }
+       } while(val != 0);
+     }
+   }
+   if(s->status == HCRC_STATE) {
+     if(s->gzhead->hcrc) {
+       if(s->pending + 2 > s->pending_buf_size) {
+   ...
+         if(s->pending != 0) {
+   ...
+           return Z_OK;
+   ...
+         }
+       }
+     }
+   ...
+     if(s->pending != 0) {
+   ...
+       return Z_OK;
+     }
+   }
+   #endif
+   if(strm->avail_in != 0 || s->lookahead != 0 ||(flush != Z_NO_FLUSH && s->status != FINISH_STATE)) {
+   ...
+     if(bstate == need_more || bstate == finish_started) {
+   ...
+       return Z_OK;
+     }
+     if(bstate == block_done) {
+   ...
+       if(strm->avail_out == 0) {
+   ...
+         return Z_OK;
+       }
+     }
+   }
+   if(flush != Z_FINISH)
+     return Z_OK;
+   if(s->wrap <= 0)
+     return Z_STREAM_END;
+   ...
+   return s->pending != 0 ? Z_OK : Z_STREAM_END;
+}
+
+-- caller of deflateParams: gzsetparams — gzwrite.c:619 --
+int ZEXPORT gzsetparams(file, level, strategy) gzFile file; int level; int strategy; {
+   gz_statep state;
+   z_streamp strm;
+   ...
+   state =(gz_statep)file;
+   strm = &(state->strm);
+   ...
+   if(state->size) {
+   ...
+>    deflateParams(strm, level, strategy);
+   ...
+   }
+}
+
+-- caller of deflateParams: test_large_deflate — test/example.c:309 --
+void test_large_deflate(compr, comprLen, uncompr, uncomprLen) Byte *compr, *uncompr; uLong comprLen, uncomprLen; {
+   z_stream c_stream;
+   ...
+   c_stream.zalloc = zalloc;
+   c_stream.zfree = zfree;
+   c_stream.opaque =(voidpf)0;
+   ...
+   c_stream.next_out = compr;
+   c_stream.avail_out =(uInt)comprLen;
+   c_stream.next_in = uncompr;
+   c_stream.avail_in =(uInt)uncomprLen;
+   ...
+>  deflateParams(&c_stream, Z_NO_COMPRESSION, Z_DEFAULT_STRATEGY);
+   ...
+}
+
+-- caller of deflateParams: test_large_deflate — test/example.c:316 --
+void test_large_deflate(compr, comprLen, uncompr, uncomprLen) Byte *compr, *uncompr; uLong comprLen, uncomprLen; {
+   z_stream c_stream;
+   ...
+   c_stream.zalloc = zalloc;
+   c_stream.zfree = zfree;
+   c_stream.opaque =(voidpf)0;
+   ...
+   c_stream.next_out = compr;
+   c_stream.avail_out =(uInt)comprLen;
+   c_stream.next_in = uncompr;
+   c_stream.avail_in =(uInt)uncomprLen;
+   ...
+   c_stream.next_in = compr;
+   c_stream.avail_in =(uInt)comprLen/2;
+   ...
+>  deflateParams(&c_stream, Z_BEST_COMPRESSION, Z_FILTERED);
+   ...
+}

@@ -1,0 +1,7 @@
+Context for merged statement of old file: source/components/executer/exsystem.c with new file: source/components/executer/exsystem.c:
+ACPI_STATUS OsGetGlobalLock(void) {
+- ACPI_STATUS Status;
++ ACPI_STATUS Status = AE_OK;
+  return(Status);
+}
+

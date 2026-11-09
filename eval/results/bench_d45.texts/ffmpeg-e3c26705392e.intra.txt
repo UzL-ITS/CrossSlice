@@ -1,0 +1,10 @@
+Context for merged statement of old file: libavcodec/mss1.c with new file: libavcodec/mss1.c:
+av_cold mss1_decode_init(AVCodecContext *avctx) {
+  MSS1Context * const c = avctx->priv_data;
+  c->free_colours = AV_RB32(avctx->extradata + 48);
++ if (c->free_colours < 0 || c->free_colours > 256) {
++ av_log(avctx, AV_LOG_ERROR, "Invalid free colours %d\n", c->free_colours);
++ return AVERROR_INVALIDDATA;
+  }
+}
+

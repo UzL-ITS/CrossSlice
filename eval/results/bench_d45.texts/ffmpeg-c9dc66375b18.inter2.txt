@@ -1,0 +1,96 @@
+Context for merged statement of old file: libavcodec/v210enc.c with new file: libavcodec/v210enc.c:
+int encode_frame(AVCodecContext *avctx, unsigned char *buf,
+                        int buf_size, void *data) {
+  for (h = 0; h < avctx->height; h++) {
+  for (w = 0; w < avctx->width - 5; w += 6) {
+  }
+  if (w < avctx->width - 1) {
++ if (w < avctx->width - 3) {
++ val |=(CLIP(*u++)<< 10)|(CLIP(*y++)<< 20);
++ bytestream_put_le32(&p, val);
++ val = CLIP(*v++)|(CLIP(*y++)<< 10);
++ bytestream_put_le32(&p, val);
+  }
+  }
+- bytestream_put_le32(&p, val);
+- val = CLIP(*v++)|(CLIP(*y++)<< 10);
+- bytestream_put_le32(&p, val);
+- val |=(CLIP(*u++)<< 10)|(CLIP(*y++)<< 20);
+- if (w < avctx->width - 3) {
+- val |=(CLIP(*u++)<< 10)|(CLIP(*y++)<< 20);
+- bytestream_put_le32(&p, val);
+- val = CLIP(*v++)|(CLIP(*y++)<< 10);
+- bytestream_put_le32(&p, val);
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: CLIP — libavcodec/v210enc.c:69 [lsp] --
+#define CLIP(v) av_clip(v, 4, 1019)
+
+-- called macro: WRITE_PIXELS — libavcodec/v210enc.c:71 [gtags_unique] --
+#define WRITE_PIXELS(a, b, c)           \
+    do {                                \
+        val =   CLIP(*a++);             \
+        val |= (CLIP(*b++) << 10) |     \
+               (CLIP(*c++) << 20);      \
+        bytestream_put_le32(&p, val);   \
+    } while (0)
+
+-- caller of encode_frame: flac_encode_frame — libavcodec/flacenc.c:1312 --
+static int flac_encode_frame(AVCodecContext *avctx, uint8_t *frame, int buf_size, void *data) {
+   FlacEncodeContext *s;
+   ...
+   s = avctx->priv_data;
+   if(!data) {
+     s->max_framesize = s->max_encoded_framesize;
+   ...
+   }
+   if(avctx->frame_size < s->frame.blocksize) {
+     s->max_framesize = ff_flac_get_max_frame_size(avctx->frame_size, s->channels, 16);
+   }
+   ...
+>  frame_bytes = encode_frame(s);
+   if(frame_bytes > s->max_framesize) {
+   ...
+   }
+   if(buf_size < frame_bytes) {
+   ...
+   }
+}
+
+-- caller of encode_frame: flac_encode_frame — libavcodec/flacenc.c:1318 --
+static int flac_encode_frame(AVCodecContext *avctx, uint8_t *frame, int buf_size, void *data) {
+   FlacEncodeContext *s;
+   ...
+   s = avctx->priv_data;
+   if(!data) {
+     s->max_framesize = s->max_encoded_framesize;
+   ...
+   }
+   if(avctx->frame_size < s->frame.blocksize) {
+     s->max_framesize = ff_flac_get_max_frame_size(avctx->frame_size, s->channels, 16);
+   }
+   ...
+   if(frame_bytes > s->max_framesize) {
+     s->frame.verbatim_only = 1;
+>    frame_bytes = encode_frame(s);
+   }
+   if(buf_size < frame_bytes) {
+   ...
+   }
+}
+
+-- caller of encode_frame: MPA_encode_frame — libavcodec/mpegaudioenc.c:752 --
+static int MPA_encode_frame(AVCodecContext *avctx, unsigned char *frame, int buf_size, void *data) {
+   MpegAudioContext *s = avctx->priv_data;
+   ...
+   unsigned char bit_alloc[MPA_MAX_CHANNELS][SBLIMIT];
+   int padding, i;
+   ...
+>  encode_frame(s, bit_alloc, padding);
+   ...
+}

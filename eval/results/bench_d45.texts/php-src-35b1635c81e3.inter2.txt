@@ -1,0 +1,104 @@
+Context for merged statement of old file: ext/standard/user_filters.c with new file: ext/standard/user_filters.c:
+PHP_FUNCTION (stream_get_filters) {
++ zend_bool return_system = 0;
+- if (ZEND_NUM_ARGS()!= 0) {
++ if (zend_parse_parameters(ZEND_NUM_ARGS()TSRMLS_CC, "|b", &return_system)== FAILURE) {
+- WRONG_PARAM_COUNT;
++ RETURN_FALSE;
+  }
+- filters_hash = php_get_stream_filters_hash();
++ if (return_system) {
++ filters_hash = php_get_stream_filters_hash();
+  }
++ else {
++ filters_hash = BG(user_filter_map);
++ }
+  if (filters_hash) {
+  for (zend_hash_internal_pointer_reset(filters_hash); (key_flags = zend_hash_get_current_key_ex(filters_hash, &filter_name, &filter_name_len, NULL, 0, NULL))!= HASH_KEY_NON_EXISTANT; zend_hash_move_forward(filters_hash)) {
+  if (key_flags == HASH_KEY_IS_STRING) {
+  }
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: add_next_index_stringl — Zend/zend_API.c:853 [gtags_unique] --
+ZEND_API int add_next_index_stringl(zval *arg, char *str, uint length, int duplicate) {
+   zval *tmp;
+   ...
+   ZVAL_STRINGL(tmp, str, length, duplicate);
+   return zend_hash_next_index_insert(Z_ARRVAL_P(arg), &tmp, sizeof(zval *), NULL);
+}
+   [reads: arg, duplicate, length, str; writes: -]
+
+-- called function: php_get_stream_filters_hash — main/streams.c:390 [gtags_unique] --
+PHPAPI HashTable *php_get_stream_filters_hash() {
+   return &stream_filters_hash;
+}
+
+-- called macro: zend_hash_move_forward — Zend/zend_hash.h:168 [gtags_unique] --
+#define zend_hash_move_forward(ht) \
+	zend_hash_move_forward_ex(ht, NULL)
+
+-- called function: zend_hash_get_current_key_ex — Zend/zend_hash.c:1043 [gtags_unique] --
+ZEND_API int zend_hash_get_current_key_ex(HashTable *ht, char **str_index, uint *str_length, ulong *num_index, zend_bool duplicate, HashPosition *pos) {
+   Bucket *p;
+   p = pos ?(*pos): ht->pInternalPointer;
+   IS_CONSISTENT(ht);
+   if(p) {
+     if(p->nKeyLength) {
+       if(duplicate) {
+         *str_index = estrndup(p->arKey, p->nKeyLength);
+       } else {
+         *str_index = p->arKey;
+       }
+       if(str_length) {
+         *str_length = p->nKeyLength;
+       }
+       return HASH_KEY_IS_STRING;
+     } else {
+       *num_index = p->h;
+       return HASH_KEY_IS_LONG;
+     }
+   }
+   return HASH_KEY_NON_EXISTANT;
+}
+   [reads: duplicate, ht, num_index, pos, str_index, str_length; writes: num_index*, str_index*, str_length*]
+
+-- called macro: zend_hash_internal_pointer_reset — Zend/zend_hash.h:178 [gtags_unique] --
+#define zend_hash_internal_pointer_reset(ht) \
+	zend_hash_internal_pointer_reset_ex(ht, NULL)
+
+-- called macro: ZEND_NUM_ARGS — Zend/zend_API.h:148 [gtags_unique] --
+#define ZEND_NUM_ARGS()		(ht)
+
+-- called macro: BG — ext/standard/basic_functions.h:200 [lsp, new version] --
+#define BG(v) (basic_globals.v)
+
+-- called function: zend_parse_parameters — Zend/zend_API.c:556 [gtags_unique, new version] --
+ZEND_API int zend_parse_parameters(int num_args TSRMLS_DC, char *type_spec, ...) {
+   va_list va;
+   int retval;
+   va_start(va, type_spec);
+   retval = zend_parse_va_args(num_args, type_spec, &va, 0 TSRMLS_CC);
+   ...
+   return retval;
+}
+   [reads: type_spec; writes: -]
+
+-- called macro: FAILURE — Zend/zend.h:211 [gtags+ts, new version] --
+#define FAILURE -1				/* this MUST stay a negative number, or it may affect functions! */
+
+-- called macro: RETURN_FALSE — Zend/zend_API.h:327 [gtags_unique, new version] --
+#define RETURN_FALSE  					{ RETVAL_FALSE; return; }
+
+-- 2nd-level context (summaries) --
+  ZVAL_STRINGL — Zend/zend_API.h:292 [gtags_unique]: #define ZVAL_STRINGL(z, s, l, duplicate) {	\
+  zend_hash_next_index_insert — Zend/zend_hash.h:104 [gtags_unique]: #define zend_hash_next_index_insert(ht, pData, nDataSize, pDest) \
+  Z_ARRVAL_P — Zend/zend_operators.h:251 [gtags_unique]: #define Z_ARRVAL_P(zval_p)		Z_ARRVAL(*zval_p)
+  IS_CONSISTENT — Zend/zend_hash.c:97 [lsp]: #define IS_CONSISTENT(a)
+  estrndup — Zend/zend_alloc.h:93 [gtags_unique]: #define estrndup(s, length)				_estrndup((s), (length) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+  zend_parse_va_args — Zend/zend_API.c:463 [gtags_unique]: static int zend_parse_va_args(int num_args, char *type_spec, va_list *va, int flags TSRMLS_DC)
+    reads: num_args, type_spec, va; writes: -

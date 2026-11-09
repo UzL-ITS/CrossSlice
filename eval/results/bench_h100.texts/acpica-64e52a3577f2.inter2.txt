@@ -1,0 +1,357 @@
+Context for merged statement of old file: source/common/adwalk.c with new file: source/common/adwalk.c:
+ACPI_STATUS AcpiDmXrefDescendingOp (
+    ACPI_PARSE_OBJECT       *Op,
+    UINT32                  Level,
+    void                    *Context) {
+- if (ACPI_SUCCESS(Status)&&(Node->Flags & ANOBJ_IS_EXTERNAL)) {
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmAddToExternalList (
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *Path,
+    UINT8                   Type,
+    UINT32                  Value) {
++ if (Op && Op->Asl.Parent) {
++ if (Op->Asl.Parent->Asl.AmlOpcode == AML_COND_REF_OF_OP) {
++ return;
+  }
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmGetExternalsFromFile (
+    void) {
+  if (!ExternalRefFile) {
++ Gbl_ExternalRefFilename = NULL;
+  }
+  while ((fgets(StringBuffer, ASL_MSG_BUFFER_SIZE, ExternalRefFile))) {
+  AcpiOsPrintf("%s: Importing method external(%u arguments)%s\n", Gbl_ExternalRefFilename, ArgCount, MethodName);
+  }
+  if (!ImportCount) {
+  fprintf(stderr, "Did not find any external methods in reference file \"%s\"\n", Gbl_ExternalRefFilename);
+  }
+  else {
+  AcpiOsPrintf("%s: Imported %u external method definitions\n", Gbl_ExternalRefFilename, ImportCount);
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmEmitExternals (
+    void) {
+  if (Gbl_ExternalRefFilename) {
+- AcpiOsPrintf(" /*\n * External declarations that were imported from\n" " * the reference file [%s]\n */\n", Gbl_ExternalRefFilename);
++ AcpiOsPrintf(" /*\n * External declarations that were imported from\n" " * input reference file [%s]\n */\n", Gbl_ExternalRefFilename);
+  }
+}
+
+Context for merged statement of old file: source/include/acopcode.h with new file: source/include/acopcode.h:
+#ifndef __ACOPCODE_H__
+- #define ARGP_COND_REF_OF_OP ARGP_LIST2(ARGP_SUPERNAME, ARGP_SUPERNAME)
++ #define ARGP_COND_REF_OF_OP ARGP_LIST2(ARGP_NAMESTRING, ARGP_SUPERNAME)
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: strtoul — source/include/platform/aclinux.h:143 [gtags_unique] --
+#define strtoul                     simple_strtoul
+
+-- called function: AcpiDmGetObjectTypeName — source/common/dmextern.c:197 [gtags_unique] --
+static const char * AcpiDmGetObjectTypeName ( ACPI_OBJECT_TYPE        Type) {
+   if(Type == ACPI_TYPE_LOCAL_SCOPE) {
+     Type = ACPI_TYPE_DEVICE;
+   } else if(Type > ACPI_TYPE_LOCAL_INDEX_FIELD) {
+     return("");
+   }
+   return(AcpiGbl_DmTypeNames[Type]);
+}
+   [reads: Type; writes: -]
+
+-- called macro: ACPI_SUCCESS — source/include/acexcep.h:166 [gtags_unique, old version] --
+#define ACPI_SUCCESS(a)                 (!(a))
+
+-- called macro: ANOBJ_IS_EXTERNAL — source/include/aclocal.h:285 [gtags_unique, old version] --
+#define ANOBJ_IS_EXTERNAL               0x08    /* iASL only: This object created via External() */
+
+-- called function: AcpiDmAddToExternalListFromFile — source/common/dmextern.c:740 [gtags_unique, old version] --
+static void AcpiDmAddToExternalListFromFile ( char                    *Path, UINT8                   Type, UINT32                  Value) {
+   char *InternalPath;
+   ...
+   ACPI_EXTERNAL_LIST *NewExternal;
+   ACPI_EXTERNAL_LIST *NextExternal;
+   ...
+   if(!Path) {
+     return;
+   }
+   if(Type == ACPI_TYPE_METHOD) {
+     if(Value & 0x80) {
+   ...
+     }
+     Value &= 0x07;
+   }
+   if((*Path == AML_ROOT_PREFIX)&&(Path[1])) {
+     Path++;
+   }
+   NextExternal = AcpiGbl_ExternalList;
+   while(NextExternal) {
+     if(!ACPI_STRCMP(Path, NextExternal->Path)) {
+       if((NextExternal->Type == ACPI_TYPE_METHOD)&&(NextExternal->Value != Value)) {
+         ACPI_ERROR((AE_INFO, "(File)External method arg count mismatch %s: Current %u, override to %u", NextExternal->Path, NextExternal->Value, Value));
+         NextExternal->Value = Value;
+       } else if(NextExternal->Type == ACPI_TYPE_ANY) {
+         NextExternal->Type = Type;
+         NextExternal->Value = Value;
+       }
+       return;
+   ...
+     }
+   }
+   Status = AcpiNsInternalizeName(Path, &InternalPath);
+   if(ACPI_FAILURE(Status)) {
+     return;
+   }
+   NewExternal = ACPI_ALLOCATE_ZEROED(sizeof(ACPI_EXTERNAL_LIST));
+   if(!NewExternal) {
+   ...
+     return;
+   }
+   ...
+   NewExternal->Type = Type;
+   NewExternal->Value = Value;
+   ...
+   NewExternal->Length =(UINT16)ACPI_STRLEN(Path);
+   ...
+   while(NextExternal) {
+     if(AcpiUtStricmp(NewExternal->Path, NextExternal->Path)< 0) {
+       if(PrevExternal) {
+         PrevExternal->Next = NewExternal;
+       } else {
+         AcpiGbl_ExternalList = NewExternal;
+       }
+       NewExternal->Next = NextExternal;
+       return;
+     }
+     PrevExternal = NextExternal;
+   ...
+   }
+   if(PrevExternal) {
+     PrevExternal->Next = NewExternal;
+   } else {
+     AcpiGbl_ExternalList = NewExternal;
+   }
+}
+   [reads: Path, Type, Value; writes: -]
+
+-- called function: AcpiDmAddExternalsToNamespace — source/common/dmextern.c:901 [gtags_unique, old version] --
+void AcpiDmAddExternalsToNamespace ( void) {
+   ...
+}
+
+-- called function: AcpiDmAddToExternalListFromFile — source/common/dmextern.c:753 [gtags_unique, new version] --
+static void AcpiDmAddToExternalListFromFile ( char                    *Path, UINT8                   Type, UINT32                  Value) {
+   char *InternalPath;
+   ...
+   ACPI_EXTERNAL_LIST *NewExternal;
+   ACPI_EXTERNAL_LIST *NextExternal;
+   ...
+   if(!Path) {
+     return;
+   }
+   if(Type == ACPI_TYPE_METHOD) {
+     if(Value & 0x80) {
+   ...
+     }
+     Value &= 0x07;
+   }
+   if((*Path == AML_ROOT_PREFIX)&&(Path[1])) {
+     Path++;
+   }
+   NextExternal = AcpiGbl_ExternalList;
+   while(NextExternal) {
+     if(!ACPI_STRCMP(Path, NextExternal->Path)) {
+       if((NextExternal->Type == ACPI_TYPE_METHOD)&&(NextExternal->Value != Value)) {
+         ACPI_ERROR((AE_INFO, "(File)External method arg count mismatch %s: Current %u, override to %u", NextExternal->Path, NextExternal->Value, Value));
+         NextExternal->Value = Value;
+       } else if(NextExternal->Type == ACPI_TYPE_ANY) {
+         NextExternal->Type = Type;
+         NextExternal->Value = Value;
+       }
+       return;
+   ...
+     }
+   }
+   Status = AcpiNsInternalizeName(Path, &InternalPath);
+   if(ACPI_FAILURE(Status)) {
+     return;
+   }
+   NewExternal = ACPI_ALLOCATE_ZEROED(sizeof(ACPI_EXTERNAL_LIST));
+   if(!NewExternal) {
+   ...
+     return;
+   }
+   ...
+   NewExternal->Type = Type;
+   NewExternal->Value = Value;
+   ...
+   NewExternal->Length =(UINT16)ACPI_STRLEN(Path);
+   ...
+   while(NextExternal) {
+     if(AcpiUtStricmp(NewExternal->Path, NextExternal->Path)< 0) {
+       if(PrevExternal) {
+         PrevExternal->Next = NewExternal;
+       } else {
+         AcpiGbl_ExternalList = NewExternal;
+       }
+       NewExternal->Next = NextExternal;
+       return;
+     }
+     PrevExternal = NextExternal;
+   ...
+   }
+   if(PrevExternal) {
+     PrevExternal->Next = NewExternal;
+   } else {
+     AcpiGbl_ExternalList = NewExternal;
+   }
+}
+   [reads: Path, Type, Value; writes: -]
+
+-- called function: AcpiDmAddExternalsToNamespace — source/common/dmextern.c:914 [gtags_unique, new version] --
+void AcpiDmAddExternalsToNamespace ( void) {
+   ...
+}
+
+-- called macro: AML_COND_REF_OF_OP — source/include/amlcode.h:227 [gtags_unique, new version] --
+#define AML_COND_REF_OF_OP          (UINT16) 0x5b12
+
+-- called macro: ARGP_COND_REF_OF_OP — source/include/acopcode.h:168 [gtags_unique, new version] --
+#define ARGP_COND_REF_OF_OP             ARGP_LIST2 (ARGP_NAMESTRING, ARGP_SUPERNAME)
+
+-- caller of AcpiDmXrefDescendingOp: AcpiDmCrossReferenceNamespace — source/common/adwalk.c:349 --
+void AcpiDmCrossReferenceNamespace ( ACPI_PARSE_OBJECT       *ParseTreeRoot, ACPI_NAMESPACE_NODE     *NamespaceRoot, ACPI_OWNER_ID           OwnerId) {
+   ...
+   ACPI_OP_WALK_INFO Info;
+   ACPI_WALK_STATE *WalkState;
+   ...
+   WalkState = AcpiDsCreateWalkState(OwnerId, ParseTreeRoot, NULL, NULL);
+   ...
+   Info.Flags = 0;
+   Info.Level = 0;
+   Info.WalkState = WalkState;
+>  AcpiDmWalkParseTree(ParseTreeRoot, AcpiDmXrefDescendingOp, AcpiDmCommonAscendingOp, &Info);
+   ...
+}
+
+-- caller of AcpiDmAddToExternalList: AcpiDmFindOrphanDescending — source/common/adwalk.c:553 --
+static ACPI_STATUS AcpiDmFindOrphanDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   ACPI_PARSE_OBJECT *ChildOp;
+   ...
+     #ifdef ...
+   ...
+     ChildOp = Op->Common.Value.Arg;
+     if((ChildOp->Common.AmlOpcode == AML_INT_NAMEPATH_OP)&& !ChildOp->Common.Node) {
+   ...
+       if(!NextOp) {
+>        AcpiDmAddToExternalList(ChildOp, ChildOp->Common.Value.String, ACPI_TYPE_INTEGER, 0);
+   ...
+       }
+     }
+     #endif
+}
+
+-- caller of AcpiDmAddToExternalList: AcpiDmFindOrphanDescending — source/common/adwalk.c:564 --
+static ACPI_STATUS AcpiDmFindOrphanDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   ACPI_PARSE_OBJECT *ChildOp;
+   ...
+     #ifdef ...
+   ...
+     ChildOp = Op->Common.Value.Arg;
+     if((ChildOp->Common.AmlOpcode == AML_INT_NAMEPATH_OP)&& !ChildOp->Common.Node) {
+   ...
+       if(ArgCount < 1) {
+>        AcpiDmAddToExternalList(ChildOp, ChildOp->Common.Value.String, ACPI_TYPE_INTEGER, 0);
+   ...
+       }
+     }
+     #endif
+}
+
+-- caller of AcpiDmAddToExternalList: AcpiDmFindOrphanDescending — source/common/adwalk.c:568 --
+static ACPI_STATUS AcpiDmFindOrphanDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   ACPI_PARSE_OBJECT *ChildOp;
+   ACPI_PARSE_OBJECT *NextOp;
+   ...
+   UINT32 ArgCount;
+   ...
+     #ifdef ...
+   ...
+     ChildOp = Op->Common.Value.Arg;
+     if((ChildOp->Common.AmlOpcode == AML_INT_NAMEPATH_OP)&& !ChildOp->Common.Node) {
+   ...
+       NextOp = Op->Common.Next;
+   ...
+       ArgCount = AcpiDmInspectPossibleArgs(3, 1, NextOp);
+   ...
+>      AcpiDmAddToExternalList(ChildOp, ChildOp->Common.Value.String, ACPI_TYPE_METHOD, ArgCount);
+   ...
+     }
+     #endif
+}
+
+-- caller of AcpiDmAddToExternalList: AcpiDmFindOrphanDescending — source/common/adwalk.c:584 --
+static ACPI_STATUS AcpiDmFindOrphanDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   ACPI_PARSE_OBJECT *ChildOp;
+   ...
+   switch(Op->Common.AmlOpcode) {
+     #ifdef ...
+   ...
+     ChildOp = Op->Common.Value.Arg;
+   ...
+     #endif
+   ...
+     ChildOp = Op->Common.Value.Arg;
+     if((ChildOp->Common.AmlOpcode == AML_INT_NAMEPATH_OP)&& !ChildOp->Common.Node) {
+   ...
+       if(!NextOp) {
+>        AcpiDmAddToExternalList(ChildOp, ChildOp->Common.Value.String, ACPI_TYPE_INTEGER, 0);
+   ...
+       }
+     }
+   }
+}
+
+-- caller of AcpiDmGetExternalsFromFile: AdAmlDisassemble — source/common/adisasm.c:419 --
+ACPI_STATUS AdAmlDisassemble ( BOOLEAN                 OutToFile, char                    *Filename, char                    *Prefix, char                    **OutFilename, BOOLEAN                 Get {
+   ...
+   if(Filename) {
+   ...
+>    AcpiDmGetExternalsFromFile();
+   ...
+   }
+}
+
+-- caller of AcpiDmEmitExternals: AcpiDmDescendingOp — source/components/disassembler/dmwalk.c:504 --
+static ACPI_STATUS AcpiDmDescendingOp ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   if(Level == 0) {
+   ...
+     if(Op->Common.AmlOpcode == AML_SCOPE_OP) {
+   ...
+>      AcpiDmEmitExternals();
+   ...
+     }
+   }
+}
+
+-- 2nd-level context (summaries) --
+  ACPI_ERROR — source/include/acoutput.h:291 [lsp]: #define ACPI_ERROR(plist)               AcpiError plist
+  AcpiNsInternalizeName — source/components/namespace/nsutils.c:477 [gtags_unique]: ACPI_STATUS AcpiNsInternalizeName ( const char              *ExternalName, char                    **ConvertedName)
+    reads: ConvertedName, ExternalName; writes: ConvertedName*
+  ACPI_ALLOCATE_ZEROED — source/include/acmacros.h:499 [lsp]: #define ACPI_ALLOCATE_ZEROED(a)     AcpiUtAllocateZeroed((ACPI_SIZE) (a), ACPI_MEM_PARAMETERS)
+  ACPI_STRLEN — source/include/platform/acenv.h:396 [lsp]: #define ACPI_STRLEN(s)          (ACPI_SIZE) strlen((s))

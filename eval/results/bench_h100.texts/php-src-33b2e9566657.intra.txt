@@ -1,0 +1,45 @@
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+- bool zend_is_indirectly_recursive(zend_op_array *root, zend_op_array *op_array, zend_bitset visited) {
++ bool zend_is_indirectly_recursive(const zend_op_array *root, const zend_op_array *op_array, zend_bitset visited) {
+- zend_func_info *func_info;
++ const zend_func_info *func_info;
+  if (zend_bitset_in(visited, func_info->num)) {
+  return false;
+  }
+  zend_bitset_incl(visited, func_info->num);
+  call_info = func_info->caller_info;
+  while ((call_info)) {
+  if (zend_is_indirectly_recursive(root, call_info->caller_op_array, visited)) {
+  call_info->recursive = true;
+  }
+  call_info = call_info->next_caller;
+  }
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+void zend_analyze_recursion(zend_call_graph *call_graph) {
+- zend_op_array *op_array;
++ const zend_op_array *op_array;
+  for (uint32_t i = 0;; i < call_graph->op_arrays_count; i++) {
+  for (; call_info; call_info = call_info->next_caller) {
+  if (call_info->caller_op_array == op_array) {
+  }
+  else {
+  if (zend_is_indirectly_recursive(op_array, call_info->caller_op_array, visited)) {
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.c with new file: Zend/Optimizer/zend_call_graph.c:
+- ZEND_API **zend_build_call_map(zend_arena **arena, zend_func_info *info, const zend_op_array *op_array) {
++ ZEND_API **zend_build_call_map(zend_arena **arena, const zend_func_info *info, const zend_op_array *op_array) {
+}
+
+Context for merged statement of old file: Zend/Optimizer/zend_call_graph.h with new file: Zend/Optimizer/zend_call_graph.h:
+#ifndef ZEND_CALL_GRAPH_H
+- ZEND_API zend_call_info **zend_build_call_map(zend_arena **arena, zend_func_info *info, const zend_op_array *op_array);
++ ZEND_API zend_call_info **zend_build_call_map(zend_arena **arena, const zend_func_info *info, const zend_op_array *op_array);
+  #endif
+

@@ -1,0 +1,243 @@
+Context for merged statement of old file: expat/examples/outline.c with new file: expat/examples/outline.c:
++ void start(void *data, const char *el, const char **attr) {
++ int i;
+  for (i = 0; i < Depth; i++) {
++ printf(" ");
+  }
++ printf("%s", el);
+  for (i = 0; attr[i]; i += 2) {
++ printf(" %s='%s'", attr[i], attr[i + 1]);
+  }
++ printf("\n");
++ Depth++;
+- void start(void *data, const char *el, const char **attr) {
+- int i;
+  for (i = 0; i < Depth; i++) {
+  }
+- printf("%s", el);
+  for (i = 0; attr[i]; i += 2) {
+  }
+- printf("\n");
+- Depth++;
+}
+}
+
+Context for merged statement of old file: expat/examples/outline.c with new file: expat/examples/outline.c:
++ void end(void *data, const char *el) {
++ Depth--;
+- void end(void *data, const char *el) {
+- Depth--;
+}
+}
+
+Context for merged statement of old file: expat/examples/outline.c with new file: expat/examples/outline.c:
++ int main(int argc, char *argv[]) {
++ XML_Parser p = XML_ParserCreate(NULL);
++ if (! p) {
++ fprintf(stderr, "Couldn't allocate memory for parser\n");
++ exit(-1);
+  }
++ XML_SetElementHandler(p, start, end);
+  for (; ; ) {
++ int done;
++ int len;
++ len = fread(Buff, 1, BUFFSIZE, stdin);
++ if (ferror(stdin)) {
++ fprintf(stderr, "Read error\n");
++ exit(-1);
+  }
++ done = feof(stdin);
++ if (! XML_Parse(p, Buff, len, done)) {
++ fprintf(stderr, "Parse error at line %d:\n%s\n", XML_GetCurrentLineNumber(p), XML_ErrorString(XML_GetErrorCode(p)));
++ exit(-1);
+  }
++ if (done) {
++ break;
+  }
+  }
++ return 0;
+- int main(int argc, char *argv[]) {
+- XML_Parser p = XML_ParserCreate(NULL);
+- if (! p) {
+  }
+- XML_SetElementHandler(p, start, end);
+  for (; ; ) {
+  }
+- return 0;
+}
+}
+
+
+==== Cross-function context ====
+
+-- called function: XML_ParserCreate — expat/lib/xmlparse.c:589 [gtags_unique] --
+XML_Parser XML_ParserCreate(const XML_Char *encodingName) {
+   return XML_ParserCreate_MM(encodingName, NULL, NULL);
+}
+   [reads: encodingName; writes: -]
+
+-- called function: XML_SetElementHandler — expat/lib/xmlparse.c:991 [gtags_unique] --
+void XML_SetElementHandler(XML_Parser parser, XML_StartElementHandler start, XML_EndElementHandler end) {
+   startElementHandler = start;
+   endElementHandler = end;
+}
+   [reads: end, start; writes: -]
+
+-- called function: XML_ErrorString — expat/lib/xmlparse.c:1397 [gtags_unique] --
+const XML_LChar *XML_ErrorString(int code) {
+   static const XML_LChar *message[] = { 0, XML_L("out of memory"), XML_L("syntax error"), XML_L("no element found"), XML_L("not well-formed(invalid token)"), XML_L("unclosed token"), XML_L("partial character"), XML_L("mismatched tag"), XML_L("duplicate attribute"), XML_L("junk after document element"), XML_L("illegal parameter entity reference"), XML_L("undefined entity"), XML_L("recursive entity reference"), XML_L("asynchronous entity"), XML_L("reference to invalid character number"), XML_L("reference to binary entity"), XML_L("reference to external entity in attribute"), XML_L("xml processing instruction not at start of external entity"), XML_L("unknown encoding"), XML_L("encoding specified in XML declaration is incorrect"), XML_L("unclosed CDATA section"), XML_L("error in processing external entity reference"), XML_L("document is not standalone"), XML_L("unexpected parser state - please send a bug report")};
+   if(code > 0 && code < sizeof(message)/sizeof(message[0]))
+     return message[code];
+   return 0;
+}
+   [reads: code; writes: -]
+
+-- called function: XML_GetErrorCode — expat/lib/xmlparse.c:1335 [gtags_unique] --
+enum XML_Error XML_GetErrorCode(XML_Parser parser) {
+   return errorCode;
+}
+
+-- called function: XML_GetCurrentLineNumber — expat/lib/xmlparse.c:1366 [gtags_unique] --
+int XML_GetCurrentLineNumber(XML_Parser parser) {
+   ...
+   return position.lineNumber + 1;
+}
+
+-- called function: XML_Parse — expat/lib/xmlparse.c:1176 [gtags_unique] --
+int XML_Parse(XML_Parser parser, const char *s, int len, int isFinal) {
+   if(len == 0) {
+     if(!isFinal)
+       return 1;
+     positionPtr = bufferPtr;
+     errorCode = processor(parser, bufferPtr, parseEndPtr = bufferEnd, 0);
+     if(errorCode == XML_ERROR_NONE)
+       return 1;
+   ...
+     processor = errorProcessor;
+     return 0;
+   }
+   #ifndef ...
+   else if(bufferPtr == bufferEnd){ const char *end; int nLeftOver; parseEndByteIndex += len; positionPtr = s; if(isFinal){ errorCode = processor(parser, s, parseEndPtr = s + len, 0); if(errorCode == XML_ERROR_NONE)return 1; eventEndPtr = eventPtr; processor = errorProcessor; return 0; } errorCode = processor(parser, s, parseEndPtr = s + len, &end); if(errorCode != XML_ERROR_NONE){ eventEndPtr = eventPtr; processor = errorProcessor; return 0; } XmlUpdatePosition(encoding, positionPtr, end, &position); nLeftOver = s + len - end; if(nLeftOver){ if(buffer == 0 || nLeftOver > bufferLim - buffer){ char *temp; temp = buffer == 0 ? MALLOC(len * 2): REALLOC(buffer, len * 2); if(temp == NULL){ errorCode = XML_ERROR_NO_MEMORY; return 0; } buffer = temp; if(!buffer){ errorCode = XML_ERROR_NO_MEMORY; eventPtr = eventEndPtr = NULL; processor = errorProcessor; return 0; } bufferLim = buffer + len * 2; } memcpy(buffer, end, nLeftOver); bufferPtr = buffer; bufferEnd = buffer + nLeftOver; } return 1; }
+   const char *end;
+   ...
+   parseEndByteIndex += len;
+   positionPtr = s;
+   if(isFinal) {
+   errorCode = processor(parser, s, parseEndPtr = s + len, 0);
+   if(errorCode == XML_ERROR_NONE)
+     return 1;
+   ...
+   processor = errorProcessor;
+   return 0;
+   }
+   errorCode = processor(parser, s, parseEndPtr = s + len, &end);
+   if(errorCode != XML_ERROR_NONE) {
+   ...
+   return 0;
+   }
+   XmlUpdatePosition(encoding, positionPtr, end, &position);
+   nLeftOver = s + len - end;
+   if(nLeftOver) {
+   if(buffer == 0 || nLeftOver > bufferLim - buffer) {
+   char *temp;
+   temp = buffer == 0 ? MALLOC(len * 2): REALLOC(buffer, len * 2);
+   if(temp == NULL) {
+   ...
+   return 0;
+   }
+   buffer = temp;
+   if(!buffer) {
+   ...
+   return 0;
+   }
+   bufferLim = buffer + len * 2;
+   }
+   memcpy(buffer, end, nLeftOver);
+   bufferPtr = buffer;
+   bufferEnd = buffer + nLeftOver;
+   }
+   return 1;
+   #endif
+     void *buff = XML_GetBuffer(parser, len);
+     if(buff == NULL)
+       return 0;
+     else {
+       memcpy(buff, s, len);
+       return XML_ParseBuffer(parser, len, isFinal);
+     }
+}
+   [reads: isFinal, len, parser, s; writes: -]
+
+-- caller of start: Copyright — expat/gennmtab/gennmtab.c:11 --
+Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd See the file COPYING for copying permission. */ #include <string.h> #include <stdio.h> #include <stddef.h> struct range {
+>  int start;
+   ...
+}
+
+-- caller of start: setTab — expat/gennmtab/gennmtab.c:363 --
+void setTab(char *tab, struct range *ranges, size_t nRanges) {
+   size_t i;
+   int j;
+   for(i = 0; i < nRanges; i++) {
+     if(ranges[i].end) {
+>      for(j = ranges[i].start; j <= ranges[i].end; j++)
+         tab[j] = 1;
+   ...
+     }
+   }
+}
+
+-- caller of start: setTab — expat/gennmtab/gennmtab.c:367 --
+void setTab(char *tab, struct range *ranges, size_t nRanges) {
+   size_t i;
+   ...
+   for(i = 0; i < nRanges; i++) {
+     if(ranges[i].end) {
+   ...
+     } else
+>      tab[ranges[i].start] = 1;
+   }
+}
+
+-- caller of end: Copyright — expat/gennmtab/gennmtab.c:12 --
+Copyright (c) 1998, 1999 Thai Open Source Software Center Ltd See the file COPYING for copying permission. */ #include <string.h> #include <stdio.h> #include <stddef.h> struct range {
+   ...
+>  int end;
+}
+
+-- caller of end: setTab — expat/gennmtab/gennmtab.c:362 --
+void setTab(char *tab, struct range *ranges, size_t nRanges) {
+   size_t i;
+   ...
+   for(i = 0; i < nRanges; i++) {
+>    if(ranges[i].end) {
+   ...
+     }
+   }
+}
+
+-- caller of end: setTab — expat/gennmtab/gennmtab.c:363 --
+void setTab(char *tab, struct range *ranges, size_t nRanges) {
+   size_t i;
+   int j;
+   for(i = 0; i < nRanges; i++) {
+     if(ranges[i].end) {
+>      for(j = ranges[i].start; j <= ranges[i].end; j++)
+         tab[j] = 1;
+   ...
+     }
+   }
+}
+
+-- 2nd-level context (summaries) --
+  XML_ParserCreate_MM — expat/lib/xmlparse.c:601 [gtags_unique]: XML_Parser XML_ParserCreate_MM(const XML_Char *encodingName, const XML_Memory_Handling_Suite *memsuite, const XML_Char *nameSep)
+    reads: encodingName, memsuite, nameSep; writes: -
+  XML_L — expat/lib/xmlparse.c:76 [lsp]: #define XML_L(x) x
+  processor — expat/lib/xmlparse.c:524 [gtags_unique]: #define processor (((Parser *)parser)->m_processor)
+  REALLOC — expat/lib/xmlparse.c:483 [gtags_unique]: #define REALLOC(p,s) (((Parser *)parser)->m_mem.realloc_fcn((p),(s)))
+  MALLOC — expat/lib/xmlparse.c:482 [gtags_unique]: #define MALLOC(s) (((Parser *)parser)->m_mem.malloc_fcn((s)))
+  XmlUpdatePosition — expat/lib/xmltok.h:241 [gtags_unique]: #define XmlUpdatePosition(enc, ptr, end, pos) \
+  XML_GetBuffer — expat/lib/xmlparse.c:1267 [gtags_unique]: void *XML_GetBuffer(XML_Parser parser, int len)
+    reads: len; writes: -
+  XML_ParseBuffer — expat/lib/xmlparse.c:1247 [gtags_unique]: int XML_ParseBuffer(XML_Parser parser, int len, int isFinal)
+    reads: isFinal, len, parser; writes: -

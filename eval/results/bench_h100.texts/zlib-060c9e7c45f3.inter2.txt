@@ -1,0 +1,213 @@
+Context for merged statement of old file: contrib/minizip/crypt.h with new file: contrib/minizip/crypt.h:
+int update_keys(unsigned long* pkeys, const z_crc_t* pcrc_32_tab, int c) {
+- register int keyshift =(int)((*(pkeys+1))>> 24);
++ int keyshift =(int)((*(pkeys+1))>> 24);
+}
+
+Context for merged statement of old file: deflate.c with new file: deflate.c:
+local longest_match(deflate_state *s, IPos cur_match) {
+- register Bytef *scan = s->window + s->strstart;
++ Bytef *scan = s->window + s->strstart;
+- register Bytef *match;
++ Bytef *match;
+- register int len;
++ int len;
+- register Bytef *strend = s->window + s->strstart + MAX_MATCH;
++ Bytef *strend = s->window + s->strstart + MAX_MATCH;
+}
+
+Context for merged statement of old file: trees.c with new file: trees.c:
+local unsigned bi_reverse(unsigned code, int len) {
+- register unsigned res = 0;
++ unsigned res = 0;
+}
+
+
+==== Cross-function context ====
+
+-- called macro: MAX_MATCH — zutil.h:89 [lsp, new version] --
+#define MAX_MATCH  258
+
+-- caller of update_keys: init_keys — contrib/minizip/crypt.h:69 --
+static void init_keys(const char* passwd, unsigned long* pkeys, const z_crc_t* pcrc_32_tab) {
+   ...
+   while(*passwd != '\0') {
+>    update_keys(pkeys, pcrc_32_tab, (int)*passwd);
+   ...
+   }
+}
+
+-- caller of longest_match: deflate_fast — deflate.c:1880 --
+local block_state deflate_fast(deflate_state *s, int flush) {
+   IPos hash_head;
+   ...
+   for(; ; ) {
+   ...
+     hash_head = NIL;
+   ...
+     if(hash_head != NIL && s->strstart - hash_head <= MAX_DIST(s)) {
+>      s->match_length = longest_match(s, hash_head);
+     }
+     if(s->match_length >= MIN_MATCH) {
+       check_match(s, s->strstart, s->match_start, s->match_length);
+       _tr_tally_dist(s, s->strstart - s->match_start, s->match_length - MIN_MATCH, bflush);
+       s->lookahead -= s->match_length;
+       #ifndef ...
+       if(s->match_length <= s->max_insert_length && s->lookahead >= MIN_MATCH) {
+         s->match_length--;
+         do {
+   ...
+           INSERT_STRING(s, s->strstart, hash_head);
+   ...
+         } while(--s->match_length != 0);
+       }
+       #endif
+         s->strstart += s->match_length;
+   ...
+         s->ins_h = s->window[s->strstart];
+         UPDATE_HASH(s, s->ins_h, s->window[s->strstart + 1]);
+   ...
+     } else {
+       Tracevv((stderr, "%c", s->window[s->strstart]));
+       _tr_tally_lit(s, s->window[s->strstart], bflush);
+       s->lookahead--;
+       s->strstart++;
+     }
+     if(bflush)
+       FLUSH_BLOCK(s, 0);
+   }
+   s->insert = s->strstart < MIN_MATCH-1 ? s->strstart : MIN_MATCH-1;
+   if(flush == Z_FINISH) {
+     FLUSH_BLOCK(s, 1);
+   ...
+   }
+   if(s->sym_next)
+     FLUSH_BLOCK(s, 0);
+   ...
+}
+
+-- caller of longest_match: deflate_slow — deflate.c:1983 --
+local block_state deflate_slow(deflate_state *s, int flush) {
+   IPos hash_head;
+   ...
+   for(; ; ) {
+   ...
+     hash_head = NIL;
+   ...
+     s->prev_length = s->match_length, s->prev_match = s->match_start;
+     s->match_length = MIN_MATCH-1;
+     if(hash_head != NIL && s->prev_length < s->max_lazy_match && s->strstart - hash_head <= MAX_DIST(s)) {
+>      s->match_length = longest_match(s, hash_head);
+       if(s->match_length <= 5 &&(s->strategy == Z_FILTERED #if TOO_FAR <= 32767 ||(s->match_length == MIN_MATCH && s->strstart - s->match_start > TOO_FAR)#endif)) {
+   ...
+       }
+     }
+     if(s->prev_length >= MIN_MATCH && s->match_length <= s->prev_length) {
+   ...
+       check_match(s, s->strstart - 1, s->prev_match, s->prev_length);
+       _tr_tally_dist(s, s->strstart - 1 - s->prev_match, s->prev_length - MIN_MATCH, bflush);
+   ...
+       do {
+         if(++s->strstart <= max_insert) {
+           INSERT_STRING(s, s->strstart, hash_head);
+         }
+       } while(--s->prev_length != 0);
+   ...
+       if(bflush)
+         FLUSH_BLOCK(s, 0);
+     } else if(s->match_available) {
+   ...
+       _tr_tally_lit(s, s->window[s->strstart - 1], bflush);
+       if(bflush) {
+         FLUSH_BLOCK_ONLY(s, 0);
+   ...
+       }
+     } else {
+     }
+   }
+   ...
+   if(s->match_available) {
+   ...
+     _tr_tally_lit(s, s->window[s->strstart - 1], bflush);
+   ...
+   }
+   ...
+   if(flush == Z_FINISH) {
+     FLUSH_BLOCK(s, 1);
+   ...
+   }
+   if(s->sym_next)
+     FLUSH_BLOCK(s, 0);
+   ...
+}
+
+-- caller of bi_reverse: gen_codes — trees.c:227 --
+local void gen_codes(ct_data *tree, int max_code, ushf *bl_count) {
+   ush next_code[MAX_BITS+1];
+   unsigned code = 0;
+   int bits;
+   int n;
+   for(bits = 1; bits <= MAX_BITS; bits++) {
+     code =(code + bl_count[bits - 1])<< 1;
+     next_code[bits] =(ush)code;
+   }
+   ...
+   for(n = 0; n <= max_code; n++) {
+     int len = tree[n].Len;
+   ...
+>    tree[n].Code =(ush)bi_reverse(next_code[len]++, len);
+     Tracecv(tree != static_ltree, (stderr, "\nn %3d %c l %2d c %4x(%x)", n, (isgraph(n)? n : ' '), len, tree[n].Code, next_code[len] - 1));
+   }
+}
+
+-- caller of bi_reverse: tr_static_init — trees.c:366 --
+local void tr_static_init(void) {
+   #if defined(GEN_TREES_H)|| !defined(STDC)
+   ...
+   int n;
+   int bits;
+   ...
+   int code;
+   ...
+   ush bl_count[MAX_BITS+1];
+   ...
+   for(code = 0; code < LENGTH_CODES-1; code++) {
+   ...
+     for(n = 0; n <(1 << extra_lbits[code]); n++) {
+   ...
+     }
+   }
+   ...
+   for(code = 0; code < 16; code++) {
+   ...
+     for(n = 0; n <(1 << extra_dbits[code]); n++) {
+   ...
+     }
+   }
+   ...
+   for(; code < D_CODES; code++) {
+   ...
+     for(n = 0; n <(1 <<(extra_dbits[code] - 7)); n++) {
+   ...
+     }
+   }
+   ...
+   for(bits = 0; bits <= MAX_BITS; bits++)
+     bl_count[bits] = 0;
+   n = 0;
+   while(n <= 143)
+     static_ltree[n++].Len = 8, bl_count[8]++;
+   while(n <= 255)
+     static_ltree[n++].Len = 9, bl_count[9]++;
+   while(n <= 279)
+     static_ltree[n++].Len = 7, bl_count[7]++;
+   while(n <= 287)
+     static_ltree[n++].Len = 8, bl_count[8]++;
+   ...
+   for(n = 0; n < D_CODES; n++) {
+   ...
+>    static_dtree[n].Code = bi_reverse((unsigned)n, 5);
+   ...
+   }
+   #endif
+}

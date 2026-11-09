@@ -1,0 +1,19 @@
+Context for merged statement of old file: trees.c with new file: trees.c:
+local detect_data_type(s) {
+- unsigned long black_mask = 0xf3ffc07fUL;
++ unsigned long block_mask = 0xf3ffc07fUL;
+  int n;
+- for (n = 0; n <= 31; n++, black_mask >>= 1) {
++ for (n = 0; n <= 31; n++, block_mask >>= 1) {
+- if ((black_mask & 1)&&(s->dyn_ltree[n].Freq != 0)) {
++ if ((block_mask & 1)&&(s->dyn_ltree[n].Freq != 0)) {
+  return Z_BINARY;
+  }
+  }
+  for (n = 32; n < LITERALS; n++) {
+  if (s->dyn_ltree[n].Freq != 0) {
+  return Z_TEXT;
+  }
+  }
+}
+

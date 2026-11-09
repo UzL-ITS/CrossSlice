@@ -1,0 +1,15 @@
+Context for merged statement of old file: main/SAPI.c with new file: main/SAPI.c:
+SAPI_API sapi_apply_default_charset(char **mimetype, size_t len TSRMLS_DC) {
+  char *charset, *newtype;
+  size_t newlen;
+  charset = SG(default_charset)? SG(default_charset): SAPI_DEFAULT_CHARSET;
+  if (*mimetype != NULL) {
+  if (*charset && strncmp(*mimetype, "text/", 5)== 0 && strstr(*mimetype, "charset=")== NULL) {
+  newlen = len +(sizeof(";charset=")-1)+ strlen(charset);
+  newtype = emalloc(newlen + 1);
++ strlcat(newtype, charset, newlen + 1);
+  *mimetype = newtype;
+  }
+  }
+}
+

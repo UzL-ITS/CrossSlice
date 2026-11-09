@@ -1,0 +1,71 @@
+Context for merged statement of old file: source/components/utilities/utcopy.c with new file: source/components/utilities/utcopy.c:
+ACPI_STATUS CmBuildExternalPackageObject (
+    ACPI_OBJECT_INTERNAL    *InternalObj, 
+    UINT8                   *Buffer, 
+    UINT32                  *SpaceUsed) {
+- for(; ;) {
++ while ((1)) {
+  }
+}
+
+Context for merged statement of old file: source/components/utilities/utcopy.c with new file: source/components/utilities/utcopy.c:
+ACPI_STATUS CmBuildInternalPackageObject (
+    ACPI_OBJECT_INTERNAL    *InternalObj, 
+    UINT8                   *Buffer, 
+    UINT32                  *SpaceUsed) {
+- for(; ;) {
++ while ((1)) {
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: return_ACPI_STATUS — source/include/acmacros.h:543 [lsp] --
+#define return_ACPI_STATUS(s)           return(s)
+
+-- called macro: DEBUG_PRINT — source/include/acmacros.h:538 [lsp] --
+#define DEBUG_PRINT(l,f)
+
+-- called macro: IS_THIS_OBJECT_TYPE — source/include/acmacros.h:310 [gtags_unique] --
+#define IS_THIS_OBJECT_TYPE(d,t)        (((ACPI_OPERAND_OBJECT  *)d)->Common.Type == (UINT8)t)
+
+-- called function: CmBuildExternalSimpleObject — source/components/utilities/utcopy.c:160 [gtags_unique] --
+ACPI_STATUS CmBuildExternalSimpleObject ( ACPI_OBJECT_INTERNAL    *InternalObj, ACPI_OBJECT             *ExternalObj, UINT8                   *DataSpace, UINT32                  *BufferSpaceUsed) {
+   UINT32 Length = 0;
+   char *SourcePtr = NULL;
+   ...
+   ExternalObj->Type = InternalObj->Common.Type;
+   switch(ExternalObj->Type) {
+   ...
+     Length = InternalObj->String.Length;
+     ExternalObj->String.Length = InternalObj->String.Length;
+     ExternalObj->String.Pointer =(char *)DataSpace;
+     SourcePtr = InternalObj->String.Pointer;
+   ...
+     Length = InternalObj->Buffer.Length;
+     ExternalObj->Buffer.Length = InternalObj->Buffer.Length;
+     ExternalObj->Buffer.Pointer = DataSpace;
+     SourcePtr =(char *)InternalObj->Buffer.Pointer;
+   ...
+     ExternalObj->Number.Value= InternalObj->Number.Value;
+   ...
+   }
+   if(Length) {
+     MEMCPY((void *)DataSpace, (void *)SourcePtr, Length);
+   }
+   *BufferSpaceUsed = Length;
+   ...
+}
+   [reads: BufferSpaceUsed, DataSpace, ExternalObj, InternalObj; writes: BufferSpaceUsed*, DataSpace*, ExternalObj*]
+
+-- caller of CmBuildExternalPackageObject: CmBuildExternalObject — source/components/utilities/utcopy.c:426 --
+ACPI_STATUS CmBuildExternalObject ( ACPI_OBJECT_INTERNAL    *InternalObj, ACPI_BUFFER             *RetBuffer) {
+   ...
+   if(IS_THIS_OBJECT_TYPE(InternalObj, ACPI_TYPE_Package)) {
+>    Status = CmBuildExternalPackageObject(InternalObj, RetBuffer->Pointer, &RetBuffer->Length);
+   } else {
+   }
+   ...
+   return_ACPI_STATUS(Status);
+}

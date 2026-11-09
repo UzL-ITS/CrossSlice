@@ -1,0 +1,21 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+START_TEST (test_misc_version) {
+- XML_Expat_Version parsed_version;
++ XML_Expat_Version parsed_version = { 0, 0, 0 };
+  if (!parse_version(version_text, &parsed_version)) {
+  }
+  if (!versions_equal(&read_version, &parsed_version)) {
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: fail — expat/tests/minicheck.h:34 [gtags_unique] --
+#define fail(msg)  _fail_unless(0, __FILE__, __LINE__, msg)
+
+-- called function: versions_equal — expat/tests/runtests.c:5687 [gtags_unique] --
+static int versions_equal(const XML_Expat_Version *first, const XML_Expat_Version *second) {
+   return(first->major == second->major && first->minor == second->minor && first->micro == second->micro);
+}
+   [reads: first, second; writes: -]

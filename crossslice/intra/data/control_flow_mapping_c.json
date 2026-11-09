@@ -1,0 +1,340 @@
+{
+    "statement_types": [
+        "declaration",       
+        "expression_statement",
+        "if_statement",
+        "switch_statement",
+        "for_statement",
+        "while_statement",
+        "do_statement",
+        "return_statement",
+        "break_statement",
+        "continue_statement",
+        "goto_statement",
+        "labeled_statement",
+        "case_statement",
+        "default_statement",
+        "function_declaration",
+        "function_definition",
+        "seh_try_statement",
+        "preproc_if",
+        "preproc_ifdef",
+        "preproc_else",
+        "preproc_elif",
+        "preproc_elifdef",
+        "preproc_function_def",
+        "preproc_def"
+    ],
+
+    "control_flow_types": [
+        "if_statement",
+        "switch_statement",
+        "for_statement",
+        "while_statement",
+        "do_statement",
+        "return_statement",
+        "break_statement",
+        "continue_statement",
+        "goto_statement",
+        "labeled_statement",
+        "case_statement",
+        "default_statement",
+        "preproc_if",
+        "preproc_ifdef",
+        "preproc_else",
+        "preproc_elif",
+        "preproc_elifdef"
+    ],
+
+    "statement_parts": {
+        "if_statement": ["condition", "consequence", "alternative"],
+
+        "conditional_expression": ["condition", "consequence", "alternative"],
+
+        "switch_statement": ["condition", "case_statement"],
+
+        "case_statement": ["value"],
+
+        "for_statement": ["initializer", "condition", "update", "body"],
+
+        "while_statement": ["condition", "body"],
+
+        "do_statement": ["body", "condition"],
+
+        "goto_statement": ["label"],
+
+        "labeled_statement": ["label"],
+
+        "preproc_if": ["condition", "consequence", "alternative"],
+        "preproc_ifdef": ["name", "consequence", "alternative"], 
+        "preproc_else": ["consequence"],
+        "preproc_elif": ["condition", "consequence", "alternative"],
+        "preproc_elifdef": ["name", "consequence", "alternative"]
+    },
+
+    "call_role_map": ["scanf", "fgets", "gets"],
+
+    "case_statement": {
+        "parts": {
+            "case": {
+                "seq": [
+                    "case",
+                    "VALUE",
+                    "$.expression"
+                ],
+                "fields": ["value"]
+            },
+            "default": {
+                "seq": [
+                    "default"
+                ],
+                "fields": []
+            }
+        },
+        "parts_map": ["case", "default"]
+    },
+
+    "labeled_statement": {
+        "parts": {
+            "label": {
+                "seq": [
+                    "LABEL",
+                    "$.identifier"
+                ],
+                "fields": ["label"]
+            },
+            "statement_or_declaration": {
+                "seq": [
+                    "$.statement",
+                    "|",
+                    "$.declaration"
+                ]
+            }
+        },
+        "parts_map": ["label", "REST"]
+    },
+
+    "conditional_expression": {
+        "parts": {
+            "condition": {
+                "seq": [
+                    "$.expression",
+                    "?",
+                    "$.expression"
+                ],
+                "fields": ["condition"]
+            },
+            "consequence": {
+                "seq": [
+                    "$.expression"
+                ],
+                "fields": ["consequence"]
+            },
+            "alternative": {
+                "seq": [
+                    ":",
+                    "$.expression"
+                ],
+                "fields": ["alternative"]
+            }
+        },
+        "parts_map": ["condition", "consequence", "alternative"]
+    },
+
+    "if_statement": {
+        "parts": {
+            "if": {
+                "seq": [
+                    "if",
+                    "(",
+                    "$.expression",
+                    ")"
+                ]
+            },
+            "condition": {
+                "seq": [
+                    "$.parenthesized_expression"
+                ],
+                "fields": ["condition"]
+            },
+            "consequence": {
+                "seq": [
+                    "$.statement"
+                ],
+                "fields": ["consequence"]
+            },
+            "alternative": {
+                "seq": [
+                    "$.else_clause"
+                ],
+                "fields": ["alternative"]
+            }
+        },
+        "parts_map": ["condition", "consequence", "alternative"]
+    },
+
+    "else_clause": {
+        "info": "else_clause: $ => seq('else', $.statement)",
+        "parts": {
+            "else": {
+                "seq": [
+                    "else"
+                ]
+            },
+            "statement": {
+                "seq": [
+                    "$.statement"
+                ],
+                "fields": []
+            }
+        },
+        "parts_map": []
+    },
+
+    "switch_statement": {
+        "parts": {
+            "switch": {
+                "seq": [
+                    "switch"
+                ]
+            },
+            "condition": {
+                "seq": [
+                    "$.parenthesized_expression"
+                ],
+                "fields": ["condition"]
+            },
+            "body": {
+                "seq": [
+                    "{",
+                    "$.compound_statement",
+                    "}"
+                ],
+                "fields": ["body"]
+            }
+        },
+        "parts_map": ["condition", "body"]
+    },
+
+    "do_statement": {
+        "parts": {
+            "do": {
+                "seq": [
+                    "do"
+                ]
+            },
+            "body": {
+                "seq": [
+                    "$.statement"
+                ],
+                "fields": ["body"]
+            },
+            "while_clause": {
+                "seq": [
+                    "while",
+                    "(",
+                    "condition -> parenthesized_expression",
+                    ")"
+                ],
+                "fields": ["condition"]
+            }
+        },
+        "parts_map": ["body", "condition"]
+    },
+
+    "while_statement": {
+        "parts": {
+            "while": {
+                "seq": [
+                    "while"
+                ]
+            },
+            "condition": {
+                "seq": [
+                    "$.parenthesized_expression"
+                ],
+                "fields": ["condition"]
+            },
+            "body": {
+                "seq": [
+                    "$.statement"
+                ],
+                "fields": ["body"]
+            }
+        },
+        "parts_map": ["condition", "body"]
+    },
+
+    "for_statement": {
+        "parts": {
+            "for": {
+                "seq": [
+                    "for"
+                ]
+            },
+            "initializer": {
+                "seq": [
+                    "(",
+                    "$.for_initialization",
+                    ";"
+                ],
+                "fields": ["initializer"]
+            },
+            "condition": {
+                "seq": [
+                    "$.expression",
+                    ";"
+                ],
+                "fields": ["condition"]
+            },
+            "increment": {
+                "seq": [
+                    "$.expression",
+                    ")"
+                ],
+                "fields": ["update"]
+            },
+            "body": {
+                "seq": [
+                    "$.statement"
+                ],
+                "fields": ["body"]
+            }
+        },
+        "parts_map": ["initializer", "condition", "update", "body"]
+    },
+
+    "return_statement": {
+        "parts": {
+            "return": {
+                "seq": [
+                    "return"
+                ]
+            },
+            "value": {
+                "seq": [
+                    "$.expression"
+                ],
+                "fields": []
+            }
+        },
+        "parts_map": []
+    },
+
+    "goto_statement": {
+        "parts": {
+            "goto": {
+                "seq": [
+                    "goto"
+                ]
+            },
+            "label": {
+                "seq": [
+                    "$.identifier"
+                ],
+                "fields": ["label"]
+            }
+        },
+        "parts_map": ["label"]
+    }
+}

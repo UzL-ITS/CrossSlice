@@ -1,0 +1,391 @@
+Context for merged statement of old file: libavformat/apetag.c with new file: libavformat/apetag.c:
+int ape_tag_read_field(AVFormatContext *s) {
+  AVIOContext *pb = s->pb;
+  int64_t size, flags;
+  size = avio_rl32(pb);
+  if (flags & APE_TAG_FLAG_IS_BINARY) {
+  uint8_t filename[1024];
+  int ret;
+  AVStream *st = avformat_new_stream(s, NULL);
+  ret = avio_get_str(pb, size, filename, sizeof(filename));
+  size -= ret;
+  if ((id = ff_guess_image2_codec(filename))!= AV_CODEC_ID_NONE) {
+- int ret = ff_add_attached_pic(s, st, s->pb, NULL, size);
++ ret = ff_add_attached_pic(s, st, s->pb, NULL, size);
+  if (ret < 0) {
+  return ret;
+  }
+  }
+  else {
+  if ((ret = ff_get_extradata(s, st->codecpar, s->pb, size))< 0) {
+  return ret;
+  }
+  }
+  }
+  else {
+  return AVERROR(ENOMEM);
+  return c;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: av_log — libavutil/log.c:443 [priority_fallback] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   va_list vl;
+   va_start(vl, fmt);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- called function: ff_get_extradata — libavformat/demux_utils.c:340 [gtags_unique] --
+int ff_get_extradata(void *logctx, AVCodecParameters *par, AVIOContext *pb, int size) {
+   int ret = ff_alloc_extradata(par, size);
+   if(ret < 0)
+     return ret;
+   ret = ffio_read_size(pb, par->extradata, size);
+   if(ret < 0) {
+     av_freep(&par->extradata);
+     par->extradata_size = 0;
+     av_log(logctx, AV_LOG_ERROR, "Failed to read extradata of size %d\n", size);
+     return ret;
+   }
+   return ret;
+}
+   [reads: logctx, par, pb, size; writes: par*]
+
+-- called function: ff_add_attached_pic — libavformat/demux_utils.c:107 [gtags_unique] --
+int ff_add_attached_pic(AVFormatContext *s, AVStream *st0, AVIOContext *pb, AVBufferRef **buf, int size) {
+   AVStream *st = st0;
+   AVPacket *pkt;
+   int ret;
+   if(!st && !(st = avformat_new_stream(s, NULL)))
+     return AVERROR(ENOMEM);
+   pkt = &st->attached_pic;
+   if(buf) {
+   ...
+     av_packet_unref(pkt);
+     pkt->buf = *buf;
+     pkt->data =(*buf)->data;
+     pkt->size =(*buf)->size - AV_INPUT_BUFFER_PADDING_SIZE;
+   ...
+   } else {
+     ret = av_get_packet(pb, pkt, size);
+     if(ret < 0)
+   ...
+   }
+   st->disposition |= AV_DISPOSITION_ATTACHED_PIC;
+   st->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
+   pkt->stream_index = st->index;
+   pkt->flags |= AV_PKT_FLAG_KEY;
+   return 0;
+   ...
+   if(!st0)
+     ff_remove_stream(s, st);
+   return ret;
+}
+   [reads: buf, pb, s, size, st0; writes: buf*, st0*]
+
+-- called function: av_dict_set — libavutil/dict.c:86 [gtags_unique] --
+int av_dict_set(AVDictionary **pm, const char *key, const char *value, int flags) {
+   AVDictionary *m = *pm;
+   AVDictionaryEntry *tag = NULL;
+   char *copy_key = NULL, *copy_value = NULL;
+   int err;
+   if(flags & AV_DICT_DONT_STRDUP_VAL)
+     copy_value =(void *)value;
+   else if(value)
+     copy_value = av_strdup(value);
+   if(!key) {
+     err = AVERROR(EINVAL);
+   ...
+   }
+   if(flags & AV_DICT_DONT_STRDUP_KEY)
+     copy_key =(void *)key;
+   else
+     copy_key = av_strdup(key);
+   if(!copy_key ||(value && !copy_value))
+   ...
+   if(!(flags & AV_DICT_MULTIKEY)) {
+     tag = av_dict_get(m, key, NULL, flags);
+   } else if(flags & AV_DICT_DEDUP) {
+     while((tag = av_dict_get(m, key, tag, flags))) {
+       if((!value && !tag->value)||(value && tag->value && !strcmp(value, tag->value))) {
+         av_free(copy_key);
+         av_free(copy_value);
+         return 0;
+       }
+     }
+   }
+   if(!m)
+     m = *pm = av_mallocz(sizeof(*m));
+   if(!m)
+   ...
+   if(tag) {
+     if(flags & AV_DICT_DONT_OVERWRITE) {
+       av_free(copy_key);
+       av_free(copy_value);
+       return 0;
+     }
+     if(copy_value && flags & AV_DICT_APPEND) {
+       size_t oldlen = strlen(tag->value);
+       size_t new_part_len = strlen(copy_value);
+       size_t len = oldlen + new_part_len + 1;
+       char *newval = av_realloc(tag->value, len);
+       if(!newval)
+   ...
+       memcpy(newval + oldlen, copy_value, new_part_len + 1);
+       av_freep(&copy_value);
+       copy_value = newval;
+     } else
+       av_free(tag->value);
+     av_free(tag->key);
+     *tag = m->elems[--m->count];
+   } else if(copy_value) {
+     AVDictionaryEntry *tmp = av_realloc_array(m->elems, m->count + 1, sizeof(*m->elems));
+     if(!tmp)
+   ...
+     m->elems = tmp;
+   }
+   if(copy_value) {
+     m->elems[m->count].key = copy_key;
+     m->elems[m->count].value = copy_value;
+     m->count++;
+   } else {
+     err = 0;
+   ...
+   }
+   return 0;
+   ...
+   err = AVERROR(ENOMEM);
+   ...
+   av_free(copy_value);
+   ...
+   if(m && !m->count) {
+     av_freep(&m->elems);
+     av_freep(pm);
+   }
+   av_free(copy_key);
+   return err;
+}
+   [reads: flags, key, pm, value; writes: value*]
+
+-- called macro: AVERROR — libavutil/error.h:41 [lsp] --
+#define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+
+-- called function: ff_guess_image2_codec — libavformat/img2.c:126 [gtags_unique] --
+enum AVCodecID ff_guess_image2_codec(const char *filename) {
+   return str2id(ff_img_tags, filename);
+}
+   [reads: filename; writes: -]
+
+-- called function: avio_get_str — libavformat/aviobuf.c:869 [gtags_unique] --
+int avio_get_str(AVIOContext *s, int maxlen, char *buf, int buflen) {
+   int i;
+   if(buflen <= 0)
+     return AVERROR(EINVAL);
+   buflen = FFMIN(buflen - 1, maxlen);
+   for(i = 0; i < buflen; i++)
+     if(!(buf[i] = avio_r8(s)))
+       return i + 1;
+   buf[i] = 0;
+   for(; i < maxlen; i++)
+     if(!avio_r8(s))
+       return i + 1;
+   return maxlen;
+}
+   [reads: buf, buflen, maxlen, s; writes: buf*]
+
+-- called function: avformat_new_stream — libavformat/options.c:245 [gtags_unique] --
+AVStream *avformat_new_stream(AVFormatContext *s, const AVCodec *c) {
+   FFStream *sti;
+   AVStream *st;
+   AVStream **streams;
+   if(s->nb_streams >= s->max_streams) {
+     av_log(s, AV_LOG_ERROR, "Number of streams exceeds max_streams parameter" "(%d), see the documentation if you wish to increase it\n", s->max_streams);
+     return NULL;
+   }
+   streams = av_realloc_array(s->streams, s->nb_streams + 1, sizeof(*streams));
+   if(!streams)
+     return NULL;
+   s->streams = streams;
+   sti = av_mallocz(sizeof(*sti));
+   if(!sti)
+     return NULL;
+   st = &sti->pub;
+   st->av_class = &stream_class;
+   st->codecpar = avcodec_parameters_alloc();
+   ...
+   sti->fmtctx = s;
+   ...
+   if(s->iformat) {
+   ...
+   } else {
+   }
+   ...
+   st->index = s->nb_streams;
+   st->start_time = AV_NOPTS_VALUE;
+   st->duration = AV_NOPTS_VALUE;
+   ...
+   sti->probe_packets = s->max_probe_packets;
+   ...
+   st->sample_aspect_ratio =(AVRational){ 0, 1 };
+   ...
+   s->streams[s->nb_streams++] = st;
+   return st;
+   ...
+   ff_free_stream(&st);
+   return NULL;
+}
+   [reads: s; writes: s*]
+
+-- called function: avio_rl32 — libavformat/aviobuf.c:733 [gtags_unique] --
+unsigned int avio_rl32(AVIOContext *s) {
+   unsigned int val;
+   val = avio_rl16(s);
+   val |= avio_rl16(s)<< 16;
+   return val;
+}
+   [reads: s; writes: -]
+
+-- called function: av_free — libavutil/mem.c:238 [priority_fallback] --
+void av_free(void *ptr) {
+   #if HAVE_ALIGNED_MALLOC
+   _aligned_free(ptr);
+   ...
+   free(ptr);
+   #endif
+}
+   [reads: ptr; writes: -]
+
+-- called function: avio_read — libavformat/aviobuf.c:615 [gtags_unique] --
+int avio_read(AVIOContext *s, unsigned char *buf, int size) {
+   int len, size1;
+   size1 = size;
+   while(size > 0) {
+     len = FFMIN(s->buf_end - s->buf_ptr, size);
+     if(len == 0 || s->write_flag) {
+       if((s->direct || size > s->buffer_size)&& !s->update_checksum && s->read_packet) {
+         len = read_packet_wrapper(s, buf, size);
+         if(len == AVERROR_EOF) {
+           s->eof_reached = 1;
+   ...
+         } else if(len < 0) {
+           s->eof_reached = 1;
+           s->error= len;
+   ...
+         } else {
+           s->pos += len;
+           ffiocontext(s)->bytes_read += len;
+           s->bytes_read = ffiocontext(s)->bytes_read;
+           size -= len;
+           buf += len;
+           s->buf_ptr = s->buffer;
+           s->buf_end = s->buffer;
+         }
+       } else {
+         fill_buffer(s);
+         len = s->buf_end - s->buf_ptr;
+         if(len == 0)
+   ...
+       }
+     } else {
+       memcpy(buf, s->buf_ptr, len);
+       buf += len;
+       s->buf_ptr += len;
+       size -= len;
+     }
+   }
+   if(size1 == size) {
+     if(s->error)
+       return s->error;
+     if(avio_feof(s))
+       return AVERROR_EOF;
+   }
+   return size1 - size;
+}
+   [reads: buf, s, size; writes: buf*, s*]
+
+-- called function: av_malloc — libavutil/mem.c:98 [priority_fallback] --
+void *av_malloc(size_t size) {
+   void *ptr = NULL;
+   if(size > atomic_load_explicit(&max_alloc_size, memory_order_relaxed))
+     return NULL;
+   #if HAVE_POSIX_MEMALIGN
+   if(size)
+     if(posix_memalign(&ptr, ALIGN, size))
+       ptr = NULL;
+   #elif HAVE_ALIGNED_MALLOC
+   ptr = _aligned_malloc(size, ALIGN);
+   #elif HAVE_MEMALIGN
+   #ifndef ...
+   ptr = memalign(ALIGN, size);
+   ...
+   ptr = memalign(size, ALIGN);
+   #endif
+   ...
+   ptr = malloc(size);
+   #endif
+   if(!ptr && !size) {
+     size = 1;
+     ptr= av_malloc(1);
+   }
+   #if CONFIG_MEMORY_POISONING
+   if(ptr)
+     memset(ptr, FF_MEMORY_POISON, size);
+   #endif
+   return ptr;
+}
+   [reads: size; writes: -]
+
+-- caller of ape_tag_read_field: ff_ape_parse_tag — libavformat/apetag.c:167 --
+int64_t ff_ape_parse_tag(AVFormatContext *s) {
+   ...
+   for(i=0; i<fields; i++)
+>    if(ape_tag_read_field(s)< 0)
+   ...
+}
+
+-- 2nd-level context (summaries) --
+  av_vlog — libavutil/log.c:460 [gtags_unique]: void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+    reads: avcl, fmt, level, vl; writes: -
+  ff_alloc_extradata — libavformat/utils.c:237 [gtags_unique]: int ff_alloc_extradata(AVCodecParameters *par, int size)
+    reads: par, size; writes: par*
+  ffio_read_size — libavformat/aviobuf.c:665 [gtags_unique]: int ffio_read_size(AVIOContext *s, unsigned char *buf, int size)
+    reads: buf, s, size; writes: -
+  av_freep — libavutil/mem.c:247 [priority_fallback]: void av_freep(void *arg)
+    reads: arg; writes: arg*
+  av_packet_unref — libavcodec/packet.c:432 [gtags_unique]: void av_packet_unref(AVPacket *pkt)
+    reads: pkt; writes: pkt*
+  av_get_packet — libavformat/utils.c:98 [gtags_unique]: int av_get_packet(AVIOContext *s, AVPacket *pkt, int size)
+    reads: pkt, s, size; writes: pkt*
+  ff_remove_stream — libavformat/avformat.c:116 [gtags_unique]: void ff_remove_stream(AVFormatContext *s, AVStream *st)
+    reads: s, st; writes: s*
+  av_strdup — libavutil/mem.c:272 [gtags_unique]: char *av_strdup(const char *s)
+    reads: s; writes: -
+  av_dict_get — libavutil/dict.c:60 [gtags_unique]: AVDictionaryEntry *av_dict_get(const AVDictionary *m, const char *key, const AVDictionaryEntry *prev, int flags)
+    reads: flags, key, m, prev; writes: -
+  av_mallocz — libavutil/mem.c:256 [priority_fallback]: void *av_mallocz(size_t size)
+    reads: size; writes: -
+  av_realloc — libavutil/mem.c:155 [priority_fallback]: void *av_realloc(void *ptr, size_t size)
+    reads: ptr, size; writes: -
+  av_realloc_array — libavutil/mem.c:217 [gtags_unique]: void *av_realloc_array(void *ptr, size_t nmemb, size_t size)
+    reads: nmemb, ptr, size; writes: -
+  str2id — libavformat/img2.c:110 [gtags_unique]: static enum AVCodecID str2id(const IdStrMap *tags, const char *str)
+    reads: str, tags; writes: -
+  FFMIN — libavutil/macros.h:49 [lsp]: #define FFMIN(a,b) ((a) > (b) ? (b) : (a))
+  avcodec_parameters_alloc — libavcodec/codec_par.c:57 [gtags_unique]: AVCodecParameters *avcodec_parameters_alloc(void)
+    reads: -; writes: -
+  ff_free_stream — libavformat/avformat.c:46 [gtags_unique]: void ff_free_stream(AVStream **pst)
+    reads: pst; writes: -
+  avio_rl16 — libavformat/aviobuf.c:717 [gtags_unique]: unsigned int avio_rl16(AVIOContext *s)
+    reads: s; writes: -
+  read_packet_wrapper — libavformat/aviobuf.c:501 [gtags_unique]: static int read_packet_wrapper(AVIOContext *s, uint8_t *buf, int size)
+    reads: buf, s, size; writes: -
+  ffiocontext — libavformat/avio_internal.h:81 [gtags_unique]: static av_always_inline FFIOContext *ffiocontext(AVIOContext *ctx)
+    reads: ctx; writes: -
+  fill_buffer — libavformat/aviobuf.c:514 [gtags+ts]: static void fill_buffer(AVIOContext *s)
+    reads: s; writes: s*
+  memalign — libavutil/mem.c:52 [gtags_unique]: #define memalign       AV_JOIN(MALLOC_PREFIX, memalign)

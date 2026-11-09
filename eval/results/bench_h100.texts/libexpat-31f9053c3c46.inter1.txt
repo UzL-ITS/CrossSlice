@@ -1,0 +1,396 @@
+Context for merged statement of old file: expat/lib/internal.h with new file: expat/lib/internal.h:
+#ifdef __cplusplus
+- extern "C" { #endif void _INTERNAL_trim_to_complete_utf8_characters(const char *from, const char **fromLimRef); #if defined(XML_GE)&& XML_GE == 1 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser); unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser); const char *unsignedCharToPrintable(unsigned char c); #endif extern #if ! defined(XML_TESTING)const #endif XML_Bool g_reparseDeferralEnabledDefault; #if defined(XML_TESTING)extern unsigned int g_bytesScanned; #endif #ifdef __cplusplus }
++ extern "C" { #endif void _INTERNAL_trim_to_complete_utf8_characters(const char *from, const char **fromLimRef); #if defined(XML_GE)&& XML_GE == 1 unsigned long long testingAccountingGetCountBytesDirect(XML_Parser parser); unsigned long long testingAccountingGetCountBytesIndirect(XML_Parser parser); const char *unsignedCharToPrintable(unsigned char c); #endif extern #if ! defined(XML_TESTING)const #endif XML_Bool g_reparseDeferralEnabledDefault; #if defined(XML_TESTING)void *expat_malloc(XML_Parser parser, size_t size, int sourceLine); void expat_free(XML_Parser parser, void *ptr, int sourceLine); void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine); extern unsigned int g_bytesScanned; #endif #ifdef __cplusplus }
+   #if defined(XML_TESTING)
++ void *expat_malloc(XML_Parser parser, size_t size, int sourceLine);
++ void expat_free(XML_Parser parser, void *ptr, int sourceLine);
++ void *expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine);
+  #endif
+  #endif
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+#if defined(XML_TESTING)
+  #endif
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+- void *
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
++ void *
+#  endif
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+}
+}
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
++ void expat_free(XML_Parser parser, void *ptr, int sourceLine) {
++ assert(parser != NULL);
++ if (ptr == NULL) {
++ return;
+  }
++ const XML_Parser rootParser = getRootParserOf(parser, NULL);
++ assert(rootParser->m_parentParser == NULL);
++ void *const mallocedPtr =(char *)ptr - sizeof(size_t);
++ const size_t bytesAllocated = sizeof(size_t)+ *(size_t *)mallocedPtr;
++ assert(rootParser->m_alloc_tracker.bytesAllocated >= bytesAllocated);
++ rootParser->m_alloc_tracker.bytesAllocated -= bytesAllocated;
++ if (rootParser->m_alloc_tracker.debugLevel >= 2) {
++ expat_heap_stat(rootParser, '-', bytesAllocated, rootParser->m_alloc_tracker.bytesAllocated, rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
+  }
++ parser->m_mem.free_fcn(mallocedPtr);
+- void expat_free(XML_Parser parser, void *ptr, int sourceLine) {
+- assert(parser != NULL);
+- if (ptr == NULL) {
+  }
+- const XML_Parser rootParser = getRootParserOf(parser, NULL);
+- assert(rootParser->m_parentParser == NULL);
+- void *const mallocedPtr =(char *)ptr - sizeof(size_t);
+- const size_t bytesAllocated = sizeof(size_t)+ *(size_t *)mallocedPtr;
+- assert(rootParser->m_alloc_tracker.bytesAllocated >= bytesAllocated);
+- rootParser->m_alloc_tracker.bytesAllocated -= bytesAllocated;
+- if (rootParser->m_alloc_tracker.debugLevel >= 2) {
+  }
+- parser->m_mem.free_fcn(mallocedPtr);
+}
+}
+
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
++ void *
+#  endif
+expat_malloc(XML_Parser parser, size_t size, int sourceLine) {
++ if (SIZE_MAX - size < sizeof(size_t)) {
++ return NULL;
+  }
++ const XML_Parser rootParser = getRootParserOf(parser, NULL);
++ assert(rootParser->m_parentParser == NULL);
++ const size_t bytesToAllocate = sizeof(size_t)+ size;
++ if ((XmlBigCount)-1 - rootParser->m_alloc_tracker.bytesAllocated < bytesToAllocate) {
++ return NULL;
+  }
++ if (! expat_heap_increase_tolerable(rootParser, bytesToAllocate, sourceLine)) {
++ return NULL;
+  }
++ void *const mallocedPtr = parser->m_mem.malloc_fcn(bytesToAllocate);
++ if (mallocedPtr == NULL) {
++ return NULL;
+  }
++ *(size_t *)mallocedPtr = size;
++ rootParser->m_alloc_tracker.bytesAllocated += bytesToAllocate;
++ if (rootParser->m_alloc_tracker.debugLevel >= 2) {
++ if (rootParser->m_alloc_tracker.bytesAllocated > rootParser->m_alloc_tracker.peakBytesAllocated) {
++ rootParser->m_alloc_tracker.peakBytesAllocated = rootParser->m_alloc_tracker.bytesAllocated;
+  }
++ expat_heap_stat(rootParser, '+', bytesToAllocate, rootParser->m_alloc_tracker.bytesAllocated, rootParser->m_alloc_tracker.peakBytesAllocated, sourceLine);
+  }
++ return(char *)mallocedPtr + sizeof(size_t);
+}
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
++ #include <math.h>
++ #include <stdbool.h>
+- #include <assert.h>
++ #include <stdint.h>
++ #include "expat_config.h"
++ #include "internal.h"
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
+END_TEST make_alloc_test_case(Suite *s) {
+  TCase *tc_alloc = tcase_create("allocation tests");
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_size_recorded);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_maximum_amplification);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_threshold);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_getbuffer_unlimited);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_alloc_tracker_api);
++ tcase_add_test(tc_alloc, test_mem_api_cycle);
++ tcase_add_test__ifdef_xml_dtd(tc_alloc, test_mem_api_unlimited);
+}
+
+Context for merged statement of old file: expat/tests/alloc_tests.c with new file: expat/tests/alloc_tests.c:
++ END_TEST START_TEST(test_mem_api_unlimited) {
++ XML_Parser parser = XML_ParserCreate(NULL);
++ #if XML_GE == 1
++ assert_true(XML_SetAllocTrackerActivationThreshold(parser, 0)== XML_TRUE);
+  #endif
++ void *ptr = XML_MemMalloc(parser, 1000);
++ assert_true(ptr != NULL);
++ ptr = XML_MemRealloc(parser, ptr, 2000);
++ assert_true(ptr != NULL);
++ XML_MemFree(parser, ptr);
++ XML_ParserFree(parser);
+}
+
+
+==== Cross-function context ====
+
+-- called function: expat_heap_stat — expat/lib/xmlparse.c:798 [gtags_unique] --
+static void expat_heap_stat(XML_Parser rootParser, char operator, XmlBigCount absDiff, XmlBigCount newTotal, XmlBigCount peakTotal, int sourceLine) {
+   const float amplification =(float)newTotal /(float)rootParser->m_accounting.countBytesDirect;
+   fprintf(stderr, "expat: Allocations(%p): Direct " EXPAT_FMT_ULL("10")", allocated %c" EXPAT_FMT_ULL("10")" to " EXPAT_FMT_ULL("10")"(" EXPAT_FMT_ULL("10")" peak), amplification %8.2f(xmlparse.c:%d)\n", (void *)rootParser, rootParser->m_accounting.countBytesDirect, operator, absDiff, newTotal, peakTotal, (double)amplification, sourceLine);
+}
+   [reads: absDiff, newTotal, operator, peakTotal, rootParser, sourceLine; writes: -]
+
+-- called function: tcase_create — expat/tests/minicheck.c:64 [gtags_unique] --
+TCase * tcase_create(const char *name) {
+   TCase *tc =(TCase *)calloc(1, sizeof(TCase));
+   if(tc != NULL) {
+     tc->name = name;
+   }
+   return tc;
+}
+   [reads: name; writes: -]
+
+-- called function: getRootParserOf — expat/lib/xmlparse.c:8639 [gtags_unique, old version] --
+static XML_Parser getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
+   XML_Parser rootParser = parser;
+   ...
+   while(rootParser->m_parentParser) {
+     rootParser = rootParser->m_parentParser;
+   ...
+   }
+   assert(! rootParser->m_parentParser);
+   ...
+   return rootParser;
+}
+   [reads: outLevelDiff, parser; writes: outLevelDiff*]
+
+-- called function: getRootParserOf — expat/lib/xmlparse.c:8651 [gtags_unique, new version] --
+static XML_Parser getRootParserOf(XML_Parser parser, unsigned int *outLevelDiff) {
+   XML_Parser rootParser = parser;
+   ...
+   while(rootParser->m_parentParser) {
+     rootParser = rootParser->m_parentParser;
+   ...
+   }
+   assert(! rootParser->m_parentParser);
+   ...
+   return rootParser;
+}
+   [reads: outLevelDiff, parser; writes: outLevelDiff*]
+
+-- called function: tcase_add_test__ifdef_xml_dtd — expat/tests/common.c:150 [gtags_unique, new version] --
+void tcase_add_test__ifdef_xml_dtd(TCase *tc, tcase_test_function test) {
+   #ifdef ...
+   tcase_add_test(tc, test);
+   ...
+   UNUSED_P(tc);
+   UNUSED_P(test);
+   #endif
+}
+   [reads: tc, test; writes: -]
+
+-- called function: XML_SetAllocTrackerActivationThreshold — expat/lib/xmlparse.c:3089 [gtags_unique, new version] --
+XML_Bool XMLCALL XML_SetAllocTrackerActivationThreshold( XML_Parser parser, unsigned long long activationThresholdBytes) {
+   if((parser == NULL)||(parser->m_parentParser != NULL)) {
+     return XML_FALSE;
+   }
+   parser->m_alloc_tracker.activationThresholdBytes = activationThresholdBytes;
+   return XML_TRUE;
+}
+   [reads: activationThresholdBytes, parser; writes: parser*]
+
+-- called function: expat_heap_increase_tolerable — expat/lib/xmlparse.c:812 [gtags_unique, new version] --
+static bool expat_heap_increase_tolerable(XML_Parser rootParser, XmlBigCount increase, int sourceLine) {
+   assert(rootParser != NULL);
+   assert(increase > 0);
+   XmlBigCount newTotal = 0;
+   bool tolerable = true;
+   if((XmlBigCount)-1 - rootParser->m_alloc_tracker.bytesAllocated < increase) {
+     tolerable = false;
+   } else {
+     newTotal = rootParser->m_alloc_tracker.bytesAllocated + increase;
+     if(newTotal >= rootParser->m_alloc_tracker.activationThresholdBytes) {
+       assert(newTotal > 0);
+       const float amplification =(float)newTotal /(float)rootParser->m_accounting.countBytesDirect;
+       if(amplification > rootParser->m_alloc_tracker.maximumAmplificationFactor) {
+         tolerable = false;
+       }
+     }
+   }
+   if(! tolerable &&(rootParser->m_alloc_tracker.debugLevel >= 1)) {
+     expat_heap_stat(rootParser, '+', increase, newTotal, newTotal, sourceLine);
+   }
+   return tolerable;
+}
+   [reads: increase, rootParser, sourceLine; writes: -]
+
+-- called function: tcase_add_test — expat/tests/minicheck.c:91 [gtags_unique, new version] --
+void tcase_add_test(TCase *tc, tcase_test_function test) {
+   assert(tc != NULL);
+   if(tc->allocated == tc->ntests) {
+     int nalloc = tc->allocated + 100;
+     size_t new_size = sizeof(tcase_test_function)* nalloc;
+     tcase_test_function *const new_tests =(tcase_test_function *)realloc(tc->tests, new_size);
+     assert(new_tests != NULL);
+     tc->tests = new_tests;
+     tc->allocated = nalloc;
+   }
+   tc->tests[tc->ntests] = test;
+   tc->ntests++;
+}
+   [reads: tc, test; writes: tc*]
+
+-- called function: XML_ParserCreate — expat/lib/xmlparse.c:1008 [gtags_unique, new version] --
+XML_Parser XMLCALL XML_ParserCreate(const XML_Char *encodingName) {
+   return XML_ParserCreate_MM(encodingName, NULL, NULL);
+}
+   [reads: encodingName; writes: -]
+
+-- caller of expat_realloc: START_TEST — expat/tests/alloc_tests.c:2111 --
+END_TEST START_TEST(test_alloc_tracker_size_recorded) {
+   XML_Memory_Handling_Suite memsuite = {malloc, realloc, free};
+   bool values[] = {true, false};
+   for(size_t i = 0;; i < sizeof(values)/ sizeof(values[0]); i++) {
+   size_t i = 0;
+     const bool useMemSuite = values[i];
+   ...
+     XML_Parser parser = useMemSuite ? XML_ParserCreate_MM(NULL, &memsuite, XCS("|")): XML_ParserCreate(NULL);
+     #if XML_GE == 1
+     void *ptr = expat_malloc(parser, 10, -1);
+   ...
+>    assert_true(expat_realloc(parser, ptr, SIZE_MAX / 2, -1)== NULL);
+   ...
+     #endif
+   }
+}
+
+-- caller of expat_realloc: START_TEST — expat/tests/alloc_tests.c:2115 --
+END_TEST START_TEST(test_alloc_tracker_size_recorded) {
+   XML_Memory_Handling_Suite memsuite = {malloc, realloc, free};
+   bool values[] = {true, false};
+   for(size_t i = 0;; i < sizeof(values)/ sizeof(values[0]); i++) {
+   size_t i = 0;
+     const bool useMemSuite = values[i];
+   ...
+     XML_Parser parser = useMemSuite ? XML_ParserCreate_MM(NULL, &memsuite, XCS("|")): XML_ParserCreate(NULL);
+     #if XML_GE == 1
+     void *ptr = expat_malloc(parser, 10, -1);
+   ...
+>    ptr = expat_realloc(parser, ptr, 20, -1);
+     assert_true(ptr != NULL);
+     assert_true(*((size_t *)ptr - 1)== 20);
+     expat_free(parser, ptr, -1);
+   ...
+     #endif
+   }
+}
+
+-- caller of expat_free: expat_realloc — expat/lib/xmlparse.c:948 --
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+   ...
+   if(size == 0) {
+>    expat_free(parser, ptr, sourceLine);
+   ...
+   }
+}
+
+-- caller of expat_free: START_TEST — expat/tests/alloc_tests.c:2120 --
+END_TEST START_TEST(test_alloc_tracker_size_recorded) {
+   XML_Memory_Handling_Suite memsuite = {malloc, realloc, free};
+   bool values[] = {true, false};
+   for(size_t i = 0;; i < sizeof(values)/ sizeof(values[0]); i++) {
+   size_t i = 0;
+     const bool useMemSuite = values[i];
+   ...
+     XML_Parser parser = useMemSuite ? XML_ParserCreate_MM(NULL, &memsuite, XCS("|")): XML_ParserCreate(NULL);
+     #if XML_GE == 1
+     void *ptr = expat_malloc(parser, 10, -1);
+   ...
+     ptr = expat_realloc(parser, ptr, 20, -1);
+   ...
+>    expat_free(parser, ptr, -1);
+   ...
+     #endif
+   }
+}
+
+-- caller of expat_free: START_TEST — expat/tests/alloc_tests.c:2155 --
+END_TEST START_TEST(test_alloc_tracker_maximum_amplification) {
+   ...
+   XML_Parser parser = XML_ParserCreate(NULL);
+   ...
+   #if XML_GE == 1
+   ...
+   void *const ptr = expat_malloc(parser, 1000, -1);
+   ...
+>  expat_free(parser, ptr, -1);
+   ...
+   #endif
+}
+
+-- caller of expat_free: START_TEST — expat/tests/alloc_tests.c:2169 --
+END_TEST START_TEST(test_alloc_tracker_threshold) {
+   XML_Parser parser = XML_ParserCreate(NULL);
+   #if XML_GE == 1
+   void *const ptr = expat_malloc(parser, 1000, -1);
+   ...
+>  expat_free(parser, ptr, -1);
+   ...
+   #endif
+}
+
+-- caller of expat_malloc: expat_realloc — expat/lib/xmlparse.c:944 --
+expat_realloc(XML_Parser parser, void *ptr, size_t size, int sourceLine) {
+   ...
+   if(ptr == NULL) {
+>    return expat_malloc(parser, size, sourceLine);
+   ...
+   }
+}
+
+-- caller of expat_malloc: START_TEST — expat/tests/alloc_tests.c:2106 --
+END_TEST START_TEST(test_alloc_tracker_size_recorded) {
+   XML_Memory_Handling_Suite memsuite = {malloc, realloc, free};
+   bool values[] = {true, false};
+   for(size_t i = 0;; i < sizeof(values)/ sizeof(values[0]); i++) {
+   size_t i = 0;
+     const bool useMemSuite = values[i];
+   ...
+     XML_Parser parser = useMemSuite ? XML_ParserCreate_MM(NULL, &memsuite, XCS("|")): XML_ParserCreate(NULL);
+     #if XML_GE == 1
+>    void *ptr = expat_malloc(parser, 10, -1);
+     assert_true(ptr != NULL);
+     assert_true(*((size_t *)ptr - 1)== 10);
+     assert_true(expat_realloc(parser, ptr, SIZE_MAX / 2, -1)== NULL);
+     assert_true(*((size_t *)ptr - 1)== 10);
+     ptr = expat_realloc(parser, ptr, 20, -1);
+     assert_true(ptr != NULL);
+     assert_true(*((size_t *)ptr - 1)== 20);
+     expat_free(parser, ptr, -1);
+   ...
+     #endif
+   }
+}
+
+-- caller of expat_malloc: START_TEST — expat/tests/alloc_tests.c:2146 --
+END_TEST START_TEST(test_alloc_tracker_maximum_amplification) {
+   ...
+   XML_Parser parser = XML_ParserCreate(NULL);
+   ...
+   #if XML_GE == 1
+   ...
+>  assert_true(expat_malloc(parser, 1000, -1)== NULL);
+   ...
+   #endif
+}
+
+-- caller of expat_malloc: START_TEST — expat/tests/alloc_tests.c:2153 --
+END_TEST START_TEST(test_alloc_tracker_maximum_amplification) {
+   ...
+   XML_Parser parser = XML_ParserCreate(NULL);
+   ...
+   #if XML_GE == 1
+   ...
+>  void *const ptr = expat_malloc(parser, 1000, -1);
+   assert_true(ptr != NULL);
+   expat_free(parser, ptr, -1);
+   ...
+   #endif
+}
+
+-- caller of make_alloc_test_case: make_suite — expat/tests/runtests.c:71 --
+static Suite * make_suite(void) {
+   Suite *s = suite_create("basic");
+   ...
+>  make_alloc_test_case(s);
+   ...
+}

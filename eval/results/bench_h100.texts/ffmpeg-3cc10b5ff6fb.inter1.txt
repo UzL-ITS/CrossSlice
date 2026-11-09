@@ -1,0 +1,154 @@
+Context for merged statement of old file: fftools/cmdutils.c with new file: fftools/cmdutils.c:
+FILE *get_preset_file(char *filename, size_t filename_size,
+                      const char *preset_name, int is_path,
+                      const char *codec_name) {
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  char *datadir = NULL;
+  #endif
+  if (is_path) {
+  }
+  else {
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  if (wchartoutf8(datadir_w, &datadir)) {
+  datadir = NULL;
+  }
+  if (datadir) {
+  char *ls;
+  for (ls = datadir; *ls; ls++) {
+  }
+  if (ls = strrchr(datadir, '/')) {
+  ptrdiff_t datadir_len = ls - datadir;
+  size_t desired_size = datadir_len + strlen("/ffpresets")+ 1;
+  char *new_datadir = av_realloc_array(datadir, desired_size, sizeof *datadir);
+  if (new_datadir) {
+  datadir = new_datadir;
+- datadir[datadir_len] = 0;
+- strncat(datadir, "/ffpresets", desired_size - 1 - datadir_len);
++ strcpy(datadir + datadir_len, "/ffpresets");
+  base[2] = datadir;
+  }
+  }
+  }
+  #endif
+  for (i = 0; i < 3 && !f; i++) {
+  if (!base[i]) {
+  }
+  snprintf(filename, filename_size, "%s%s/%s.ffpreset", base[i], i != 1 ? "" : "/.ffmpeg", preset_name);
+  f = fopen_utf8(filename, "r");
+  if (!f && codec_name) {
+  snprintf(filename, filename_size, "%s%s/%s-%s.ffpreset", base[i], i != 1 ? "" : "/.ffmpeg", codec_name, preset_name);
+  f = fopen_utf8(filename, "r");
+  }
+  }
+  }
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  av_free(datadir);
+  #endif
+  return f;
+}
+
+
+==== Cross-function context ====
+
+-- called function: fopen_utf8 — fftools/fopen_utf8.h:66 [lsp] --
+static inline FILE *fopen_utf8(const char *path, const char *mode) {
+   return fopen(path, mode);
+}
+   [reads: mode, path; writes: -]
+
+-- called function: av_realloc_array — libavutil/mem.c:217 [gtags_unique] --
+void *av_realloc_array(void *ptr, size_t nmemb, size_t size) {
+   size_t result;
+   if(size_mult(nmemb, size, &result)< 0)
+     return NULL;
+   return av_realloc(ptr, result);
+}
+   [reads: nmemb, ptr, size; writes: -]
+
+-- called function: av_free — libavutil/mem.c:238 [priority_fallback] --
+void av_free(void *ptr) {
+   #if HAVE_ALIGNED_MALLOC
+   _aligned_free(ptr);
+   ...
+   free(ptr);
+   #endif
+}
+   [reads: ptr; writes: -]
+
+-- called function: wchartoutf8 — libavutil/wchar_filename.h:70 [gtags_unique] --
+av_warn_unused_result static inline int wchartoutf8(const wchar_t *filename_w, char **filename) {
+   return wchartocp(CP_UTF8, filename_w, filename);
+}
+   [reads: filename, filename_w; writes: -]
+
+-- called function: get_module_filename — compat/w32dlfcn.h:32 [gtags_unique] --
+static inline wchar_t *get_module_filename(HMODULE module) {
+   wchar_t *path = NULL, *new_path;
+   DWORD path_size = 0, path_len;
+   do {
+     path_size = path_size ? FFMIN(2 * path_size, INT16_MAX + 1): MAX_PATH;
+     new_path = av_realloc_array(path, path_size, sizeof *path);
+     if(!new_path) {
+   ...
+       return NULL;
+     }
+     path = new_path;
+     path_len = GetModuleFileNameW(module, path, path_size);
+   } while(path_len && path_size <= INT16_MAX && path_size <= path_len);
+   if(!path_len) {
+   ...
+     return NULL;
+   }
+   return path;
+}
+   [reads: module; writes: -]
+
+-- called function: av_strlcpy — libavutil/avstring.c:85 [gtags_unique] --
+size_t av_strlcpy(char *dst, const char *src, size_t size) {
+   size_t len = 0;
+   while(++len < size && *src)
+     *dst++ = *src++;
+   if(len <= size)
+     *dst = 0;
+   return len + strlen(src)- 1;
+}
+   [reads: dst, size, src; writes: dst*]
+
+-- caller of get_preset_file: opt_preset — fftools/ffmpeg_opt.c:1116 --
+static int opt_preset(void *optctx, const char *opt, const char *arg) {
+   OptionsContext *o = optctx;
+   ...
+   char filename[1000], line[1000], tmp_line[1000];
+   const char *codec_name = NULL;
+   ...
+   codec_name = opt_match_per_type_str(&o->codec_names, *opt);
+>  if(!(f = get_preset_file(filename, sizeof(filename), arg, *opt == 'f', codec_name))) {
+   ...
+   }
+   while(fgets(line, sizeof(line), f)) {
+   ...
+     if(strcspn(line, "#\n\r")== 0)
+   ...
+     av_strlcpy(tmp_line, line, sizeof(tmp_line));
+     if(!av_strtok(key, "=", &value)|| !av_strtok(value, "\r\n", &endptr)) {
+       av_log(NULL, AV_LOG_FATAL, "%s: Invalid syntax: '%s'\n", filename, line);
+   ...
+     }
+   ...
+     if(!strcmp(key, "acodec"))
+   ...
+     else if(!strcmp(key, "vcodec"))
+   ...
+     else if(!strcmp(key, "scodec"))
+   ...
+     else if(!strcmp(key, "dcodec"))
+   ...
+     else if((parse_option(o, key, value, options)< 0)&&(opt_default_new(o, key, value)< 0)) {
+       av_log(NULL, AV_LOG_FATAL, "%s: Invalid option or argument: '%s', parsed as '%s' = '%s'\n", filename, line, key, value);
+   ...
+     }
+   }
+   ...
+   fclose(f);
+   ...
+}

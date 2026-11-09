@@ -1,0 +1,10 @@
+Context for merged statement of old file: inflate.c with new file: inflate.c:
+int inflateResetKeep(strm) {
+  struct inflate_state FAR *state;
+  state =(struct inflate_state FAR *)strm->state;
++ if (state->wrap) {
+- strm->adler = 1;
++ strm->adler = state->wrap & 1;
+  }
+}
+

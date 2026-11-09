@@ -1,0 +1,114 @@
+Context for merged statement of old file: source/tools/examples/examples.c with new file: source/tools/examples/examples.c:
+ACPI_STATUS InitializeFullAcpica (void) {
+  ACPI_STATUS Status;
++ AcpiGbl_OverrideDefaultRegionHandlers = TRUE;
+  Status = AcpiInitializeSubsystem();
+  Status = AcpiInitializeTables(NULL, 16, FALSE);
+- if (ACPI_FAILURE(Status)) {
+- ACPI_EXCEPTION((AE_INFO, Status, "While loading ACPI tables"));
+- return(Status);
+  }
+- Status = AcpiLoadTables();
+  Status = InstallHandlers();
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While installing handlers"));
+  return(Status);
+  }
+  Status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While enabling ACPICA"));
+  return(Status);
+  }
++ Status = AcpiLoadTables();
++ if (ACPI_FAILURE(Status)) {
++ ACPI_EXCEPTION((AE_INFO, Status, "While loading ACPI tables"));
++ return(Status);
+  }
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While initializing ACPICA objects"));
+  return(Status);
+  }
+}
+
+Context for merged statement of old file: source/tools/examples/examples.c with new file: source/tools/examples/examples.c:
+ACPI_STATUS InitializeAcpi (
+    void) {
+  ACPI_STATUS Status;
++ AcpiGbl_OverrideDefaultRegionHandlers = TRUE;
+  Status = AcpiInitializeSubsystem();
+  Status = AcpiReallocateRootTable();
+- Status = AcpiLoadTables();
+- if (ACPI_FAILURE(Status)) {
+- return(Status);
+  }
+  Status = InstallHandlers();
+  if (ACPI_FAILURE(Status)) {
+  ACPI_EXCEPTION((AE_INFO, Status, "While installing handlers"));
+  return(Status);
+  }
+  Status = AcpiEnableSubsystem(ACPI_FULL_INITIALIZATION);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
++ Status = AcpiLoadTables();
+  if (ACPI_FAILURE(Status)) {
+  return(Status);
+  }
+  if (ACPI_FAILURE(Status)) {
+  return(Status);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_EXCEPTION — source/include/acoutput.h:307 [lsp] --
+#define ACPI_EXCEPTION(plist)           AcpiException plist
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:167 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: AcpiInitializeTables — source/components/tables/tbxface.c:178 [gtags_unique] --
+ACPI_STATUS AcpiInitializeTables ( ACPI_TABLE_DESC         *InitialTableArray, UINT32                  InitialTableCount, BOOLEAN                 AllowResize) {
+   ...
+}
+   [reads: AllowResize, InitialTableArray, InitialTableCount; writes: InitialTableArray*]
+
+-- called function: InstallHandlers — source/tools/examples/examples.c:463 [gtags_unique, old version] --
+static ACPI_STATUS InstallHandlers (void) {
+   ACPI_STATUS Status;
+   Status = AcpiInstallNotifyHandler(ACPI_ROOT_OBJECT, ACPI_SYSTEM_NOTIFY, NotifyHandler, NULL);
+   if(ACPI_FAILURE(Status)) {
+   ...
+     return(Status);
+   }
+   Status = AcpiInstallAddressSpaceHandler(ACPI_ROOT_OBJECT, ACPI_ADR_SPACE_SYSTEM_MEMORY, RegionHandler, RegionInit, NULL);
+   if(ACPI_FAILURE(Status)) {
+   ...
+     return(Status);
+   }
+   return(AE_OK);
+}
+
+-- called function: InstallHandlers — source/tools/examples/examples.c:465 [gtags_unique, new version] --
+static ACPI_STATUS InstallHandlers (void) {
+   ACPI_STATUS Status;
+   Status = AcpiInstallNotifyHandler(ACPI_ROOT_OBJECT, ACPI_SYSTEM_NOTIFY, NotifyHandler, NULL);
+   if(ACPI_FAILURE(Status)) {
+   ...
+     return(Status);
+   }
+   Status = AcpiInstallAddressSpaceHandler(ACPI_ROOT_OBJECT, ACPI_ADR_SPACE_SYSTEM_MEMORY, RegionHandler, RegionInit, NULL);
+   if(ACPI_FAILURE(Status)) {
+   ...
+     return(Status);
+   }
+   return(AE_OK);
+}
+
+-- caller of InitializeFullAcpica: main — source/tools/examples/examples.c:220 --
+main ( int                     argc, char                    **argv) {
+   ...
+>  InitializeFullAcpica();
+   ...
+}

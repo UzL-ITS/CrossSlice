@@ -1,0 +1,35 @@
+Context for merged statement of old file: ext/standard/array.c with new file: ext/standard/array.c:
+PHP_FUNCTION (array_unshift) {
+  zval *args, *stack;
+- HashTable *new_hash;
++ HashTable new_hash;
+- HashTable old_hash;
+  int argc;
++ int i;
++ zend_string *key;
++ zval *value;
++ zend_hash_init(&new_hash, zend_hash_num_elements(Z_ARRVAL_P(stack))+ argc, NULL, ZVAL_PTR_DTOR, 0);
+  for (i = 0; i < argc; i++) {
++ if (Z_REFCOUNTED(args[i])) {
++ Z_ADDREF(args[i]);
+  }
++ zend_hash_next_index_insert_new(&new_hash, &args[i]);
+  }
++ ZEND_HASH_FOREACH_STR_KEY_VAL_IND(Z_ARRVAL_P(stack), key, value)
++ if (key) {
+- new_hash = php_splice(Z_ARRVAL_P(stack), 0, 0, &args[0], argc, NULL);
++ zend_hash_add_new(&new_hash, key, value);
+  }
++ else {
+- old_hash = *Z_ARRVAL_P(stack);
++ zend_hash_next_index_insert_new(&new_hash, value);
++ }
++ ZEND_HASH_FOREACH_END();
++ Z_ARRVAL_P(stack)->pDestructor = NULL;
+- FREE_HASHTABLE(new_hash);
++ zend_hash_destroy(Z_ARRVAL_P(stack));
+- *Z_ARRVAL_P(stack)= *new_hash;
++ *Z_ARRVAL_P(stack)= new_hash;
+- zend_hash_destroy(&old_hash);
+}
+

@@ -1,0 +1,652 @@
+Context for merged statement of old file: deflate.c with new file: deflate.c:
+- const char deflate_copyright[] = " deflate 1.1.3 Copyright 1995-1998 Jean-loup Gailly ";
++ const char deflate_copyright[] = " deflate 1.1.4 Copyright 1995-2002 Jean-loup Gailly ";
+
+Context for merged statement of old file: deflate.c with new file: deflate.c:
+int deflateInit2_(strm, level, method, windowBits, memLevel, strategy,
+		  version, stream_size) {
+  if (level == Z_DEFAULT_COMPRESSION) {
+  level = 6;
+  }
+   #ifdef FASTEST
+  level = 1;
+  #endif
+  if (windowBits < 0) {
+  windowBits = -windowBits;
+  }
+- if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED || windowBits < 8 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > Z_HUFFMAN_ONLY) {
++ if (memLevel < 1 || memLevel > MAX_MEM_LEVEL || method != Z_DEFLATED || windowBits < 9 || windowBits > 15 || level < 0 || level > 9 || strategy < 0 || strategy > Z_HUFFMAN_ONLY) {
+  return Z_STREAM_ERROR;
+  }
+}
+
+Context for merged statement of old file: infblock.c with new file: infblock.c:
+int inflate_blocks(s, z, r) {
+  uInt t;
+  uLong b;
+  uInt n;
+  uInt m;
+- LOAD while(1)switch(s->mode){ case TYPE: NEEDBITS(3)t =(uInt)b & 7; s->last = t & 1; switch(t >> 1){ case 0: Tracev((stderr, "inflate: stored block%s\n", s->last ? "(last)" : "")); DUMPBITS(3)t = k & 7; DUMPBITS(t)s->mode = LENS; break; case 1: Tracev((stderr, "inflate: fixed codes block%s\n", s->last ? "(last)" : "")); { uInt bl, bd; inflate_huft *tl, *td; inflate_trees_fixed(&bl, &bd, &tl, &td, z); s->sub.decode.codes = inflate_codes_new(bl, bd, tl, td, z); if(s->sub.decode.codes == Z_NULL){ r = Z_MEM_ERROR; LEAVE } } DUMPBITS(3)s->mode = CODES; break; case 2: Tracev((stderr, "inflate: dynamic codes block%s\n", s->last ? "(last)" : "")); DUMPBITS(3)s->mode = TABLE; break; case 3: DUMPBITS(3)s->mode = BAD; z->msg =(char*)"invalid block type"; r = Z_DATA_ERROR; LEAVE } break; case LENS: NEEDBITS(32)if((((~b)>> 16)& 0xffff)!=(b & 0xffff)){ s->mode = BAD; z->msg =(char*)"invalid stored block lengths"; r = Z_DATA_ERROR; LEAVE } s->sub.left =(uInt)b & 0xffff; b = k = 0; Tracev((stderr, "inflate: stored length %u\n", s->sub.left)); s->mode = s->sub.left ? STORED :(s->last ? DRY : TYPE); break; case STORED: if(n == 0)LEAVE NEEDOUT t = s->sub.left; if(t > n)t = n; if(t > m)t = m; zmemcpy(q, p, t); p += t; n -= t; q += t; m -= t; if((s->sub.left -= t)!= 0)break; Tracev((stderr, "inflate: stored end, %lu total out\n", z->total_out +(q >= s->read ? q - s->read :(s->end - s->read)+(q - s->window)))); s->mode = s->last ? DRY : TYPE; break; case TABLE: NEEDBITS(14)s->sub.trees.table = t =(uInt)b & 0x3fff; #ifndef PKZIP_BUG_WORKAROUND if((t & 0x1f)> 29 ||((t >> 5)& 0x1f)> 29){ s->mode = BAD; z->msg =(char*)"too many length or distance symbols"; r = Z_DATA_ERROR; LEAVE } #endif t = 258 +(t & 0x1f)+((t >> 5)& 0x1f); if((s->sub.trees.blens =(uIntf*)ZALLOC(z, t, sizeof(uInt)))== Z_NULL){ r = Z_MEM_ERROR; LEAVE } DUMPBITS(14)s->sub.trees.index = 0; Tracev((stderr, "inflate: table sizes ok\n")); s->mode = BTREE; case BTREE: while(s->sub.trees.index < 4 +(s->sub.trees.table >> 10)){ NEEDBITS(3)s->sub.trees.blens[border[s->sub.trees.index++]] =(uInt)b & 7; DUMPBITS(3)} while(s->sub.trees.index < 19)s->sub.trees.blens[border[s->sub.trees.index++]] = 0; s->sub.trees.bb = 7; t = inflate_trees_bits(s->sub.trees.blens, &s->sub.trees.bb, &s->sub.trees.tb, s->hufts, z); if(t != Z_OK){ ZFREE(z, s->sub.trees.blens); r = t; if(r == Z_DATA_ERROR)s->mode = BAD; LEAVE } s->sub.trees.index = 0; Tracev((stderr, "inflate: bits tree ok\n")); s->mode = DTREE; case DTREE: while(t = s->sub.trees.table, s->sub.trees.index < 258 +(t & 0x1f)+((t >> 5)& 0x1f)){ inflate_huft *h; uInt i, j, c; t = s->sub.trees.bb; NEEDBITS(t)h = s->sub.trees.tb +((uInt)b & inflate_mask[t]); t = h->bits; c = h->base; if(c < 16){ DUMPBITS(t)s->sub.trees.blens[s->sub.trees.index++] = c; } else { i = c == 18 ? 7 : c - 14; j = c == 18 ? 11 : 3; NEEDBITS(t + i)DUMPBITS(t)j +=(uInt)b & inflate_mask[i]; DUMPBITS(i)i = s->sub.trees.index; t = s->sub.trees.table; if(i + j > 258 +(t & 0x1f)+((t >> 5)& 0x1f)||(c == 16 && i < 1)){ ZFREE(z, s->sub.trees.blens); s->mode = BAD; z->msg =(char*)"invalid bit length repeat"; r = Z_DATA_ERROR; LEAVE } c = c == 16 ? s->sub.trees.blens[i - 1] : 0; do { s->sub.trees.blens[i++] = c; } while(--j); s->sub.trees.index = i; } } s->sub.trees.tb = Z_NULL; { uInt bl, bd; inflate_huft *tl, *td; inflate_codes_statef *c; bl = 9; bd = 6; t = s->sub.trees.table; t = inflate_trees_dynamic(257 +(t & 0x1f), 1 +((t >> 5)& 0x1f), s->sub.trees.blens, &bl, &bd, &tl, &td, s->hufts, z); ZFREE(z, s->sub.trees.blens); if(t != Z_OK){ if(t ==(uInt)Z_DATA_ERROR)s->mode = BAD; r = t; LEAVE } Tracev((stderr, "inflate: trees ok\n")); if((c = inflate_codes_new(bl, bd, tl, td, z))== Z_NULL){ r = Z_MEM_ERROR; LEAVE } s->sub.decode.codes = c; } s->mode = CODES; case CODES: UPDATE if((r = inflate_codes(s, z, r))!= Z_STREAM_END)return inflate_flush(s, z, r); r = Z_OK; inflate_codes_free(s->sub.decode.codes, z); LOAD Tracev((stderr, "inflate: codes end, %lu total out\n", z->total_out +(q >= s->read ? q - s->read :(s->end - s->read)+(q - s->window)))); if(!s->last){ s->mode = TYPE; break; } s->mode = DRY; case DRY: FLUSH if(s->read != s->write)LEAVE s->mode = DONE; case DONE: r = Z_STREAM_END; LEAVE case BAD: r = Z_DATA_ERROR; LEAVE default: r = Z_STREAM_ERROR; LEAVE } }
++ LOAD while(1)switch(s->mode){ case TYPE: NEEDBITS(3)t =(uInt)b & 7; s->last = t & 1; switch(t >> 1){ case 0: Tracev((stderr, "inflate: stored block%s\n", s->last ? "(last)" : "")); DUMPBITS(3)t = k & 7; DUMPBITS(t)s->mode = LENS; break; case 1: Tracev((stderr, "inflate: fixed codes block%s\n", s->last ? "(last)" : "")); { uInt bl, bd; inflate_huft *tl, *td; inflate_trees_fixed(&bl, &bd, &tl, &td, z); s->sub.decode.codes = inflate_codes_new(bl, bd, tl, td, z); if(s->sub.decode.codes == Z_NULL){ r = Z_MEM_ERROR; LEAVE } } DUMPBITS(3)s->mode = CODES; break; case 2: Tracev((stderr, "inflate: dynamic codes block%s\n", s->last ? "(last)" : "")); DUMPBITS(3)s->mode = TABLE; break; case 3: DUMPBITS(3)s->mode = BAD; z->msg =(char*)"invalid block type"; r = Z_DATA_ERROR; LEAVE } break; case LENS: NEEDBITS(32)if((((~b)>> 16)& 0xffff)!=(b & 0xffff)){ s->mode = BAD; z->msg =(char*)"invalid stored block lengths"; r = Z_DATA_ERROR; LEAVE } s->sub.left =(uInt)b & 0xffff; b = k = 0; Tracev((stderr, "inflate: stored length %u\n", s->sub.left)); s->mode = s->sub.left ? STORED :(s->last ? DRY : TYPE); break; case STORED: if(n == 0)LEAVE NEEDOUT t = s->sub.left; if(t > n)t = n; if(t > m)t = m; zmemcpy(q, p, t); p += t; n -= t; q += t; m -= t; if((s->sub.left -= t)!= 0)break; Tracev((stderr, "inflate: stored end, %lu total out\n", z->total_out +(q >= s->read ? q - s->read :(s->end - s->read)+(q - s->window)))); s->mode = s->last ? DRY : TYPE; break; case TABLE: NEEDBITS(14)s->sub.trees.table = t =(uInt)b & 0x3fff; #ifndef PKZIP_BUG_WORKAROUND if((t & 0x1f)> 29 ||((t >> 5)& 0x1f)> 29){ s->mode = BAD; z->msg =(char*)"too many length or distance symbols"; r = Z_DATA_ERROR; LEAVE } #endif t = 258 +(t & 0x1f)+((t >> 5)& 0x1f); if((s->sub.trees.blens =(uIntf*)ZALLOC(z, t, sizeof(uInt)))== Z_NULL){ r = Z_MEM_ERROR; LEAVE } DUMPBITS(14)s->sub.trees.index = 0; Tracev((stderr, "inflate: table sizes ok\n")); s->mode = BTREE; case BTREE: while(s->sub.trees.index < 4 +(s->sub.trees.table >> 10)){ NEEDBITS(3)s->sub.trees.blens[border[s->sub.trees.index++]] =(uInt)b & 7; DUMPBITS(3)} while(s->sub.trees.index < 19)s->sub.trees.blens[border[s->sub.trees.index++]] = 0; s->sub.trees.bb = 7; t = inflate_trees_bits(s->sub.trees.blens, &s->sub.trees.bb, &s->sub.trees.tb, s->hufts, z); if(t != Z_OK){ r = t; if(r == Z_DATA_ERROR){ ZFREE(z, s->sub.trees.blens); s->mode = BAD; } LEAVE } s->sub.trees.index = 0; Tracev((stderr, "inflate: bits tree ok\n")); s->mode = DTREE; case DTREE: while(t = s->sub.trees.table, s->sub.trees.index < 258 +(t & 0x1f)+((t >> 5)& 0x1f)){ inflate_huft *h; uInt i, j, c; t = s->sub.trees.bb; NEEDBITS(t)h = s->sub.trees.tb +((uInt)b & inflate_mask[t]); t = h->bits; c = h->base; if(c < 16){ DUMPBITS(t)s->sub.trees.blens[s->sub.trees.index++] = c; } else { i = c == 18 ? 7 : c - 14; j = c == 18 ? 11 : 3; NEEDBITS(t + i)DUMPBITS(t)j +=(uInt)b & inflate_mask[i]; DUMPBITS(i)i = s->sub.trees.index; t = s->sub.trees.table; if(i + j > 258 +(t & 0x1f)+((t >> 5)& 0x1f)||(c == 16 && i < 1)){ ZFREE(z, s->sub.trees.blens); s->mode = BAD; z->msg =(char*)"invalid bit length repeat"; r = Z_DATA_ERROR; LEAVE } c = c == 16 ? s->sub.trees.blens[i - 1] : 0; do { s->sub.trees.blens[i++] = c; } while(--j); s->sub.trees.index = i; } } s->sub.trees.tb = Z_NULL; { uInt bl, bd; inflate_huft *tl, *td; inflate_codes_statef *c; bl = 9; bd = 6; t = s->sub.trees.table; t = inflate_trees_dynamic(257 +(t & 0x1f), 1 +((t >> 5)& 0x1f), s->sub.trees.blens, &bl, &bd, &tl, &td, s->hufts, z); if(t != Z_OK){ if(t ==(uInt)Z_DATA_ERROR){ ZFREE(z, s->sub.trees.blens); s->mode = BAD; } r = t; LEAVE } Tracev((stderr, "inflate: trees ok\n")); if((c = inflate_codes_new(bl, bd, tl, td, z))== Z_NULL){ r = Z_MEM_ERROR; LEAVE } s->sub.decode.codes = c; } ZFREE(z, s->sub.trees.blens); s->mode = CODES; case CODES: UPDATE if((r = inflate_codes(s, z, r))!= Z_STREAM_END)return inflate_flush(s, z, r); r = Z_OK; inflate_codes_free(s->sub.decode.codes, z); LOAD Tracev((stderr, "inflate: codes end, %lu total out\n", z->total_out +(q >= s->read ? q - s->read :(s->end - s->read)+(q - s->window)))); if(!s->last){ s->mode = TYPE; break; } s->mode = DRY; case DRY: FLUSH if(s->read != s->write)LEAVE s->mode = DONE; case DONE: r = Z_STREAM_END; LEAVE case BAD: r = Z_DATA_ERROR; LEAVE default: r = Z_STREAM_ERROR; LEAVE } }
+  switch ((t >> 1)) {
+  uInt bl, bd;
+  inflate_huft *tl, *td;
+  if (s->sub.decode.codes == Z_NULL) {
+  r = Z_MEM_ERROR;
+  }
+  DUMPBITS(3)s->mode = CODES;
+  DUMPBITS(3)s->mode = TABLE;
+  DUMPBITS(3)s->mode = BAD;
+  z->msg =(char*)"invalid block type";
+  r = Z_DATA_ERROR;
+  }
+  if ((((~b)>> 16)& 0xffff)!=(b & 0xffff)) {
+  z->msg =(char*)"invalid stored block lengths";
+  r = Z_DATA_ERROR;
+  }
+  s->sub.left =(uInt)b & 0xffff;
+  b = k = 0;
+  NEEDOUT t = s->sub.left;
+  if (t > n) {
+  t = n;
+  }
+  if (t > m) {
+  t = m;
+  }
+  NEEDBITS(14)s->sub.trees.table = t =(uInt)b & 0x3fff;
+   #ifndef PKZIP_BUG_WORKAROUND
+  if ((t & 0x1f)> 29 ||((t >> 5)& 0x1f)> 29) {
+  z->msg =(char*)"too many length or distance symbols";
+  r = Z_DATA_ERROR;
+  }
+  #endif
+  t = 258 +(t & 0x1f)+((t >> 5)& 0x1f);
+  if ((s->sub.trees.blens =(uIntf*)ZALLOC(z, t, sizeof(uInt)))== Z_NULL) {
+  r = Z_MEM_ERROR;
+  }
+  case BTREE:
+  while ((s->sub.trees.index < 4 +(s->sub.trees.table >> 10))) {
+  NEEDBITS(3)s->sub.trees.blens[border[s->sub.trees.index++]] =(uInt)b & 7;
+  }
+  while ((s->sub.trees.index < 19)) {
+  s->sub.trees.blens[border[s->sub.trees.index++]] = 0;
+  }
+  s->sub.trees.bb = 7;
+  t = inflate_trees_bits(s->sub.trees.blens, &s->sub.trees.bb, &s->sub.trees.tb, s->hufts, z);
+  if (t != Z_OK) {
+  r = t;
+  if (r == Z_DATA_ERROR) {
++ ZFREE(z, s->sub.trees.blens);
++ s->mode = BAD;
+  }
+  }
+  s->sub.trees.index = 0;
+  s->mode = DTREE;
+- ZFREE(z, s->sub.trees.blens);
+- s->mode = BAD;
+  case DTREE:
+  while ((t = s->sub.trees.table, s->sub.trees.index < 258 +(t & 0x1f)+((t >> 5)& 0x1f))) {
+  inflate_huft *h;
+  uInt i, j, c;
+  t = s->sub.trees.bb;
+  NEEDBITS(t)h = s->sub.trees.tb +((uInt)b & inflate_mask[t]);
+  t = h->bits;
+  c = h->base;
+  if (c < 16) {
+  DUMPBITS(t)s->sub.trees.blens[s->sub.trees.index++] = c;
+  }
+  else {
+  i = c == 18 ? 7 : c - 14;
+  j = c == 18 ? 11 : 3;
+  DUMPBITS(t)j +=(uInt)b & inflate_mask[i]; DUMPBITS(i)i = s->sub.trees.index; t = s->sub.trees.table; if(i + j > 258 +(t & 0x1f)+((t >> 5)& 0x1f)||(c == 16 && i < 1)){ ZFREE(z, s->sub.trees.blens); s->mode = BAD; z->msg =(char*)"invalid bit length repeat"; r = Z_DATA_ERROR; LEAVE } c = c == 16 ? s->sub.trees.blens[i - 1] : 0; do { s->sub.trees.blens[i++] = c; } while(--j); s->sub.trees.index = i; }
+  DUMPBITS(i)i = s->sub.trees.index;
+  t = s->sub.trees.table;
+  ZFREE(z, s->sub.trees.blens);
+  s->mode = BAD;
+  z->msg =(char*)"invalid bit length repeat";
+  LEAVE } c = c == 16 ? s->sub.trees.blens[i - 1] : 0;
+  do {
+  s->sub.trees.blens[i++] = c;
+  } while ((--j));
+  s->sub.trees.index = i;
+  }
+  s->sub.trees.tb = Z_NULL;
+  uInt bl, bd;
+  inflate_huft *tl, *td;
+  bl = 9;
+  bd = 6;
+  t = s->sub.trees.table;
+  t = inflate_trees_dynamic(257 +(t & 0x1f), 1 +((t >> 5)& 0x1f), s->sub.trees.blens, &bl, &bd, &tl, &td, s->hufts, z);
+- ZFREE(z, s->sub.trees.blens);
+  if (t != Z_OK) {
+  if (t ==(uInt)Z_DATA_ERROR) {
++ ZFREE(z, s->sub.trees.blens);
++ s->mode = BAD;
+  }
+  }
+  if ((c = inflate_codes_new(bl, bd, tl, td, z))== Z_NULL) {
+  }
+  s->sub.decode.codes = c;
++ ZFREE(z, s->sub.trees.blens);
+  return inflate_flush(s, z, r);
+  }
+- s->mode = BAD;
+  int inflate_blocks_free(s, z)inflate_blocks_statef *s; z_streamp z; { inflate_blocks_reset(s, z, Z_NULL); ZFREE(z, s->window); ZFREE(z, s->hufts); ZFREE(z, s); Tracev((stderr, "inflate: blocks freed\n")); return Z_OK; }
+  inflate_blocks_reset(s, z, Z_NULL);
+  ZFREE(z, s->window);
+  ZFREE(z, s->hufts);
+  ZFREE(z, s);
+  void inflate_set_dictionary(s, d, n)inflate_blocks_statef *s; const Bytef *d; uInt n; { zmemcpy(s->window, d, n); s->read = s->write = s->window + n; }
+  zmemcpy(s->window, d, n);
+  s->read = s->write = s->window + n;
+  int inflate_blocks_sync_point(s)inflate_blocks_statef *s; { return s->mode == LENS; }
+  return s->mode == LENS;
+
+Context for merged statement of old file: infcodes.c with new file: infcodes.c:
+int inflate_codes(s, z, r) {
+  uInt j;
+  inflate_huft *t;
+  uInt e;
+  uLong b;
+  Bytef *q;
+  Bytef *f;
+  inflate_codes_statef *c = s->sub.decode.codes;
+- LOAD while(1)switch(c->mode){ case START: #ifndef SLOW if(m >= 258 && n >= 10){ UPDATE r = inflate_fast(c->lbits, c->dbits, c->ltree, c->dtree, s, z); LOAD if(r != Z_OK){ c->mode = r == Z_STREAM_END ? WASH : BADCODE; break; } } #endif c->sub.code.need = c->lbits; c->sub.code.tree = c->ltree; c->mode = LEN; case LEN: j = c->sub.code.need; NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]); DUMPBITS(t->bits)e =(uInt)(t->exop); if(e == 0){ c->sub.lit = t->base; Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ? "inflate: literal '%c'\n" : "inflate: literal 0x%02x\n", t->base)); c->mode = LIT; break; } if(e & 16){ c->sub.copy.get = e & 15; c->len = t->base; c->mode = LENEXT; break; } if((e & 64)== 0){ c->sub.code.need = e; c->sub.code.tree = t + t->base; break; } if(e & 32){ Tracevv((stderr, "inflate: end of block\n")); c->mode = WASH; break; } c->mode = BADCODE; z->msg =(char*)"invalid literal/length code"; r = Z_DATA_ERROR; LEAVE case LENEXT: j = c->sub.copy.get; NEEDBITS(j)c->len +=(uInt)b & inflate_mask[j]; DUMPBITS(j)c->sub.code.need = c->dbits; c->sub.code.tree = c->dtree; Tracevv((stderr, "inflate: length %u\n", c->len)); c->mode = DIST; case DIST: j = c->sub.code.need; NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]); DUMPBITS(t->bits)e =(uInt)(t->exop); if(e & 16){ c->sub.copy.get = e & 15; c->sub.copy.dist = t->base; c->mode = DISTEXT; break; } if((e & 64)== 0){ c->sub.code.need = e; c->sub.code.tree = t + t->base; break; } c->mode = BADCODE; z->msg =(char*)"invalid distance code"; r = Z_DATA_ERROR; LEAVE case DISTEXT: j = c->sub.copy.get; NEEDBITS(j)c->sub.copy.dist +=(uInt)b & inflate_mask[j]; DUMPBITS(j)Tracevv((stderr, "inflate: distance %u\n", c->sub.copy.dist)); c->mode = COPY; case COPY: #ifndef __TURBOC__ f =(uInt)(q - s->window)< c->sub.copy.dist ? s->end -(c->sub.copy.dist -(q - s->window)): q - c->sub.copy.dist; #else f = q - c->sub.copy.dist; if((uInt)(q - s->window)< c->sub.copy.dist)f = s->end -(c->sub.copy.dist -(uInt)(q - s->window)); #endif while(c->len){ NEEDOUT OUTBYTE(*f++)if(f == s->end)f = s->window; c->len--; } c->mode = START; break; case LIT: NEEDOUT OUTBYTE(c->sub.lit)c->mode = START; break; case WASH: if(k > 7){ Assert(k < 16, "inflate_codes grabbed too many bytes")k -= 8; n++; p--; } FLUSH if(s->read != s->write)LEAVE c->mode = END; case END: r = Z_STREAM_END; LEAVE case BADCODE: r = Z_DATA_ERROR; LEAVE default: r = Z_STREAM_ERROR; LEAVE }
++ LOAD while(1)switch(c->mode){ case START: #ifndef SLOW if(m >= 258 && n >= 10){ UPDATE r = inflate_fast(c->lbits, c->dbits, c->ltree, c->dtree, s, z); LOAD if(r != Z_OK){ c->mode = r == Z_STREAM_END ? WASH : BADCODE; break; } } #endif c->sub.code.need = c->lbits; c->sub.code.tree = c->ltree; c->mode = LEN; case LEN: j = c->sub.code.need; NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]); DUMPBITS(t->bits)e =(uInt)(t->exop); if(e == 0){ c->sub.lit = t->base; Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ? "inflate: literal '%c'\n" : "inflate: literal 0x%02x\n", t->base)); c->mode = LIT; break; } if(e & 16){ c->sub.copy.get = e & 15; c->len = t->base; c->mode = LENEXT; break; } if((e & 64)== 0){ c->sub.code.need = e; c->sub.code.tree = t + t->base; break; } if(e & 32){ Tracevv((stderr, "inflate: end of block\n")); c->mode = WASH; break; } c->mode = BADCODE; z->msg =(char*)"invalid literal/length code"; r = Z_DATA_ERROR; LEAVE case LENEXT: j = c->sub.copy.get; NEEDBITS(j)c->len +=(uInt)b & inflate_mask[j]; DUMPBITS(j)c->sub.code.need = c->dbits; c->sub.code.tree = c->dtree; Tracevv((stderr, "inflate: length %u\n", c->len)); c->mode = DIST; case DIST: j = c->sub.code.need; NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]); DUMPBITS(t->bits)e =(uInt)(t->exop); if(e & 16){ c->sub.copy.get = e & 15; c->sub.copy.dist = t->base; c->mode = DISTEXT; break; } if((e & 64)== 0){ c->sub.code.need = e; c->sub.code.tree = t + t->base; break; } c->mode = BADCODE; z->msg =(char*)"invalid distance code"; r = Z_DATA_ERROR; LEAVE case DISTEXT: j = c->sub.copy.get; NEEDBITS(j)c->sub.copy.dist +=(uInt)b & inflate_mask[j]; DUMPBITS(j)Tracevv((stderr, "inflate: distance %u\n", c->sub.copy.dist)); c->mode = COPY; case COPY: f = q - c->sub.copy.dist; while(f < s->window)f += s->end - s->window; while(c->len){ NEEDOUT OUTBYTE(*f++)if(f == s->end)f = s->window; c->len--; } c->mode = START; break; case LIT: NEEDOUT OUTBYTE(c->sub.lit)c->mode = START; break; case WASH: if(k > 7){ Assert(k < 16, "inflate_codes grabbed too many bytes")k -= 8; n++; p--; } FLUSH if(s->read != s->write)LEAVE c->mode = END; case END: r = Z_STREAM_END; LEAVE case BADCODE: r = Z_DATA_ERROR; LEAVE default: r = Z_STREAM_ERROR; LEAVE }
+  c->sub.code.need = c->lbits;
+  c->sub.code.tree = c->ltree;
+  j = c->sub.code.need;
+  NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]);
+  if (e & 16) {
+  c->sub.copy.get = e & 15;
+  c->len = t->base;
+  }
+  if ((e & 64)== 0) {
+  c->sub.code.need = e;
+  c->sub.code.tree = t + t->base;
+  }
+  j = c->sub.copy.get;
+  NEEDBITS(j)c->len +=(uInt)b & inflate_mask[j];
+  c->sub.code.tree = c->dtree;
+  j = c->sub.code.need;
+  NEEDBITS(j)t = c->sub.code.tree +((uInt)b & inflate_mask[j]);
+  if (e & 16) {
+  c->sub.copy.dist = t->base;
+  }
+  case COPY:
++ f = q - c->sub.copy.dist;
+- if((uInt)(q - s->window)< c->sub.copy.dist)f = s->end -(c->sub.copy.dist -(uInt)(q - s->window)); {
++ while ((f < s->window)) {
+- f = s->end -(c->sub.copy.dist -(uInt)(q - s->window));
++ f += s->end - s->window;
+  }
+  while ((c->len)) {
+  NEEDOUT OUTBYTE(*f++)if(f == s->end)f = s->window;
+  c->len--;
+  }
++ c->mode = START;
++ break;
+- #ifndef __TURBOC__
+- f =(uInt)(q - s->window)< c->sub.copy.dist ? s->end -(c->sub.copy.dist -(q - s->window)): q - c->sub.copy.dist;
+  #endif
+- f = q - c->sub.copy.dist;
+- break;
+- c->mode = START;
+  while ((c->len)) {
+  }
+}
+
+Context for merged statement of old file: inffast.c with new file: inffast.c:
+int inflate_fast(bl, bd, tl, td, s, z) {
+  inflate_huft *t;
+  uInt e;
+  uLong b;
+  Bytef *q;
+  uInt ml;
+  uInt md;
+  uInt c;
+  Bytef *r;
+  LOAD ml = inflate_mask[bl];
+  md = inflate_mask[bd];
+  do {
+  if ((e =(t = tl +((uInt)b & ml))->exop)== 0) {
+  *q++ =(Byte)t->base;
+  }
+  do {
+  if (e & 16) {
+  e &= 15;
+  c = t->base +((uInt)b & inflate_mask[e]);
+  e =(t = td +((uInt)b & md))->exop;
+  do {
+  if (e & 16) {
+  e &= 15;
+  GRABBITS(e)d = t->base +((uInt)b & inflate_mask[e]);
++ r = q - d;
+- if ((uInt)(q - s->window)>= d) {
++ if (r < s->window) {
+  do {
++ r += s->end - s->window;
++ } while ((r < s->window));
+- r = s->end - e;
++ e = s->end - r;
+  if (c > e) {
+  c -= e;
+  do {
+  *q++ = *r++;
+  } while ((--e));
+  r = s->window;
++ *q++ = *r++;
+  }
++ else {
+- e = d -(uInt)(q - s->window);
++ *q++ = *r++;
++ c--;
++ *q++ = *r++;
++ c--;
+  do {
++ *q++ = *r++;
++ } while ((--c));
++ }
++ *q++ = *r++;
++ c--;
+- *q++ = *r++;
++ c--;
+  }
+  else {
+- c--;
+- *q++ = *r++;
++ *q++ = *r++;
+  do {
++ *q++ = *r++;
+- *q++ = *r++;
+  } while ((--c));
+- r = q - d;
+  }
+  }
+  else {
+  do {
+  }
+  } while ((--c));
+  if ((e & 64)== 0) {
+  e =(t +=((uInt)b & inflate_mask[e]))->exop;
+  }
+  else {
+  return Z_DATA_ERROR;
+  }
+  }
+  } while ((1));
+  }
+  if ((e & 64)== 0) {
+  t += t->base;
+  if ((e =(t +=((uInt)b & inflate_mask[e]))->exop)== 0) {
+  DUMPBITS(t->bits)
+  Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ? "inflate: * literal '%c'\n" : "inflate: * literal 0x%02x\n", t->base));
+  *q++ =(Byte)t->base;
+  }
+  }
+  else {
+  if (e & 32) {
+  return Z_STREAM_END;
+  }
+  else {
+  return Z_DATA_ERROR;
+  }
+  }
+  } while ((1));
+  } while ((m >= 258 && n >= 10));
+
+Context for merged statement of old file: inftrees.c with new file: inftrees.c:
+- const char inflate_copyright[] = " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
++ const char inflate_copyright[] = " inflate 1.1.4 Copyright 1995-2002 Mark Adler ";
+
+Context for merged statement of old file: inftrees.c with new file: inftrees.c:
+local huft_build(b, n, s, d, e, t, m, hp, hn, v) {
+  for (; k <= g; k++) {
+  while ((a--)) {
+  while ((k > w + l)) {
+  if (*hn + z > MANY) {
+- return Z_MEM_ERROR;
++ return Z_DATA_ERROR;
+  }
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: zlib.h with new file: zlib.h:
+#ifndef _ZLIB_H
+   #ifdef __cplusplus
+- extern "C" { #endif #define ZLIB_VERSION "1.1.3" typedef voidpf(*alloc_func)OF((voidpf opaque, uInt items, uInt size)); typedef void(*free_func)OF((voidpf opaque, voidpf address)); struct internal_state; typedef struct z_stream_s { Bytef *next_in; uInt avail_in; uLong total_in; Bytef *next_out; uInt avail_out; uLong total_out; char *msg; struct internal_state FAR *state; alloc_func zalloc; free_func zfree; voidpf opaque; int data_type; uLong adler; uLong reserved; } z_stream; typedef z_stream FAR *z_streamp; #define Z_NO_FLUSH 0 #define Z_PARTIAL_FLUSH 1 #define Z_SYNC_FLUSH 2 #define Z_FULL_FLUSH 3 #define Z_FINISH 4 #define Z_OK 0 #define Z_STREAM_END 1 #define Z_NEED_DICT 2 #define Z_ERRNO(-1)#define Z_STREAM_ERROR(-2)#define Z_DATA_ERROR(-3)#define Z_MEM_ERROR(-4)#define Z_BUF_ERROR(-5)#define Z_VERSION_ERROR(-6)#define Z_NO_COMPRESSION 0 #define Z_BEST_SPEED 1 #define Z_BEST_COMPRESSION 9 #define Z_DEFAULT_COMPRESSION(-1)#define Z_FILTERED 1 #define Z_HUFFMAN_ONLY 2 #define Z_DEFAULT_STRATEGY 0 #define Z_BINARY 0 #define Z_ASCII 1 #define Z_UNKNOWN 2 #define Z_DEFLATED 8 #define Z_NULL 0 #define zlib_version zlibVersion()ZEXTERN const char * ZEXPORT zlibVersion OF((void)); ZEXTERN int ZEXPORT deflate OF((z_streamp strm, int flush)); ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm)); ZEXTERN int ZEXPORT inflate OF((z_streamp strm, int flush)); ZEXTERN int ZEXPORT inflateEnd OF((z_streamp strm)); ZEXTERN int ZEXPORT deflateSetDictionary OF((z_streamp strm, const Bytef *dictionary, uInt dictLength)); ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest, z_streamp source)); ZEXTERN int ZEXPORT deflateReset OF((z_streamp strm)); ZEXTERN int ZEXPORT deflateParams OF((z_streamp strm, int level, int strategy)); ZEXTERN int ZEXPORT inflateSetDictionary OF((z_streamp strm, const Bytef *dictionary, uInt dictLength)); ZEXTERN int ZEXPORT inflateSync OF((z_streamp strm)); ZEXTERN int ZEXPORT inflateReset OF((z_streamp strm)); ZEXTERN int ZEXPORT compress OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen)); ZEXTERN int ZEXPORT compress2 OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen, int level)); ZEXTERN int ZEXPORT uncompress OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen)); typedef voidp gzFile; ZEXTERN gzFile ZEXPORT gzopen OF((const char *path, const char *mode)); ZEXTERN gzFile ZEXPORT gzdopen OF((int fd, const char *mode)); ZEXTERN int ZEXPORT gzsetparams OF((gzFile file, int level, int strategy)); ZEXTERN int ZEXPORT gzread OF((gzFile file, voidp buf, unsigned len)); ZEXTERN int ZEXPORT gzwrite OF((gzFile file, const voidp buf, unsigned len)); ZEXTERN int ZEXPORTVA gzprintf OF((gzFile file, const char *format, ...)); ZEXTERN int ZEXPORT gzputs OF((gzFile file, const char *s)); ZEXTERN char * ZEXPORT gzgets OF((gzFile file, char *buf, int len)); ZEXTERN int ZEXPORT gzputc OF((gzFile file, int c)); ZEXTERN int ZEXPORT gzgetc OF((gzFile file)); ZEXTERN int ZEXPORT gzflush OF((gzFile file, int flush)); ZEXTERN z_off_t ZEXPORT gzseek OF((gzFile file, z_off_t offset, int whence)); ZEXTERN int ZEXPORT gzrewind OF((gzFile file)); ZEXTERN z_off_t ZEXPORT gztell OF((gzFile file)); ZEXTERN int ZEXPORT gzeof OF((gzFile file)); ZEXTERN int ZEXPORT gzclose OF((gzFile file)); ZEXTERN const char * ZEXPORT gzerror OF((gzFile file, int *errnum)); ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len)); ZEXTERN uLong ZEXPORT crc32 OF((uLong crc, const Bytef *buf, uInt len)); ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level, const char *version, int stream_size)); ZEXTERN int ZEXPORT inflateInit_ OF((z_streamp strm, const char *version, int stream_size)); ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy, const char *version, int stream_size)); ZEXTERN int ZEXPORT inflateInit2_ OF((z_streamp strm, int windowBits, const char *version, int stream_size)); #define deflateInit(strm, level)\ deflateInit_((strm), (level), ZLIB_VERSION, sizeof(z_stream))#define inflateInit(strm)\ inflateInit_((strm), ZLIB_VERSION, sizeof(z_stream))#define deflateInit2(strm, level, method, windowBits, memLevel, strategy)\ deflateInit2_((strm), (level), (method), (windowBits), (memLevel), \(strategy), ZLIB_VERSION, sizeof(z_stream))#define inflateInit2(strm, windowBits)\ inflateInit2_((strm), (windowBits), ZLIB_VERSION, sizeof(z_stream))#if !defined(_Z_UTIL_H)&& !defined(NO_DUMMY_DECL)struct internal_state {int dummy;}; #endif ZEXTERN const char * ZEXPORT zError OF((int err)); ZEXTERN int ZEXPORT inflateSyncPoint OF((z_streamp z)); ZEXTERN const uLongf * ZEXPORT get_crc_table OF((void)); #ifdef __cplusplus }
++ extern "C" { #endif #define ZLIB_VERSION "1.1.4" typedef voidpf(*alloc_func)OF((voidpf opaque, uInt items, uInt size)); typedef void(*free_func)OF((voidpf opaque, voidpf address)); struct internal_state; typedef struct z_stream_s { Bytef *next_in; uInt avail_in; uLong total_in; Bytef *next_out; uInt avail_out; uLong total_out; char *msg; struct internal_state FAR *state; alloc_func zalloc; free_func zfree; voidpf opaque; int data_type; uLong adler; uLong reserved; } z_stream; typedef z_stream FAR *z_streamp; #define Z_NO_FLUSH 0 #define Z_PARTIAL_FLUSH 1 #define Z_SYNC_FLUSH 2 #define Z_FULL_FLUSH 3 #define Z_FINISH 4 #define Z_OK 0 #define Z_STREAM_END 1 #define Z_NEED_DICT 2 #define Z_ERRNO(-1)#define Z_STREAM_ERROR(-2)#define Z_DATA_ERROR(-3)#define Z_MEM_ERROR(-4)#define Z_BUF_ERROR(-5)#define Z_VERSION_ERROR(-6)#define Z_NO_COMPRESSION 0 #define Z_BEST_SPEED 1 #define Z_BEST_COMPRESSION 9 #define Z_DEFAULT_COMPRESSION(-1)#define Z_FILTERED 1 #define Z_HUFFMAN_ONLY 2 #define Z_DEFAULT_STRATEGY 0 #define Z_BINARY 0 #define Z_ASCII 1 #define Z_UNKNOWN 2 #define Z_DEFLATED 8 #define Z_NULL 0 #define zlib_version zlibVersion()ZEXTERN const char * ZEXPORT zlibVersion OF((void)); ZEXTERN int ZEXPORT deflate OF((z_streamp strm, int flush)); ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm)); ZEXTERN int ZEXPORT inflate OF((z_streamp strm, int flush)); ZEXTERN int ZEXPORT inflateEnd OF((z_streamp strm)); ZEXTERN int ZEXPORT deflateSetDictionary OF((z_streamp strm, const Bytef *dictionary, uInt dictLength)); ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest, z_streamp source)); ZEXTERN int ZEXPORT deflateReset OF((z_streamp strm)); ZEXTERN int ZEXPORT deflateParams OF((z_streamp strm, int level, int strategy)); ZEXTERN int ZEXPORT inflateSetDictionary OF((z_streamp strm, const Bytef *dictionary, uInt dictLength)); ZEXTERN int ZEXPORT inflateSync OF((z_streamp strm)); ZEXTERN int ZEXPORT inflateReset OF((z_streamp strm)); ZEXTERN int ZEXPORT compress OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen)); ZEXTERN int ZEXPORT compress2 OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen, int level)); ZEXTERN int ZEXPORT uncompress OF((Bytef *dest, uLongf *destLen, const Bytef *source, uLong sourceLen)); typedef voidp gzFile; ZEXTERN gzFile ZEXPORT gzopen OF((const char *path, const char *mode)); ZEXTERN gzFile ZEXPORT gzdopen OF((int fd, const char *mode)); ZEXTERN int ZEXPORT gzsetparams OF((gzFile file, int level, int strategy)); ZEXTERN int ZEXPORT gzread OF((gzFile file, voidp buf, unsigned len)); ZEXTERN int ZEXPORT gzwrite OF((gzFile file, const voidp buf, unsigned len)); ZEXTERN int ZEXPORTVA gzprintf OF((gzFile file, const char *format, ...)); ZEXTERN int ZEXPORT gzputs OF((gzFile file, const char *s)); ZEXTERN char * ZEXPORT gzgets OF((gzFile file, char *buf, int len)); ZEXTERN int ZEXPORT gzputc OF((gzFile file, int c)); ZEXTERN int ZEXPORT gzgetc OF((gzFile file)); ZEXTERN int ZEXPORT gzflush OF((gzFile file, int flush)); ZEXTERN z_off_t ZEXPORT gzseek OF((gzFile file, z_off_t offset, int whence)); ZEXTERN int ZEXPORT gzrewind OF((gzFile file)); ZEXTERN z_off_t ZEXPORT gztell OF((gzFile file)); ZEXTERN int ZEXPORT gzeof OF((gzFile file)); ZEXTERN int ZEXPORT gzclose OF((gzFile file)); ZEXTERN const char * ZEXPORT gzerror OF((gzFile file, int *errnum)); ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len)); ZEXTERN uLong ZEXPORT crc32 OF((uLong crc, const Bytef *buf, uInt len)); ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level, const char *version, int stream_size)); ZEXTERN int ZEXPORT inflateInit_ OF((z_streamp strm, const char *version, int stream_size)); ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int level, int method, int windowBits, int memLevel, int strategy, const char *version, int stream_size)); ZEXTERN int ZEXPORT inflateInit2_ OF((z_streamp strm, int windowBits, const char *version, int stream_size)); #define deflateInit(strm, level)\ deflateInit_((strm), (level), ZLIB_VERSION, sizeof(z_stream))#define inflateInit(strm)\ inflateInit_((strm), ZLIB_VERSION, sizeof(z_stream))#define deflateInit2(strm, level, method, windowBits, memLevel, strategy)\ deflateInit2_((strm), (level), (method), (windowBits), (memLevel), \(strategy), ZLIB_VERSION, sizeof(z_stream))#define inflateInit2(strm, windowBits)\ inflateInit2_((strm), (windowBits), ZLIB_VERSION, sizeof(z_stream))#if !defined(_Z_UTIL_H)&& !defined(NO_DUMMY_DECL)struct internal_state {int dummy;}; #endif ZEXTERN const char * ZEXPORT zError OF((int err)); ZEXTERN int ZEXPORT inflateSyncPoint OF((z_streamp z)); ZEXTERN const uLongf * ZEXPORT get_crc_table OF((void)); #ifdef __cplusplus }
+- #define ZLIB_VERSION "1.1.3"
++ #define ZLIB_VERSION "1.1.4"
+  const Bytef *dictionary, uInt dictLength));
+  int level, int strategy));
+  const Bytef *dictionary, uInt dictLength));
+  int level, int strategy));
+  const voidp buf, unsigned len));
+  const Bytef *buf, uInt len));
+  const Bytef *buf, uInt len));
+  int level, const char *version, int stream_size));
+  const char *version, int stream_size));
+  int level, int method, int windowBits, int memLevel, int strategy, const char *version, int stream_size));
+  int windowBits, const char *version, int stream_size));
+  #define deflateInit(strm, level)\ deflateInit_((strm), (level), ZLIB_VERSION, sizeof(z_stream))
+  #define inflateInit(strm)\ inflateInit_((strm), ZLIB_VERSION, sizeof(z_stream))
+  #define deflateInit2(strm, level, method, windowBits, memLevel, strategy)\ deflateInit2_((strm), (level), (method), (windowBits), (memLevel), \(strategy), ZLIB_VERSION, sizeof(z_stream))
+  #define inflateInit2(strm, windowBits)\ inflateInit2_((strm), (windowBits), ZLIB_VERSION, sizeof(z_stream))
+  #endif
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: DUMPBITS — infutil.h:76 [gtags_unique] --
+#define DUMPBITS(j) {b>>=(j);k-=(j);}
+
+-- called macro: ZFREE — zutil.h:217 [gtags_unique] --
+#define ZFREE(strm, addr)  (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
+
+-- called macro: Tracev — zutil.h:196 [lsp] --
+#  define Tracev(x) {if (z_verbose>0) fprintf x ;}
+
+-- called macro: Tracevv — zutil.h:197 [lsp] --
+#  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
+
+-- called macro: NEEDBITS — infutil.h:75 [gtags_unique] --
+#define NEEDBITS(j) {while(k<(j)){NEEDBYTE;b|=((uLong)NEXTBYTE)<<k;k+=8;}}
+
+-- called macro: OF — zconf.h:137 [priority_fallback] --
+#    define OF(args)  ()
+
+-- called function: inflate_flush — infutil.c:23 [gtags_unique] --
+int inflate_flush(s, z, r) inflate_blocks_statef *s; z_streamp z; int r; {
+   ...
+   if(n && r == Z_BUF_ERROR)
+     r = Z_OK;
+   ...
+   if(q == s->end) {
+   ...
+     if(n && r == Z_BUF_ERROR)
+       r = Z_OK;
+   ...
+   }
+   ...
+   return r;
+}
+
+-- called function: inflate_trees_dynamic — inftrees.c:321 [gtags_unique, old version] --
+int inflate_trees_dynamic(nl, nd, c, bl, bd, tl, td, hp, z) uInt nl;                /* number of literal/length codes */ uInt nd;                /* number of distance codes */ uIntf *c; {
+   int r;
+   uInt hn = 0;
+   uIntf *v;
+   if((v =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL)
+     return Z_MEM_ERROR;
+   r = huft_build(c, nl, 257, cplens, cplext, tl, bl, hp, &hn, v);
+   if(r != Z_OK || *bl == 0) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r != Z_MEM_ERROR) {
+   ...
+       r = Z_DATA_ERROR;
+     }
+   ...
+     return r;
+   }
+   r = huft_build(c + nl, nd, 0, cpdist, cpdext, td, bd, hp, &hn, v);
+   if(r != Z_OK ||(*bd == 0 && nl > 257)) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r == Z_BUF_ERROR) {
+       #ifdef ...
+       r = Z_OK;
+       #endif
+     }
+   ...
+     r = Z_DATA_ERROR;
+   } else if(r != Z_MEM_ERROR) {
+   ...
+     r = Z_DATA_ERROR;
+   }
+   ...
+   return r;
+}
+
+-- called macro: GRABBITS — inffast.c:20 [gtags_unique, old version] --
+#define GRABBITS(j) {while(k<(j)){b|=((uLong)NEXTBYTE)<<k;k+=8;}}
+
+-- called function: inflate_codes_free — infcodes.c:251 [gtags_unique, old version] --
+void inflate_codes_free(c, z) inflate_codes_statef *c; z_streamp z; {
+   ...
+}
+
+-- called function: inflate_trees_dynamic — inftrees.c:320 [gtags_unique, new version] --
+int inflate_trees_dynamic(nl, nd, c, bl, bd, tl, td, hp, z) uInt nl;                /* number of literal/length codes */ uInt nd;                /* number of distance codes */ uIntf *c; {
+   int r;
+   uInt hn = 0;
+   uIntf *v;
+   if((v =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL)
+     return Z_MEM_ERROR;
+   r = huft_build(c, nl, 257, cplens, cplext, tl, bl, hp, &hn, v);
+   if(r != Z_OK || *bl == 0) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r != Z_MEM_ERROR) {
+   ...
+       r = Z_DATA_ERROR;
+     }
+   ...
+     return r;
+   }
+   r = huft_build(c + nl, nd, 0, cpdist, cpdext, td, bd, hp, &hn, v);
+   if(r != Z_OK ||(*bd == 0 && nl > 257)) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r == Z_BUF_ERROR) {
+       #ifdef ...
+       r = Z_OK;
+       #endif
+     }
+   ...
+     r = Z_DATA_ERROR;
+   } else if(r != Z_MEM_ERROR) {
+   ...
+     r = Z_DATA_ERROR;
+   }
+   ...
+   return r;
+}
+
+-- called macro: ZEXPORT — zconf.h:180 [priority_fallback, new version] --
+#      define ZEXPORT __declspec(dllexport) WINAPI
+
+-- called macro: Z_DATA_ERROR — zlib.h:137 [gtags_unique, new version] --
+#define Z_DATA_ERROR   (-3)
+
+-- caller of deflateInit2_: deflateInit_ — deflate.c:196 --
+int ZEXPORT deflateInit_(strm, level, version, stream_size) z_streamp strm; int level; const char *version; int stream_size; {
+>  return deflateInit2_(strm, level, Z_DEFLATED, MAX_WBITS, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY, version, stream_size);
+}
+
+-- caller of inflate_blocks: inflate — inflate.c:221 --
+int ZEXPORT inflate(z, f) z_streamp z; int f; {
+   int r;
+   ...
+   r = Z_BUF_ERROR;
+   while(1)
+     switch(z->state->mode) {
+   ...
+         z->state->mode = BAD;
+         z->msg =(char*)"unknown compression method";
+         z->state->sub.marker = 5;
+   ...
+       if((z->state->sub.method >> 4)+ 8 > z->state->wbits) {
+         z->state->mode = BAD;
+         z->msg =(char*)"invalid window size";
+         z->state->sub.marker = 5;
+   ...
+       }
+       z->state->mode = FLAG;
+   ...
+       if(((z->state->sub.method << 8)+ b)% 31) {
+         z->state->mode = BAD;
+         z->msg =(char*)"incorrect header check";
+         z->state->sub.marker = 5;
+   ...
+       }
+   ...
+       if(!(b & PRESET_DICT)) {
+         z->state->mode = BLOCKS;
+   ...
+       }
+       z->state->mode = DICT4;
+   ...
+       z->state->mode = DICT3;
+   ...
+       z->state->mode = DICT2;
+   ...
+       z->state->mode = DICT1;
+   ...
+       z->state->mode = BAD;
+       z->msg =(char*)"need dictionary";
+       z->state->sub.marker = 0;
+   ...
+>      r = inflate_blocks(z->state->blocks, z, r);
+       if(r == Z_DATA_ERROR) {
+   ...
+       }
+       if(r == Z_OK)
+   ...
+       if(r != Z_STREAM_END)
+         return r;
+   ...
+     }
+}
+
+-- caller of inflate_codes: inflate_blocks — infblock.c:340 --
+int inflate_blocks(s, z, r) inflate_blocks_statef *s; z_streamp z; int r; {
+   ...
+   while(t = s->sub.trees.table, s->sub.trees.index < 258 +(t & 0x1f)+((t >> 5)& 0x1f)) {
+   ...
+   case CODES: UPDATE if((r = inflate_codes(s, z, r))!= Z_STREAM_END)return inflate_flush(s, z, r); r = Z_OK; inflate_codes_free(s->sub.decode.codes, z); LOAD Tracev((stderr, "inflate: codes end, %lu total out\n", z->total_out +(q >= s->read ? q - s->read :(s->end - s->read)+(q - s->window)))); if(!s->last) {
+   ...
+   }
+   }
+}
+
+-- caller of inflate_fast: inflate_codes — infcodes.c:109 --
+int inflate_codes(s, z, r) inflate_blocks_statef *s; z_streamp z; int r; {
+   ...
+   inflate_codes_statef *c = s->sub.decode.codes;
+   ...
+   #ifndef ...
+   if(m >= 258 && n >= 10) {
+   UPDATE r = inflate_fast(c->lbits, c->dbits, c->ltree, c->dtree, s, z);
+   LOAD if(r != Z_OK){ c->mode = r == Z_STREAM_END ? WASH : BADCODE; break; }
+   c->mode = r == Z_STREAM_END ? WASH : BADCODE;
+   ...
+   }
+   #endif
+   ...
+   while(c->len) {
+   NEEDOUT OUTBYTE(*f++)if(f == s->end)f = s->window;
+   ...
+   }
+}
+
+-- caller of huft_build: inflate_trees_bits — inftrees.c:306 --
+int inflate_trees_bits(c, bb, tb, hp, z) uIntf *c;               /* 19 code lengths */ uIntf *bb;              /* bits tree desired/actual depth */ inflate_huft * FAR *tb; /* bits tree result */ infla {
+   ...
+   uInt hn = 0;
+   uIntf *v;
+   if((v =(uIntf*)ZALLOC(z, 19, sizeof(uInt)))== Z_NULL)
+   ...
+>  r = huft_build(c, 19, 19, (uIntf*)Z_NULL, (uIntf*)Z_NULL, tb, bb, hp, &hn, v);
+   if(r == Z_DATA_ERROR)
+   ...
+   else if(r == Z_BUF_ERROR || *bb == 0) {
+   ...
+   }
+   ...
+   return r;
+}
+
+-- caller of huft_build: inflate_trees_dynamic — inftrees.c:340 --
+int inflate_trees_dynamic(nl, nd, c, bl, bd, tl, td, hp, z) uInt nl;                /* number of literal/length codes */ uInt nd;                /* number of distance codes */ uIntf *c; {
+   ...
+   uInt hn = 0;
+   uIntf *v;
+   if((v =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL)
+   ...
+>  r = huft_build(c, nl, 257, cplens, cplext, tl, bl, hp, &hn, v);
+   if(r != Z_OK || *bl == 0) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r != Z_MEM_ERROR) {
+   ...
+     }
+   ...
+     return r;
+   }
+   ...
+   if(r != Z_OK ||(*bd == 0 && nl > 257)) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r == Z_BUF_ERROR) {
+   ...
+     }
+   } else if(r != Z_MEM_ERROR) {
+   ...
+   }
+   ...
+   return r;
+}
+
+-- caller of huft_build: inflate_trees_dynamic — inftrees.c:355 --
+int inflate_trees_dynamic(nl, nd, c, bl, bd, tl, td, hp, z) uInt nl;                /* number of literal/length codes */ uInt nd;                /* number of distance codes */ uIntf *c; {
+   ...
+   uInt hn = 0;
+   uIntf *v;
+   if((v =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL)
+   ...
+>  r = huft_build(c + nl, nd, 0, cpdist, cpdext, td, bd, hp, &hn, v);
+   if(r != Z_OK ||(*bd == 0 && nl > 257)) {
+     if(r == Z_DATA_ERROR)
+   ...
+     else if(r == Z_BUF_ERROR) {
+   ...
+     }
+   } else if(r != Z_MEM_ERROR) {
+   ...
+   }
+   ...
+   return r;
+}
+
+-- caller of huft_build: inflate_trees_fixed — inftrees.c:433 --
+int inflate_trees_fixed(bl, bd, tl, td, z) uIntf *bl;               /* literal desired/actual bit depth */ uIntf *bd;               /* distance desired/actual bit depth */ inflate_huft * FAR *tl;  /* {
+   #ifdef ...
+   if(!fixed_built) {
+     int k;
+     uInt f = 0;
+     uIntf *c;
+     uIntf *v;
+     if((c =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL)
+   ...
+     if((v =(uIntf*)ZALLOC(z, 288, sizeof(uInt)))== Z_NULL) {
+   ...
+     }
+     for(k = 0; k < 144; k++)
+       c[k] = 8;
+     for(; k < 256; k++)
+       c[k] = 9;
+     for(; k < 280; k++)
+       c[k] = 7;
+     for(; k < 288; k++)
+       c[k] = 8;
+     fixed_bl = 9;
+>    huft_build(c, 288, 257, cplens, cplext, &fixed_tl, &fixed_bl, fixed_mem, &f, v);
+   ...
+   }
+   #endif
+}

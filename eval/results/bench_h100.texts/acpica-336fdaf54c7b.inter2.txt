@@ -1,0 +1,246 @@
+Context for merged statement of old file: source/common/adisasm.c with new file: source/common/adisasm.c:
+ACPI_STATUS AdDoExternalFileList (
+    char                    *Filename) {
+  while ((ExternalFileList)) {
+  while ((ExternalListHead)) {
++ AcpiGbl_ParseOpRoot = NULL;
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:203 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: AcpiDmFinishNamespaceLoad — source/common/adwalk.c:305 [gtags_unique] --
+void AcpiDmFinishNamespaceLoad ( ACPI_PARSE_OBJECT       *ParseTreeRoot, ACPI_NAMESPACE_NODE     *NamespaceRoot, ACPI_OWNER_ID           OwnerId) {
+   ...
+   ACPI_OP_WALK_INFO Info;
+   ACPI_WALK_STATE *WalkState;
+   if(!ParseTreeRoot) {
+     return;
+   }
+   WalkState = AcpiDsCreateWalkState(OwnerId, ParseTreeRoot, NULL, NULL);
+   if(!WalkState) {
+     return;
+   }
+   Status = AcpiDsScopeStackPush(NamespaceRoot, NamespaceRoot->Type, WalkState);
+   if(ACPI_FAILURE(Status)) {
+     return;
+   }
+   Info.Flags = 0;
+   Info.Level = 0;
+   Info.WalkState = WalkState;
+   AcpiDmWalkParseTree(ParseTreeRoot, AcpiDmLoadDescendingOp, AcpiDmCommonAscendingOp, &Info);
+   ACPI_FREE(WalkState);
+}
+   [reads: NamespaceRoot, OwnerId, ParseTreeRoot; writes: -]
+
+-- called function: AdParseTable — source/common/dmtables.c:484 [gtags_unique] --
+ACPI_STATUS AdParseTable ( ACPI_TABLE_HEADER       *Table, ACPI_OWNER_ID           *OwnerId, BOOLEAN                 LoadTable, BOOLEAN                 External) {
+   ACPI_STATUS Status = AE_OK;
+   ACPI_WALK_STATE *WalkState;
+   UINT8 *AmlStart;
+   UINT32 AmlLength;
+   UINT32 TableIndex;
+   if(!Table) {
+     return(AE_NOT_EXIST);
+   }
+   fprintf(stderr, "Pass 1 parse of [%4.4s]\n", (char *)Table->Signature);
+   AmlLength = Table->Length - sizeof(ACPI_TABLE_HEADER);
+   AmlStart =((UINT8 *)Table + sizeof(ACPI_TABLE_HEADER));
+   AcpiUtSetIntegerWidth(Table->Revision);
+   AcpiGbl_ParseOpRoot = AcpiPsCreateScopeOp(AmlStart);
+   if(!AcpiGbl_ParseOpRoot) {
+     return(AE_NO_MEMORY);
+   }
+   #ifdef ...
+   if(AcpiGbl_CaptureComments) {
+     AcpiGbl_ParseOpRoot->Common.CvFilename = AcpiGbl_FileTreeRoot->Filename;
+   } else {
+     AcpiGbl_ParseOpRoot->Common.CvFilename = NULL;
+   }
+   #endif
+   WalkState = AcpiDsCreateWalkState(0, AcpiGbl_ParseOpRoot, NULL, NULL);
+   if(!WalkState) {
+     return(AE_NO_MEMORY);
+   }
+   Status = AcpiDsInitAmlWalk(WalkState, AcpiGbl_ParseOpRoot, NULL, AmlStart, AmlLength, NULL, ACPI_IMODE_LOAD_PASS1);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   WalkState->ParseFlags &= ~ACPI_PARSE_DELETE_TREE;
+   Status = AcpiPsParseAml(WalkState);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   TableIndex = AcpiGbl_RootTableList.CurrentTableCount - 1;
+   if(LoadTable) {
+     Status = AdStoreTable(Table, &TableIndex);
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+     Status = AcpiTbAllocateOwnerId(TableIndex);
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+     if(OwnerId) {
+       Status = AcpiTbGetOwnerId(TableIndex, OwnerId);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+     }
+   }
+   fprintf(stderr, "Pass 2 parse of [%4.4s]\n", (char *)Table->Signature);
+   Status = AcpiNsOneCompleteParse(ACPI_IMODE_LOAD_PASS2, TableIndex, NULL);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   if(External) {
+     return(AE_OK);
+   }
+   ...
+   (void)AcpiDmParseDeferredOps(AcpiGbl_ParseOpRoot);
+   ...
+   AcpiDmFindResources(AcpiGbl_ParseOpRoot);
+   ...
+   return(AE_OK);
+}
+   [reads: External, LoadTable, OwnerId, Table; writes: -]
+
+-- called function: AcGetAllTablesFromFile — source/common/acfileio.c:220 [gtags_unique] --
+ACPI_STATUS AcGetAllTablesFromFile ( char                    *Filename, UINT8                   GetOnlyAmlTables, ACPI_NEW_TABLE_DESC     **ReturnListHead) {
+   ACPI_NEW_TABLE_DESC *ListHead = NULL;
+   ...
+   ACPI_NEW_TABLE_DESC *TableDesc;
+   FILE *File;
+   ACPI_TABLE_HEADER *Table = NULL;
+   UINT32 FileSize;
+   ACPI_STATUS Status = AE_OK;
+   File = fopen(Filename, "rb");
+   if(!File) {
+     fprintf(stderr, "Could not open input file: %s\n", Filename);
+     if(errno == ENOENT) {
+       return(AE_NOT_EXIST);
+     }
+     return(AE_ERROR);
+   }
+   FileSize = CmGetFileSize(File);
+   if(FileSize == ACPI_UINT32_MAX) {
+     Status = AE_ERROR;
+   ...
+   }
+   fprintf(stderr, "Input file %s, Length 0x%X(%u)bytes\n", Filename, FileSize, FileSize);
+   if(FileSize < sizeof(ACPI_TABLE_HEADER)) {
+     Status = AE_BAD_HEADER;
+   ...
+   }
+   if(!AcIsFileBinary(File)) {
+     fprintf(stderr, " %s: File does not appear to contain a valid AML table\n", Filename);
+     Status = AE_TYPE;
+   ...
+   }
+   while(ACPI_SUCCESS(Status)) {
+     Status = AcGetOneTableFromFile(Filename, File, GetOnlyAmlTables, &Table);
+     if(Status == AE_CTRL_TERMINATE) {
+       Status = AE_OK;
+   ...
+     } else if(Status == AE_TYPE) {
+       Status = AE_OK;
+   ...
+     } else if(ACPI_FAILURE(Status)) {
+   ...
+     }
+   ...
+     TableDesc = AcpiOsAllocate(sizeof(ACPI_NEW_TABLE_DESC));
+     if(!TableDesc) {
+   ...
+       Status = AE_NO_MEMORY;
+   ...
+     }
+     TableDesc->Table = Table;
+     TableDesc->Next = NULL;
+     if(!ListHead) {
+       ListHead = TableDesc;
+   ...
+     } else {
+     }
+   }
+   if(*ReturnListHead) {
+     ListTail = *ReturnListHead;
+     while(ListTail->Next) {
+       ListTail = ListTail->Next;
+     }
+     ListTail->Next = ListHead;
+   } else {
+     *ReturnListHead = ListHead;
+   }
+   ...
+   fclose(File);
+   return(Status);
+}
+   [reads: Filename, GetOnlyAmlTables, ReturnListHead; writes: ReturnListHead*]
+
+-- caller of AdDoExternalFileList: AdAmlDisassemble — source/common/adisasm.c:325 --
+ACPI_STATUS AdAmlDisassemble ( BOOLEAN                 OutToFile, char                    *Filename, char                    *Prefix, char                    **OutFilename) {
+   ...
+   if(Filename) {
+   ...
+>    Status = AdDoExternalFileList(Filename);
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+   } else {
+   ...
+     if(ACPI_FAILURE(Status)) {
+       AcpiOsPrintf("Could not get ACPI tables, %s\n", AcpiFormatException(Status));
+       return(Status);
+     }
+   ...
+     if(ACPI_FAILURE(Status)) {
+       AcpiOsPrintf("Could not get DSDT, %s\n", AcpiFormatException(Status));
+       return(Status);
+   ...
+     }
+   }
+   ...
+   while(ListHead) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+   ...
+     }
+   }
+   ...
+   return(Status);
+}
+
+-- 2nd-level context (summaries) --
+  AcpiDsCreateWalkState — source/components/dispatcher/dswstate.c:707 [gtags_unique]: ACPI_WALK_STATE * AcpiDsCreateWalkState ( ACPI_OWNER_ID           OwnerId, ACPI_PARSE_OBJECT       *Origin, ACPI_OPERAND_OBJECT     *MethodDesc, ACPI_THREAD_STATE       *Thread)
+    reads: MethodDesc, Origin, OwnerId, Thread; writes: -
+  AcpiDsScopeStackPush — source/components/dispatcher/dswscope.c:214 [gtags_unique]: ACPI_STATUS AcpiDsScopeStackPush ( ACPI_NAMESPACE_NODE     *Node, ACPI_OBJECT_TYPE        Type, ACPI_WALK_STATE         *WalkState)
+    reads: Node, Type, WalkState; writes: WalkState*
+  AcpiDmWalkParseTree — source/components/disassembler/dmwalk.c:253 [gtags_unique]: void AcpiDmWalkParseTree ( ACPI_PARSE_OBJECT       *Op, ASL_WALK_CALLBACK       DescendingCallback, ASL_WALK_CALLBACK       AscendingCallback, void                    *Context)
+    reads: AscendingCallback, Context, DescendingCallback, Op; writes: Context*
+  ACPI_FREE — source/include/actypes.h:494 [lsp]: #define ACPI_FREE(a)                    AcpiOsFree (a)
+  AcpiUtSetIntegerWidth — source/components/utilities/utmisc.c:288 [gtags_unique]: void AcpiUtSetIntegerWidth ( UINT8                   Revision)
+    reads: Revision; writes: -
+  AcpiDsInitAmlWalk — source/components/dispatcher/dswstate.c:769 [gtags_unique]: ACPI_STATUS AcpiDsInitAmlWalk ( ACPI_WALK_STATE         *WalkState, ACPI_PARSE_OBJECT       *Op, ACPI_NAMESPACE_NODE     *MethodNode, UINT8                   *AmlStart, UINT32                  AmlLeng
+    reads: AmlLength, AmlStart, Info, MethodNode, Op, PassNumber, WalkState; writes: WalkState*
+  AcpiPsParseAml — source/components/parser/psparse.c:560 [gtags_unique]: ACPI_STATUS AcpiPsParseAml ( ACPI_WALK_STATE         *WalkState)
+    reads: WalkState; writes: WalkState*
+  AdStoreTable — source/common/dmtables.c:397 [gtags_unique]: static ACPI_STATUS AdStoreTable ( ACPI_TABLE_HEADER       *Table, UINT32                  *TableIndex)
+    reads: Table, TableIndex; writes: -
+  AcpiTbAllocateOwnerId — source/components/tables/tbdata.c:1030 [gtags_unique]: ACPI_STATUS AcpiTbAllocateOwnerId ( UINT32                  TableIndex)
+    reads: TableIndex; writes: -
+  AcpiTbGetOwnerId — source/components/tables/tbdata.c:1100 [gtags_unique]: ACPI_STATUS AcpiTbGetOwnerId ( UINT32                  TableIndex, ACPI_OWNER_ID           *OwnerId)
+    reads: OwnerId, TableIndex; writes: OwnerId*
+  AcpiNsOneCompleteParse — source/components/namespace/nsparse.c:301 [gtags_unique]: ACPI_STATUS AcpiNsOneCompleteParse ( UINT32                  PassNumber, UINT32                  TableIndex, ACPI_NAMESPACE_NODE     *StartNode)
+    reads: PassNumber, StartNode, TableIndex; writes: -
+  AcpiDmFindResources — source/common/dmrestag.c:1088 [gtags_unique]: void AcpiDmFindResources ( ACPI_PARSE_OBJECT       *Root)
+    reads: Root; writes: Root*
+  AcGetOneTableFromFile — source/common/acfileio.c:379 [gtags_unique]: static ACPI_STATUS AcGetOneTableFromFile ( char                    *Filename, FILE                    *File, UINT8                   GetOnlyAmlTables, ACPI_TABLE_HEADER       **ReturnTable)
+    reads: File, Filename, GetOnlyAmlTables, ReturnTable; writes: ReturnTable*
+  AcpiOsAllocate — source/include/platform/aclinuxex.h:194 [priority_fallback]: static inline void * AcpiOsAllocate ( ACPI_SIZE               Size)
+    reads: Size; writes: -

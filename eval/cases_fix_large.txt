@@ -1,0 +1,21 @@
+# Curated repair cases: hand-labeled vulnerability fixes in LARGE C projects
+# (many files to navigate). One `<repo url> <sha>` per line; the agent is
+# told only the function name(s). Selected 2026-09-17 from data/dataset_manual.json
+# by tree size and change shape (<=2 pre-existing functions, small diff).
+# Linux/OpenBSD checkouts fetch 40-75k blobs on first use (minutes each).
+
+https://github.com/torvalds/linux 21643e69a4   # linux, 37k files: gntalloc_ioctl_alloc (2 lines)
+https://github.com/torvalds/linux 3fd61b2099   # linux, 49k files: nvme_trans_inquiry (3 lines)
+https://github.com/torvalds/linux 128c664292   # linux, 66k files: ccp_run_sha_cmd (3 lines)
+https://github.com/torvalds/linux 29eb315427   # linux, 75k files: yam_siocdevprivate (4 lines)
+https://github.com/torvalds/linux 974a9f0b47   # linux, 23k files: may_open (4 lines)
+https://github.com/torvalds/linux a497e47d4a   # linux, 45k files: lbs_debugfs_write (6 lines)
+https://github.com/openbsd/src 789f384cc6   # openbsd src, 64k files: sosend (7 lines)
+https://github.com/php/php-src a1631ac57b   # php-src, 18k files: exif_process_IFD_in_MAKERNOTE (4 lines)
+https://github.com/zephyrproject-rtos/zephyr 0b39cbf3c0   # zephyr, 11k files: mqtt_read_message_chunk (15 lines)
+https://github.com/wireshark/wireshark aaa28a9d39   # wireshark, 6k files: dissect_diameter_base_framed_ipv6_prefix (10 lines)
+https://github.com/ffmpeg/ffmpeg 1b1dac2716   # ffmpeg, 7k files: ffio_limit (9 lines)
+https://github.com/ffmpeg/ffmpeg 31dc73e92a   # ffmpeg, 4k files: vorbis_parse_setup_hdr_codebooks (13 lines)
+https://github.com/qemu/qemu 8409dc884a   # qemu, 5k files: serial_exit_core (10 lines)
+https://github.com/libarchive/libarchive 65a23f5dbe   # libarchive: get_uncompressed_data (8 lines)
+https://github.com/openzfs/zfs 5421a04adc   # zfs, 4k files: foreach_nfs_host_cb (47 lines)

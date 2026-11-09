@@ -1,0 +1,409 @@
+Context for merged statement of old file: libavformat/avformat.h with new file: libavformat/avformat.h:
+#ifndef AVFORMAT_AVFORMAT_H
+- typedef struct AVStreamGroupLayeredVideo { const AVClass *av_class; union { unsigned int el_index; unsigned int lcevc_index; }; int width; int height; } AVStreamGroupLayeredVideo;
++ typedef struct AVStreamGroupLayeredVideo { const AVClass *av_class; #if FF_API_LCEVC_STRUCT union { #endif unsigned int el_index; #if FF_API_LCEVC_STRUCT attribute_deprecated unsigned int lcevc_index; }; #endif int width; int height; } AVStreamGroupLayeredVideo;
+- struct AVStreamGroupLayeredVideo {
++ struct AVStreamGroupLayeredVideo {
++ #if FF_API_LCEVC_STRUCT
+- union { unsigned int el_index; unsigned int lcevc_index; };
++ union { #endif unsigned int el_index; #if FF_API_LCEVC_STRUCT attribute_deprecated unsigned int lcevc_index; };
+- union { unsigned int el_index; unsigned int lcevc_index; }
++ union { #endif unsigned int el_index; #if FF_API_LCEVC_STRUCT attribute_deprecated unsigned int lcevc_index; }
++ #endif
++ #if FF_API_LCEVC_STRUCT
+- unsigned int lcevc_index;
++ attribute_deprecated unsigned int lcevc_index;
++ attribute_deprecated unsigned
+  #endif
+  #endif
+- unsigned int
+  }
+- #define AVStreamGroupLCEVC AVStreamGroupLayeredVideo
++ #if FF_API_LCEVC_STRUCT
++ #define AVStreamGroupLCEVC AVStreamGroupLayeredVideo
+  #endif
+- typedef struct AVStreamGroup { const AVClass *av_class; void *priv_data; unsigned int index; int64_t id; enum AVStreamGroupParamsType type; union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; struct AVStreamGroupLCEVC *lcevc; struct AVStreamGroupTREF *tref; } params; AVDictionary *metadata; unsigned int nb_streams; AVStream **streams; int disposition; } AVStreamGroup;
++ typedef struct AVStreamGroup { const AVClass *av_class; void *priv_data; unsigned int index; int64_t id; enum AVStreamGroupParamsType type; union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; #if FF_API_LCEVC_STRUCT attribute_deprecated struct AVStreamGroupLCEVC *lcevc; #endif struct AVStreamGroupTREF *tref; } params; AVDictionary *metadata; unsigned int nb_streams; AVStream **streams; int disposition; } AVStreamGroup;
+- struct AVStreamGroup {
++ struct AVStreamGroup {
+- union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; struct AVStreamGroupLCEVC *lcevc; struct AVStreamGroupTREF *tref; } params;
++ union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; #if FF_API_LCEVC_STRUCT attribute_deprecated struct AVStreamGroupLCEVC *lcevc; #endif struct AVStreamGroupTREF *tref; } params;
+- union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; struct AVStreamGroupLCEVC *lcevc; struct AVStreamGroupTREF *tref; }
++ union { struct AVIAMFAudioElement *iamf_audio_element; struct AVIAMFMixPresentation *iamf_mix_presentation; struct AVStreamGroupTileGrid *tile_grid; struct AVStreamGroupLayeredVideo *layered_video; #if FF_API_LCEVC_STRUCT attribute_deprecated struct AVStreamGroupLCEVC *lcevc; #endif struct AVStreamGroupTREF *tref; }
++ #if FF_API_LCEVC_STRUCT
++ attribute_deprecated struct
+- struct AVStreamGroupLCEVC *lcevc;
++ AVStreamGroupLCEVC *lcevc;
+  #endif
+- struct AVStreamGroupLCEVC {
+  }
+  }
+  #endif
+
+Context for merged statement of old file: libavformat/dashdec.c with new file: libavformat/dashdec.c:
+int open_demux_for_component(AVFormatContext *s, struct representation *pls) {
+  int i;
+  for (i = 0; i < pls->ctx->nb_streams; i++) {
+  }
+  for (i = 0; i < pls->ctx->nb_stream_groups; i++) {
+  AVStreamGroup *istg = pls->ctx->stream_groups[i];
+  AVStreamGroup *stg;
+  stg = avformat_stream_group_create(s, istg->type, NULL);
+  switch ((stg->type)) {
+  case AV_STREAM_GROUP_PARAMS_LCEVC:
+- AVStreamGroupLCEVC *ilcevc = istg->params.lcevc;
++ AVStreamGroupLayeredVideo *ilcevc = istg->params.layered_video;
+- AVStreamGroupLCEVC *lcevc = stg->params.lcevc;
++ AVStreamGroupLayeredVideo *lcevc = stg->params.layered_video;
+  ret = av_opt_copy(lcevc, ilcevc);
+  if (ret < 0) {
+  return ret;
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: libavformat/dashdec.c with new file: libavformat/dashdec.c:
+int dash_read_header(AVFormatContext *s) {
+  DASHContext *c = s->priv_data;
+  struct representation *rep;
+  int stream_index = 0;
+  int i, j;
+  if (!c->is_live) {
+  s->duration =(int64_t)c->media_presentation_duration * AV_TIME_BASE;
+  }
+  for (i = 0; i < c->n_videos; i++) {
+  rep = c->videos[i];
+  rep->stream_index = stream_index;
+  stream_index += rep->ctx->nb_streams;
+  }
+  for (i = 0; i < c->n_audios; i++) {
+  rep = c->audios[i];
+  rep->stream_index = stream_index;
+  stream_index += rep->ctx->nb_streams;
+  }
+  for (i = 0; i < c->n_subtitles; i++) {
+  rep = c->subtitles[i];
+  rep->stream_index = stream_index;
+  }
+  for (i = 0; i < c->n_videos; i++) {
+  rep = c->videos[i];
+  rep->assoc_stream = av_malloc_array(rep->ctx->nb_streams, sizeof(*rep->assoc_stream));
+  for (int j = 0;; j < rep->ctx->nb_streams; j++) {
+  rep->assoc_stream[j] = s->streams[rep->stream_index + j];
+  }
+  int j = 0;
+  }
+  for (i = 0; i < c->n_audios; i++) {
+  rep = c->audios[i];
+  rep->assoc_stream = av_malloc_array(rep->ctx->nb_streams, sizeof(*rep->assoc_stream));
+  for (int j = 0;; j < rep->ctx->nb_streams; j++) {
+  rep->assoc_stream[j] = s->streams[rep->stream_index + j];
+  }
+  int j = 0;
+  }
+  for (i = 0; i < c->n_subtitles; i++) {
+  rep = c->subtitles[i];
+  rep->assoc_stream = av_malloc_array(rep->ctx->nb_streams, sizeof(*rep->assoc_stream));
+  for (int j = 0;; j < rep->ctx->nb_streams; j++) {
+  rep->assoc_stream[j] = s->streams[rep->stream_index + j];
+  }
+  int j = 0;
+  }
+  for (i = 0; i < c->n_videos; i++) {
+  rep = c->videos[i];
+  AVStreamGroup *stg = avformat_stream_group_create(s, AV_STREAM_GROUP_PARAMS_LCEVC, NULL);
+- stg->params.lcevc->width = rep->assoc_stream[0]->codecpar->width;
++ stg->params.layered_video->width = rep->assoc_stream[0]->codecpar->width;
+- stg->params.lcevc->height = rep->assoc_stream[0]->codecpar->height;
++ stg->params.layered_video->height = rep->assoc_stream[0]->codecpar->height;
+  ret = avformat_stream_group_add_stream(stg, ref->assoc_stream[0]);
+  if (ret < 0) {
+  return ret;
+  }
+  ret = avformat_stream_group_add_stream(stg, rep->assoc_stream[0]);
+  if (ret < 0) {
+  return ret;
+  }
+- stg->params.lcevc->lcevc_index = stg->nb_streams - 1;
++ stg->params.layered_video->el_index = stg->nb_streams - 1;
+  }
+}
+
+Context for merged statement of old file: libavformat/demux.c with new file: libavformat/demux.c:
+int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options) {
+  for (unsigned i = 0;; i < ic->nb_streams; i++) {
+  }
+  unsigned i = 0;
+  for (unsigned i = 0;; i < ic->nb_streams; i++) {
+  }
+  unsigned i = 0;
+  for (unsigned i = 0;; i < ic->nb_streams; i++) {
+  }
+  unsigned i = 0;
+  for (unsigned i = 0;; i < ic->nb_streams; i++) {
+  }
+  unsigned i = 0;
+  for (unsigned i = 0;; i < ic->nb_stream_groups; i++) {
+  AVStreamGroup *const stg = ic->stream_groups[i];
+- AVStreamGroupLCEVC *lcevc;
++ AVStreamGroupLayeredVideo *lcevc;
+- lcevc = stg->params.lcevc;
++ lcevc = stg->params.layered_video;
+  if (lcevc->width && lcevc->height) {
+  }
+- st = stg->streams[lcevc->lcevc_index];
++ st = stg->streams[lcevc->el_index];
+  lcevc->width = st->codecpar->width;
+  lcevc->height = st->codecpar->height;
+  }
+  unsigned i = 0;
+}
+
+Context for merged statement of old file: libavformat/dump.c with new file: libavformat/dump.c:
+void dump_stream_group(const AVFormatContext *ic, uint8_t *printed,
+                              int i, int index, int is_output) {
+  const AVStreamGroup *stg = ic->stream_groups[i];
+  switch ((stg->type)) {
+  case AV_STREAM_GROUP_PARAMS_LCEVC:
+- const AVStreamGroupLCEVC *lcevc = stg->params.lcevc;
++ const AVStreamGroupLayeredVideo *lcevc = stg->params.layered_video;
+  AVCodecContext *avctx = avcodec_alloc_context3(NULL);
+- if (avctx && stg->nb_streams && !avcodec_parameters_to_context(avctx, stg->streams[0]->codecpar)) {
++ if (avctx && stg->nb_streams == 2 && !avcodec_parameters_to_context(avctx, stg->streams[!lcevc->el_index]->codecpar)) {
+  avctx->width = lcevc->width;
+  avctx->height = lcevc->height;
+  avctx->coded_width = lcevc->width;
+  avctx->coded_height = lcevc->height;
+  if (ic->dump_separator) {
+  av_opt_set(avctx, "dump_separator", ic->dump_separator, 0);
+  }
+  avcodec_string(buf, sizeof(buf), avctx, is_output);
+  }
+  avcodec_free_context(&avctx);
+  }
+}
+
+Context for merged statement of old file: libavformat/mov.c with new file: libavformat/mov.c:
+int mov_parse_lcevc_streams(AVFormatContext *s) {
+  for (int i = 0;; i < s->nb_streams; i++) {
+  AVStreamGroup *stg;
+  AVStream *st = s->streams[i];
+  stg = avformat_stream_group_create(s, AV_STREAM_GROUP_PARAMS_LCEVC, NULL);
+- stg->params.lcevc->width = st->codecpar->width;
++ stg->params.layered_video->width = st->codecpar->width;
+- stg->params.lcevc->height = st->codecpar->height;
++ stg->params.layered_video->height = st->codecpar->height;
+  while ((st_base = mov_find_reference_track(s, st, tag->id, tag->nb_id, j))) {
+  err = avformat_stream_group_add_stream(stg, st_base);
+  if (err < 0) {
+  return err;
+  }
+  }
+  if (!j) {
+  ff_remove_stream_group(s, stg);
+  }
+  err = avformat_stream_group_add_stream(stg, st);
+  if (err < 0) {
+  return err;
+  }
+- stg->params.lcevc->lcevc_index = stg->nb_streams - 1;
++ stg->params.layered_video->el_index = stg->nb_streams - 1;
+  }
+  int i = 0;
+}
+
+Context for merged statement of old file: libavformat/movenc.c with new file: libavformat/movenc.c:
+int mov_init(AVFormatContext *s) {
+  MOVMuxContext *mov = s->priv_data;
+  int has_iamf = 0;
+  int i, ret;
+  if (mov->flags & FF_MOV_FLAG_EMPTY_MOOV && s->flags & AVFMT_FLAG_AUTO_BSF) {
+  s->flags &= ~AVFMT_FLAG_AUTO_BSF;
+  }
+  if (!mov->use_editlist && s->avoid_negative_ts == AVFMT_AVOID_NEG_TS_AUTO && !(mov->flags & FF_MOV_FLAG_NEGATIVE_CTS_OFFSETS)) {
+  s->avoid_negative_ts = AVFMT_AVOID_NEG_TS_MAKE_ZERO;
+  }
+  if (mov->mode == MODE_AVIF) {
+  s->streams[0]->disposition |= AV_DISPOSITION_DEFAULT;
+  }
+  for (i = 0; i < s->nb_stream_groups; i++) {
+  AVStreamGroup *stg = s->stream_groups[i];
+  if (stg->type == AV_STREAM_GROUP_PARAMS_LCEVC) {
+- AVStreamGroupLCEVC *lcevc = stg->params.lcevc;
++ AVStreamGroupLayeredVideo *lcevc = stg->params.layered_video;
+- if (lcevc->lcevc_index > 1) {
++ if (lcevc->el_index > 1) {
+  return AVERROR(EINVAL);
+  }
+- AVStream *st = stg->streams[lcevc->lcevc_index];
++ AVStream *st = stg->streams[lcevc->el_index];
+  if (st->codecpar->codec_id != AV_CODEC_ID_LCEVC) {
+- av_log(s, AV_LOG_ERROR, "Stream #%u is not an LCEVC stream\n", lcevc->lcevc_index);
++ av_log(s, AV_LOG_ERROR, "Stream #%u is not an LCEVC stream\n", lcevc->el_index);
+  }
+  }
+   #if CONFIG_IAMFENC
+  has_iamf = 1;
+  if (!mov->nb_tracks) {
+  mov->nb_tracks++;
+  }
+  #endif
+  }
+  for (i = 0; i < s->nb_streams; i++) {
+  mov->nb_tracks++;
+  }
+  if (mov->mode &(MODE_MP4|MODE_MOV|MODE_IPOD)&& s->nb_chapters) {
+  mov->chapter_track = mov->nb_tracks++;
+  }
+  if (mov->flags & FF_MOV_FLAG_RTP_HINT) {
+  for (i = 0; i < s->nb_streams; i++) {
+  if (rtp_hinting_needed(s->streams[i])) {
+  mov->nb_tracks++;
+  }
+  }
+  }
+  if (mov->write_tmcd == -1 &&(mov->mode == MODE_MOV || mov->mode == MODE_MP4)|| mov->write_tmcd == 1) {
+  for (i = 0; i < s->nb_streams; i++) {
+  if (st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&(t ||(t=av_dict_get(st->metadata, "timecode", NULL, 0)))) {
+  if (ret >= 0) {
+  mov->nb_meta_tmcd++;
+  }
+  }
+  }
+  if (mov->nb_meta_tmcd) {
+  for (i = 0; i < s->nb_streams; i++) {
+  if (st->codecpar->codec_tag == MKTAG('t', 'm', 'c', 'd')) {
+  mov->nb_meta_tmcd = 0;
+  }
+  }
+  }
+  mov->nb_tracks += mov->nb_meta_tmcd;
+  }
+  mov->tracks = av_calloc(mov->nb_tracks + 1, sizeof(*mov->tracks));
+  for (i = 0; i < mov->nb_tracks; i++) {
+  }
+  for (int j = 0, i = 0;; j < s->nb_streams; j++) {
+  AVStream *st = s->streams[j];
+  if (st != st->priv_data) {
+  if (has_iamf) {
+  i += has_iamf--;
+  }
+  }
+  st->priv_data = &mov->tracks[i++];
+  }
+  int j = 0, i = 0;
+  for (i = 0; i < s->nb_streams; i++) {
+  }
+  for (i = 0; i < s->nb_stream_groups; i++) {
+  AVStreamGroup *stg = s->stream_groups[i];
+  switch ((stg->type)) {
+  case AV_STREAM_GROUP_PARAMS_LCEVC:
+- AVStreamGroupLCEVC *lcevc = stg->params.lcevc;
++ AVStreamGroupLayeredVideo *lcevc = stg->params.layered_video;
+- AVStream *st = stg->streams[lcevc->lcevc_index];
++ AVStream *st = stg->streams[lcevc->el_index];
+  MOVTrack *track = st->priv_data;
+  for (int j = 0;; j < mov->nb_tracks; j++) {
+  MOVTrack *trk = &mov->tracks[j];
+- if (trk->st == stg->streams[!lcevc->lcevc_index]) {
++ if (trk->st == stg->streams[!lcevc->el_index]) {
+  track->src_track = av_malloc(sizeof(*track->src_track));
+  if (!track->src_track) {
+  return AVERROR(ENOMEM);
+  }
+  *track->src_track = j;
+  track->nb_src_track = 1;
+  }
+  }
+  int j = 0;
+  track->par->width = lcevc->width;
+  track->par->height = track->height = lcevc->height;
+  }
+  }
+}
+
+Context for merged statement of old file: libavformat/mpegts.c with new file: libavformat/mpegts.c:
+void create_stream_groups(MpegTSContext *ts, struct Program *prg) {
+  for (int i = 0;; i < prg->nb_stream_groups; i++) {
+  struct StreamGroup *grp = &prg->stream_groups[i];
+  AVStreamGroup *stg;
+  int j;
+  if (grp->type == AV_STREAM_GROUP_PARAMS_DOLBY_VISION && grp->nb_streams == 1) {
+  for (j = 0; j < prg->nb_streams; j++) {
+  }
+  }
+  for (j = 0; j < ts->stream->nb_stream_groups; j++) {
+  stg = ts->stream->stream_groups[j];
+  }
+  if (j == ts->stream->nb_stream_groups) {
+  stg = avformat_stream_group_create(ts->stream, grp->type, NULL);
+  }
+  for (int j = 0;; j < grp->nb_streams; j++) {
+  switch ((grp->type)) {
+  case AV_STREAM_GROUP_PARAMS_LCEVC:
+  if (grp->streams[j]->codecpar->codec_id == AV_CODEC_ID_LCEVC) {
+- stg->params.lcevc->lcevc_index = stg->nb_streams - 1;
++ stg->params.layered_video->el_index = stg->nb_streams - 1;
+  }
+  }
+  }
+  }
+  int i = 0;
+}
+
+Context for merged statement of old file: libavformat/options.c with new file: libavformat/options.c:
++ #if FF_API_LCEVC_STRUCT
+  #endif
+- static const AVOption lcevc_options[] = { { "lcevc_index", "Index of the LCEVC stream within the group", OFFSET(lcevc_index), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, FLAGS }, { "video_size", "size of video after LCEVC enhancement has been applied", OFFSET(width), AV_OPT_TYPE_IMAGE_SIZE, { .str = NULL }, 0, INT_MAX, FLAGS }, { NULL }, };
++ static const AVOption layered_video_options[] = { #if FF_API_LCEVC_STRUCT { "lcevc_index", "Index of the LCEVC stream within the group", OFFSET(lcevc_index), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, FLAGS | AV_OPT_FLAG_DEPRECATED }, #endif { "el_index", "Index of the enhancement layer stream within the group", OFFSET(el_index), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, FLAGS }, { "video_size", "size of the final layered video presentation", OFFSET(width), AV_OPT_TYPE_IMAGE_SIZE, { .str = NULL }, 0, INT_MAX, FLAGS }, { NULL }, };
+- #undef OFFSET
+- static const AVClass lcevc_class = { .class_name = "AVStreamGroupLCEVC", .version = LIBAVUTIL_VERSION_INT, .option = lcevc_options, };
+- #define OFFSET(x)offsetof(AVStreamGroupLayeredVideo, x)
+  static const AVOption layered_video_options[] = { { "el_index", "Index of the enhancement layer stream within the group", OFFSET(el_index), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, INT_MAX, FLAGS }, { "video_size", "size of the final layered video presentation", OFFSET(width), AV_OPT_TYPE_IMAGE_SIZE, { .str = NULL }, 0, INT_MAX, FLAGS }, { NULL }, };
++ #if FF_API_LCEVC_STRUCT
+  #endif
+
+Context for merged statement of old file: libavformat/options.c with new file: libavformat/options.c:
+void *stream_group_child_next(void *obj, void *prev) {
+  if (!prev) {
+  switch ((stg->type)) {
+- case AV_STREAM_GROUP_PARAMS_LCEVC:
+- return stg->params.lcevc;
++ case AV_STREAM_GROUP_PARAMS_LCEVC:
+  }
+  }
+}
+
+Context for merged statement of old file: libavformat/options.c with new file: libavformat/options.c:
+AVClass *stream_group_child_iterate(void **opaque) {
+  switch ((i)) {
+- case AV_STREAM_GROUP_PARAMS_LCEVC:
+- ret = &lcevc_class;
+- break;
++ case AV_STREAM_GROUP_PARAMS_LCEVC:
+  }
+}
+
+Context for merged statement of old file: libavformat/options.c with new file: libavformat/options.c:
+AVStreamGroup *avformat_stream_group_create(AVFormatContext *s,
+                                            enum AVStreamGroupParamsType type,
+                                            AVDictionary **options) {
+  switch ((type)) {
+- case AV_STREAM_GROUP_PARAMS_LCEVC:
+- stg->params.lcevc = av_mallocz(sizeof(*stg->params.lcevc));
+- if (!stg->params.lcevc) {
+- goto fail;
+  }
+- stg->params.lcevc->av_class = &lcevc_class;
+- av_opt_set_defaults(stg->params.lcevc);
+- break;
++ case AV_STREAM_GROUP_PARAMS_LCEVC:
+  }
+}
+
+Context for merged statement of old file: libavformat/version_major.h with new file: libavformat/version_major.h:
+#ifndef AVFORMAT_VERSION_MAJOR_H
++ #define FF_API_LCEVC_STRUCT(LIBAVFORMAT_VERSION_MAJOR < 64)
+  #endif
+

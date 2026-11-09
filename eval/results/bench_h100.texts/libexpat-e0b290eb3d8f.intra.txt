@@ -1,0 +1,29 @@
+Context for merged statement of old file: expat/lib/xmltok.c with new file: expat/lib/xmltok.c:
+enum XML_Convert_Result utf8_toUtf8(const ENCODING *UNUSED_P(enc),
+            const char **fromP, const char *fromLim,
+            char **toP, const char *toLim) {
+  const ptrdiff_t bytesStorable = toLim - *toP;
+  if (bytesAvailable > bytesStorable) {
+  fromLim = *fromP + bytesStorable;
+  }
+- input_incomplete = true;
++ const char * const fromLimBefore = fromLim;
++ align_limit_to_full_utf8_characters(*fromP, &fromLim);
++ if (fromLim < fromLimBefore) {
++ input_incomplete = true;
+  }
++ const ptrdiff_t bytesToCopy = fromLim - *fromP;
++ memcpy(*toP, *fromP, bytesToCopy);
++ *fromP += bytesToCopy;
++ *toP += bytesToCopy;
+- *toP += bytesToCopy;
+- *fromP += bytesToCopy;
+- memcpy(*toP, *fromP, bytesToCopy);
+- const ptrdiff_t bytesToCopy = fromLim - *fromP;
+- if (fromLim < fromLimBefore) {
+- input_incomplete = true;
+  }
+- align_limit_to_full_utf8_characters(*fromP, &fromLim);
+- const char * const fromLimBefore = fromLim;
+}
+

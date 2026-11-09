@@ -1,0 +1,10 @@
+Context for merged statement of old file: source/compiler/dtio.c with new file: source/compiler/dtio.c:
+char *
+DtTrim (
+    char                    *String) {
+- if (!strcmp(String, " ")) {
++ if (*String == 0 || !strcmp(String, " ")) {
+  return(ReturnString);
+  }
+}
+

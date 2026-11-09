@@ -1,0 +1,154 @@
+{
+    "declaration": {
+        "def": ["declarator"],
+        "use": [],
+        "info": "size only relevant if an identifier; In value and size, look for all identifiers"
+    },
+
+    "function_declarator": {
+        "def": ["declarator", "parameters"],
+        "use": [],
+        "info": "Look at function delcator separetely"
+    },
+
+    "init_declarator": {
+        "def": ["declarator"],
+        "use": ["value"],
+        "info": "value can be initializer_list or expression"
+    },
+
+    "array_declarator": {
+        "def": ["declarator"],
+        "use": ["size"],
+        "info": "size is an expression"
+    },
+
+    "case_statement": {
+        "def": [],
+        "use": ["value"]
+    },
+
+    "binary_expression": {
+        "def": [],
+        "use": ["left", "right"],
+        "info": ""
+    },
+
+    "comma_expression": {
+        "def": [],
+        "use": ["left", "right"],
+        "info": "left is an expression, right is an expression"
+    },
+
+    "assignment_expression": {
+        "def": ["left"],
+        "use": ["right"],
+        "info": "left is an _assignment_left_expression, right is an expression"
+    },
+
+    "unary_expression": {
+        "def": [],
+        "use": ["argument"]
+    },
+
+    "update_expression": {
+        "def": ["argument"],
+        "use": ["argument"]
+    },
+
+    "cast_expression": {
+        "def": [],
+        "use": ["value"],
+        "info": "Not really a def or use!"
+    },
+
+    "pointer_expression": {
+        "def": [],
+        "use": ["argument"],
+        "info": "Not really a def or use!"
+    },
+
+    "sizeof_expression": {
+        "def": [],
+        "use": ["value", "type"]
+    },
+
+    "alignof_expression": {
+        "def": [],
+        "use": ["type"]
+    },
+
+    "offsetof_expression": {
+        "def": [],
+        "use": ["member", "type"]
+    },
+
+    "subscript_expression": {
+        "def": ["argument"],
+        "use": ["index"]
+    },
+
+    "call_expression": {
+        "def": [],
+        "use": ["function", "arguments"]
+    },
+
+    "field_expression": {
+        "def": [],
+        "use": ["argument"]
+    },
+
+    "for_statement": {
+        "def": ["initializer"],
+        "use": ["condition", "update"]
+    },
+
+    "while_statement": {
+        "def": [],
+        "use": ["condition"]
+    },
+
+    "do_statement": {
+        "def": [],
+        "use": ["condition"]
+    },
+
+    "if_statement": {
+        "def": [],
+        "use": ["condition"]
+    },
+
+    "conditional_expression": {
+        "def": [],
+        "use": ["condition", "consequence", "alternative"]
+    },
+
+    "switch_statement": {
+      "def":   [],
+      "use":   ["condition"],  
+      "info":  "Cases (case_statement/default_statement) live inside the `body` child."
+    },
+
+    "goto_statement": {
+      "def":   [],
+      "use":   ["label"]
+    },
+
+    "labeled_statement": {
+      "def":   [],
+      "use":   ["label"],  
+      "info":  "The `body` (child) is handled recursively."
+    },
+
+    "type_identifier": { "def": [], "use": [] },
+
+    "initializer_list": { "def": [], "use": [] },
+
+    "enumerator": { "def": [], "use": [] },
+
+    "preproc_if": { "def": [], "use": ["condition"] },
+    "preproc_ifdef": { "def": [], "use": ["name"] },
+    "preproc_def": { "def": ["name"], "use": ["value"] },
+    "preproc_function_def": { "def": ["name"], "use": [] },
+    "preproc_call": { "def": [], "use": ["function", "arguments"] }
+}

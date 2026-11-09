@@ -1,0 +1,62 @@
+Context for merged statement of old file: ext/mhash/mhash.c with new file: ext/mhash/mhash.c:
+#if HAVE_LIBMHASH
+  function_entry mhash_functions[] = { PHP_FE(mhash_get_block_size, NULL)PHP_FE(mhash_get_hash_name, NULL)PHP_FE(mhash_keygen_s2k, NULL)PHP_FE(mhash_count, NULL)PHP_FE(mhash, NULL){NULL, NULL, NULL} };
+- static PHP_MINIT_FUNCTION(mhash);
+- zend_module_entry mhash_module_entry = { STANDARD_MODULE_HEADER, "mhash", mhash_functions, PHP_MINIT(mhash), NULL, NULL, NULL, NULL, NO_VERSION_YET, STANDARD_MODULE_PROPERTIES, };
++ zend_module_entry mhash_module_entry = { STANDARD_MODULE_HEADER, "mhash", mhash_functions, PHP_MINIT(mhash), NULL, NULL, NULL, PHP_MINFO(mhash), NO_VERSION_YET, STANDARD_MODULE_PROPERTIES, };
+  #endif
+
+Context for merged statement of old file: ext/mhash/mhash.c with new file: ext/mhash/mhash.c:
++ PHP_MINFO_FUNCTION (mhash) {
++ char version[32];
++ sprintf(version, "%d", MHASH_API_VERSION);
++ php_info_print_table_start();
++ php_info_print_table_row(2, "MHASH support", "Enabled");
++ php_info_print_table_row(2, "MHASH API Version", version);
++ php_info_print_table_end();
+}
+
+Context for merged statement of old file: ext/mhash/php_mhash.h with new file: ext/mhash/php_mhash.h:
+#ifndef PHP_MHASH_H
+   #if HAVE_LIBMHASH
++ static PHP_MINIT_FUNCTION(mhash);
+  #endif
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: PHP_FE — main/php.h:283 [gtags_unique] --
+#define PHP_FE			ZEND_FE
+
+-- called function: PHP_FUNCTION — ext/ereg/ereg.c:621 [priority_fallback] --
+PHPAPI PHP_FUNCTION(sql_regcase) {
+   ...
+}
+
+-- called macro: PHP_MINIT — main/php.h:300 [gtags_unique] --
+#define PHP_MINIT		ZEND_MODULE_STARTUP_N
+
+-- called macro: PHP_MINFO — main/php.h:304 [gtags_unique, new version] --
+#define PHP_MINFO		ZEND_MODULE_INFO_N
+
+-- called function: php_info_print_table_row — ext/standard/info.c:492 [gtags_unique, new version] --
+PHPAPI void php_info_print_table_row(int num_cols, ...) {
+   ...
+}
+   [reads: num_cols; writes: -]
+
+-- called macro: STANDARD_MODULE_HEADER — Zend/zend_modules.h:44 [gtags_unique, new version] --
+#define STANDARD_MODULE_HEADER sizeof(zend_module_entry), ZEND_MODULE_API_NO, ZEND_DEBUG, USING_ZTS
+
+-- called macro: NO_VERSION_YET — Zend/zend_modules.h:51 [gtags_unique, new version] --
+#define NO_VERSION_YET NULL
+
+-- called macro: STANDARD_MODULE_PROPERTIES — Zend/zend_modules.h:48 [gtags_unique, new version] --
+#define STANDARD_MODULE_PROPERTIES \
+	NULL, NULL, STANDARD_MODULE_PROPERTIES_EX
+
+-- called function: php_info_print_table_start — ext/standard/info.c:429 [gtags_unique, new version] --
+PHPAPI void php_info_print_table_start() {
+   ...
+}

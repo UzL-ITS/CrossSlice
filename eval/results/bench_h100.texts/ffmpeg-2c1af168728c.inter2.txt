@@ -1,0 +1,364 @@
+Context for merged statement of old file: libavformat/matroskaenc.c with new file: libavformat/matroskaenc.c:
+int mkv_write_block(void *logctx, MatroskaMuxContext *mkv,
+                           AVIOContext *pb, const AVStream *st,
+                           mkv_track *track, const AVPacket *pkt,
+                           int keyframe, int64_t ts, uint64_t duration,
+                           int force_blockgroup, int64_t relative_packet_pos) {
+  #define SMPTE_2094_APP5_MAX_SIZE 855
+  uint8_t smpte_2094_app5_buf[5 + SMPTE_2094_APP5_MAX_SIZE];
+  if (par->codec_type == AVMEDIA_TYPE_VIDEO) {
+  if (side_data) {
+  size_t payload_size = sizeof(smpte_2094_app5_buf)- 5;
+- mkv_write_blockadditional(&writer, t35_buf, payload_size + 5, MATROSKA_BLOCK_ADD_ID_ITU_T_T35);
++ mkv_write_blockadditional(&writer, smpte_2094_app5_buf, payload_size + 5, MATROSKA_BLOCK_ADD_ID_ITU_T_T35);
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: mkv_write_blockadditional — libavformat/matroskaenc.c:2833 [gtags_unique] --
+static void mkv_write_blockadditional(EbmlWriter *writer, const uint8_t *buf, size_t size, uint64_t additional_id) {
+   ebml_writer_open_master(writer, MATROSKA_ID_BLOCKMORE);
+   ebml_writer_add_uint(writer, MATROSKA_ID_BLOCKADDID, additional_id);
+   ebml_writer_add_bin(writer, MATROSKA_ID_BLOCKADDITIONAL, buf, size);
+   ebml_writer_close_master(writer);
+}
+   [reads: additional_id, buf, size, writer; writes: -]
+
+-- called macro: FFMAX — libavutil/macros.h:47 [lsp] --
+#define FFMAX(a,b) ((a) > (b) ? (a) : (b))
+
+-- called function: av_dynamic_hdr_smpte2094_app5_to_t35 — libavutil/hdr_dynamic_metadata.c:564 [gtags_unique] --
+int av_dynamic_hdr_smpte2094_app5_to_t35(const AVDynamicHDRSmpte2094App5 *s, uint8_t **data, size_t *size) {
+   uint8_t *buf;
+   size_t size_bytes, size_bits;
+   PutBitContext pbc, *pb = &pbc;
+   if(!s)
+     return AVERROR(EINVAL);
+   if((!data || *data)&& !size)
+     return AVERROR(EINVAL);
+   if(s->application_version >= 8 || s->minimum_application_version >= 3)
+     return AVERROR_INVALIDDATA;
+   size_bits = 0;
+   size_bits += 3 + 3 + 2;
+   size_bits += 1 + 1 + 6;
+   if(s->has_custom_hdr_reference_white_flag)
+     size_bits += 16;
+   if(s->has_adaptive_tone_map_flag) {
+     size_bits += 16 + 1;
+     if(s->use_reference_white_tone_mapping_flag) {
+       size_bits += 7;
+     } else {
+       size_bits += 3 + 2 + 1 + 1;
+       if(s->gain_application_space_chromaticities_flag == 3)
+         size_bits += 16 * 8;
+       if(s->num_alternate_images > 4)
+         return AVERROR_INVALIDDATA;
+       for(int a = 0;; a < s->num_alternate_images; a++) {
+       int a = 0;
+         size_bits += 16;
+         if(!a || !s->has_common_component_mix_params_flag) {
+           size_bits += 2;
+           if(s->component_mixing_type[a] != 3) {
+             size_bits += 6;
+           } else {
+             size_bits += 6;
+             for(int k = 0;; k < 6; k++)
+               int k = 0;
+             if(s->has_component_mixing_coefficient_flag[a][k])
+               size_bits += 16;
+           }
+         }
+         if(!a || !s->has_common_curve_params_flag) {
+           size_bits += 5 + 1 + 2;
+           if(s->gain_curve_num_control_points_minus_1[a] > 31)
+             return AVERROR_INVALIDDATA;
+           size_bits += 16 *(s->gain_curve_num_control_points_minus_1[a] + 1);
+         }
+         size_bits += 16 *(s->gain_curve_num_control_points_minus_1[a] + 1);
+         if(!s->gain_curve_use_pchip_slope_flag[a])
+           size_bits += 16 *(s->gain_curve_num_control_points_minus_1[a] + 1);
+       }
+     }
+   }
+   if(size_bits % 8)
+     return AVERROR_INVALIDDATA;
+   size_bytes = size_bits >> 3;
+   if(!data) {
+     *size = size_bytes;
+     return 0;
+   } else if(*data) {
+     if(*size < size_bytes)
+       return AVERROR_BUFFER_TOO_SMALL;
+     buf = *data;
+   } else {
+     buf = av_malloc(size_bytes);
+     if(!buf)
+       return AVERROR(ENOMEM);
+   }
+   init_put_bits(pb, buf, size_bytes);
+   put_bits(pb, 3, s->application_version);
+   put_bits(pb, 3, s->minimum_application_version);
+   ...
+   put_bits(pb, 1, s->has_custom_hdr_reference_white_flag);
+   put_bits(pb, 1, s->has_adaptive_tone_map_flag);
+   ...
+   if(s->has_custom_hdr_reference_white_flag)
+     put_bits(pb, 16, s->hdr_reference_white);
+   if(s->has_adaptive_tone_map_flag) {
+     put_bits(pb, 16, s->baseline_hdr_headroom);
+     put_bits(pb, 1, s->use_reference_white_tone_mapping_flag);
+     if(s->use_reference_white_tone_mapping_flag) {
+   ...
+     } else {
+       put_bits(pb, 3, s->num_alternate_images);
+       put_bits(pb, 2, s->gain_application_space_chromaticities_flag);
+       put_bits(pb, 1, s->has_common_component_mix_params_flag);
+       put_bits(pb, 1, s->has_common_curve_params_flag);
+       if(s->gain_application_space_chromaticities_flag == 3)
+         for(int r = 0;; r < 8; r++)
+           int r = 0;
+       put_bits(pb, 16, s->gain_application_space_chromaticities[r]);
+       for(int a = 0;; a < s->num_alternate_images; a++) {
+       int a = 0;
+         put_bits(pb, 16, s->alternate_hdr_headrooms[a]);
+         if(!a || !s->has_common_component_mix_params_flag) {
+           put_bits(pb, 2, s->component_mixing_type[a]);
+           if(s->component_mixing_type[a] != 3) {
+   ...
+           } else {
+             for(int k = 0;; k < 6; k++)
+               int k = 0;
+             put_bits(pb, 1, s->has_component_mixing_coefficient_flag[a][k]);
+             for(int k = 0;; k < 6; k++)
+               int k = 0;
+             if(s->has_component_mixing_coefficient_flag[a][k])
+               put_bits(pb, 16, s->component_mixing_coefficient[a][k]);
+           }
+         }
+         if(!a || !s->has_common_curve_params_flag) {
+           put_bits(pb, 5, s->gain_curve_num_control_points_minus_1[a]);
+           put_bits(pb, 1, s->gain_curve_use_pchip_slope_flag[a]);
+   ...
+           for(int c = 0;; c <= s->gain_curve_num_control_points_minus_1[a]; c++)
+             int c = 0;
+           put_bits(pb, 16, s->gain_curve_control_points_x[a][c]);
+         }
+         for(int c = 0;; c <= s->gain_curve_num_control_points_minus_1[a]; c++)
+           int c = 0;
+         put_bits(pb, 16, s->gain_curve_control_points_y[a][c]);
+         if(!s->gain_curve_use_pchip_slope_flag[a]) {
+           for(int c = 0;; c <= s->gain_curve_num_control_points_minus_1[a]; c++)
+             int c = 0;
+           put_bits(pb, 16, s->gain_curve_control_points_theta[a][c]);
+         }
+       }
+     }
+   }
+   ...
+   *data = buf;
+   if(size)
+     *size = size_bytes;
+   return 0;
+}
+   [reads: data, s, size; writes: data*, size*]
+
+-- called function: av_packet_get_side_data — libavcodec/packet.c:252 [gtags_unique] --
+uint8_t *av_packet_get_side_data(const AVPacket *pkt, enum AVPacketSideDataType type, size_t *size) {
+   int i;
+   for(i = 0; i < pkt->side_data_elems; i++) {
+     if(pkt->side_data[i].type == type) {
+       if(size)
+         *size = pkt->side_data[i].size;
+       return pkt->side_data[i].data;
+     }
+   }
+   if(size)
+     *size = 0;
+   return NULL;
+}
+   [reads: pkt, size, type; writes: size*]
+
+-- called function: av_dynamic_hdr_plus_to_t35 — libavutil/hdr_dynamic_metadata.c:239 [gtags_unique] --
+int av_dynamic_hdr_plus_to_t35(const AVDynamicHDRPlus *s, uint8_t **data, size_t *size) {
+   uint8_t *buf;
+   size_t size_bits, size_bytes;
+   PutBitContext pbc, *pb = &pbc;
+   if(!s)
+     return AVERROR(EINVAL);
+   if((!data || *data)&& !size)
+     return AVERROR(EINVAL);
+   size_bits = 8;
+   size_bits += 2;
+   for(int w = 1;; w < s->num_windows; w++)
+     int w = 1;
+   size_bits += 153;
+   size_bits += 27;
+   size_bits += 1;
+   if(s->targeted_system_display_actual_peak_luminance_flag)
+     size_bits += 10 + s->num_rows_targeted_system_display_actual_peak_luminance * s->num_cols_targeted_system_display_actual_peak_luminance * 4;
+   for(int w = 0;; w < s->num_windows; w++)
+     int w = 0;
+   size_bits += 72 + s->params[w].num_distribution_maxrgb_percentiles * 24 + 10;
+   size_bits += 1;
+   if(s->mastering_display_actual_peak_luminance_flag)
+     size_bits += 10 + s->num_rows_mastering_display_actual_peak_luminance * s->num_cols_mastering_display_actual_peak_luminance * 4;
+   for(int w = 0;; w < s->num_windows; w++) {
+   int w = 0;
+     size_bits += 1;
+     if(s->params[w].tone_mapping_flag)
+       size_bits += 28 + s->params[w].num_bezier_curve_anchors * 10;
+     size_bits += 1;
+     if(s->params[w].color_saturation_mapping_flag)
+       size_bits += 6;
+   }
+   size_bytes =(size_bits + 7)/ 8;
+   av_assert0(size_bytes <= AV_HDR_PLUS_MAX_PAYLOAD_SIZE);
+   if(!data) {
+     *size = size_bytes;
+     return 0;
+   } else if(*data) {
+     if(*size < size_bytes)
+       return AVERROR_BUFFER_TOO_SMALL;
+     buf = *data;
+   } else {
+     buf = av_malloc(size_bytes);
+     if(!buf)
+       return AVERROR(ENOMEM);
+   }
+   init_put_bits(pb, buf, size_bytes);
+   ...
+   put_bits(pb, 2, s->num_windows);
+   for(int w = 1;; w < s->num_windows; w++) {
+   int w = 1;
+     put_bits(pb, 16, s->params[w].window_upper_left_corner_x.num / s->params[w].window_upper_left_corner_x.den);
+     put_bits(pb, 16, s->params[w].window_upper_left_corner_y.num / s->params[w].window_upper_left_corner_y.den);
+     put_bits(pb, 16, s->params[w].window_lower_right_corner_x.num / s->params[w].window_lower_right_corner_x.den);
+     put_bits(pb, 16, s->params[w].window_lower_right_corner_y.num / s->params[w].window_lower_right_corner_y.den);
+     put_bits(pb, 16, s->params[w].center_of_ellipse_x);
+     put_bits(pb, 16, s->params[w].center_of_ellipse_y);
+     put_bits(pb, 8, s->params[w].rotation_angle);
+     put_bits(pb, 16, s->params[w].semimajor_axis_internal_ellipse);
+     put_bits(pb, 16, s->params[w].semimajor_axis_external_ellipse);
+     put_bits(pb, 16, s->params[w].semiminor_axis_external_ellipse);
+     put_bits(pb, 1, s->params[w].overlap_process_option);
+   }
+   put_bits(pb, 27, s->targeted_system_display_maximum_luminance.num * luminance_den / s->targeted_system_display_maximum_luminance.den);
+   put_bits(pb, 1, s->targeted_system_display_actual_peak_luminance_flag);
+   if(s->targeted_system_display_actual_peak_luminance_flag) {
+     put_bits(pb, 5, s->num_rows_targeted_system_display_actual_peak_luminance);
+     put_bits(pb, 5, s->num_cols_targeted_system_display_actual_peak_luminance);
+     for(int i = 0;; i < s->num_rows_targeted_system_display_actual_peak_luminance; i++) {
+     int i = 0;
+       for(int j = 0;; j < s->num_cols_targeted_system_display_actual_peak_luminance; j++)
+         int j = 0;
+       put_bits(pb, 4, s->targeted_system_display_actual_peak_luminance[i][j].num * peak_luminance_den / s->targeted_system_display_actual_peak_luminance[i][j].den);
+     }
+   }
+   for(int w = 0;; w < s->num_windows; w++) {
+   int w = 0;
+     for(int i = 0;; i < 3; i++)
+       int i = 0;
+     put_bits(pb, 17, s->params[w].maxscl[i].num * rgb_den / s->params[w].maxscl[i].den);
+     put_bits(pb, 17, s->params[w].average_maxrgb.num * rgb_den / s->params[w].average_maxrgb.den);
+     put_bits(pb, 4, s->params[w].num_distribution_maxrgb_percentiles);
+     for(int i = 0;; i < s->params[w].num_distribution_maxrgb_percentiles; i++) {
+     int i = 0;
+       put_bits(pb, 7, s->params[w].distribution_maxrgb[i].percentage);
+       put_bits(pb, 17, s->params[w].distribution_maxrgb[i].percentile.num * rgb_den / s->params[w].distribution_maxrgb[i].percentile.den);
+     }
+     put_bits(pb, 10, s->params[w].fraction_bright_pixels.num * fraction_pixel_den / s->params[w].fraction_bright_pixels.den);
+   }
+   put_bits(pb, 1, s->mastering_display_actual_peak_luminance_flag);
+   if(s->mastering_display_actual_peak_luminance_flag) {
+     put_bits(pb, 5, s->num_rows_mastering_display_actual_peak_luminance);
+     put_bits(pb, 5, s->num_cols_mastering_display_actual_peak_luminance);
+     for(int i = 0;; i < s->num_rows_mastering_display_actual_peak_luminance; i++) {
+     int i = 0;
+       for(int j = 0;; j < s->num_cols_mastering_display_actual_peak_luminance; j++)
+         int j = 0;
+       put_bits(pb, 4, s->mastering_display_actual_peak_luminance[i][j].num * peak_luminance_den / s->mastering_display_actual_peak_luminance[i][j].den);
+     }
+   }
+   for(int w = 0;; w < s->num_windows; w++) {
+   int w = 0;
+     put_bits(pb, 1, s->params[w].tone_mapping_flag);
+     if(s->params[w].tone_mapping_flag) {
+       put_bits(pb, 12, s->params[w].knee_point_x.num * knee_point_den / s->params[w].knee_point_x.den);
+       put_bits(pb, 12, s->params[w].knee_point_y.num * knee_point_den / s->params[w].knee_point_y.den);
+       put_bits(pb, 4, s->params[w].num_bezier_curve_anchors);
+       for(int i = 0;; i < s->params[w].num_bezier_curve_anchors; i++)
+         int i = 0;
+       put_bits(pb, 10, s->params[w].bezier_curve_anchors[i].num * bezier_anchor_den / s->params[w].bezier_curve_anchors[i].den);
+       put_bits(pb, 1, s->params[w].color_saturation_mapping_flag);
+       if(s->params[w].color_saturation_mapping_flag)
+         put_bits(pb, 6, s->params[w].color_saturation_weight.num * saturation_weight_den / s->params[w].color_saturation_weight.den);
+     }
+   }
+   ...
+   *data = buf;
+   if(size)
+     *size = size_bytes;
+   return 0;
+}
+   [reads: data, s, size; writes: data*, size*]
+
+-- called macro: MATROSKA_BLOCK_ADD_ID_ITU_T_T35 — libavformat/matroska.h:369 [gtags_unique, new version] --
+#define MATROSKA_BLOCK_ADD_ID_ITU_T_T35 4
+
+-- caller of mkv_write_block: mkv_write_packet_internal — libavformat/matroskaenc.c:3129 --
+static int mkv_write_packet_internal(AVFormatContext *s, const AVPacket *pkt) {
+   MatroskaMuxContext *mkv = s->priv_data;
+   AVIOContext *pb;
+   AVStream *st = s->streams[pkt->stream_index];
+   AVCodecParameters *par = s->streams[pkt->stream_index]->codecpar;
+   mkv_track *track = &mkv->tracks[pkt->stream_index];
+   int is_sub = par->codec_type == AVMEDIA_TYPE_SUBTITLE;
+   int keyframe = is_sub || !!(pkt->flags & AV_PKT_FLAG_KEY);
+   int64_t duration = FFMAX(pkt->duration, 0);
+   ...
+   int64_t ts = track->write_dts ? pkt->dts : pkt->pts;
+   int64_t relative_packet_pos;
+   ...
+   ts += track->ts_offset;
+   ...
+   if(mkv->cluster_pos == -1) {
+   ...
+     mkv->cluster_bc->direct = 1;
+     mkv->cluster_pos = avio_tell(s->pb);
+   ...
+     mkv->cluster_pts = FFMAX(0, ts);
+   ...
+   }
+   pb = mkv->cluster_bc;
+   relative_packet_pos = avio_tell(pb);
+>  ret = mkv_write_block(s, mkv, pb, st, track, pkt, keyframe, ts, duration, par->codec_id == AV_CODEC_ID_WEBVTT, relative_packet_pos);
+   if(ret < 0)
+     return ret;
+   if(keyframe && IS_SEEKABLE(s->pb, mkv)&&(par->codec_type == AVMEDIA_TYPE_VIDEO || par->codec_type == AVMEDIA_TYPE_SUBTITLE || !mkv->have_video && !track->has_cue)) {
+   ...
+     if(ret < 0)
+       return ret;
+   ...
+   }
+}
+
+-- 2nd-level context (summaries) --
+  ebml_writer_open_master — libavformat/matroskaenc.c:490 [gtags_unique]: static void ebml_writer_open_master(EbmlWriter *writer, uint32_t id)
+    reads: id, writer; writes: writer*
+  ebml_writer_add_uint — libavformat/matroskaenc.c:568 [gtags_unique]: static void ebml_writer_add_uint(EbmlWriter *writer, uint32_t id, uint64_t val)
+    reads: id, val, writer; writes: -
+  ebml_writer_add_bin — libavformat/matroskaenc.c:541 [gtags_unique]: static void ebml_writer_add_bin(EbmlWriter *writer, uint32_t id, const uint8_t *data, size_t size)
+    reads: data, id, size, writer; writes: -
+  ebml_writer_close_master — libavformat/matroskaenc.c:501 [gtags_unique]: static void ebml_writer_close_master(EbmlWriter *writer)
+    reads: writer; writes: writer*
+  AVERROR — libavutil/error.h:41 [lsp]: #define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+  av_malloc — libavutil/mem.c:98 [priority_fallback]: void *av_malloc(size_t size)
+    reads: size; writes: -
+  init_put_bits — libavcodec/put_bits.h:62 [gtags_unique]: static inline void init_put_bits(PutBitContext *s, uint8_t *buffer, int buffer_size)
+    reads: buffer, buffer_size, s; writes: s*
+  put_bits — libavcodec/put_bits.h:257 [lsp]: static inline void put_bits(PutBitContext *s, int n, BitBuf value)
+    reads: n, s, value; writes: -
+  av_assert0 — libavutil/avassert.h:42 [lsp]: #define av_assert0(cond) do {                                           \

@@ -1,0 +1,26 @@
+Context for merged statement of old file: tests/checkasm/rv40dsp.c with new file: tests/checkasm/rv40dsp.c:
+void check_chroma_mc(void) {
+- declare_func_emms(AV_CPU_FLAG_MMX, void, uint8_t *dst, const uint8_t *src, ptrdiff_t stride, int h, int x, int y);
++ declare_func(void, uint8_t *dst, const uint8_t *src, ptrdiff_t stride, int h, int x, int y);
+}
+
+
+==== Cross-function context ====
+
+-- called macro: declare_func_emms — tests/checkasm/checkasm.h:220 [gtags_unique, old version] --
+#define declare_func_emms(cpu_flags, ret, ...) declare_new_emms(cpu_flags, ret, __VA_ARGS__) typedef ret func_type(__VA_ARGS__)
+
+-- called macro: declare_func — tests/checkasm/checkasm.h:218 [gtags+ts, new version] --
+#define declare_func(ret, ...) declare_new(ret, __VA_ARGS__) typedef ret func_type(__VA_ARGS__)
+
+-- caller of check_chroma_mc: checkasm_check_h264chroma — tests/checkasm/h264chroma.c:84 --
+void checkasm_check_h264chroma(void) {
+>  check_chroma_mc();
+   ...
+}
+
+-- caller of check_chroma_mc: checkasm_check_rv40dsp — tests/checkasm/rv40dsp.c:73 --
+void checkasm_check_rv40dsp(void) {
+>  check_chroma_mc();
+   ...
+}

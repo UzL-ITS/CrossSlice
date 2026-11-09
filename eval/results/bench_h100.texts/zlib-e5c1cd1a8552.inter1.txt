@@ -1,0 +1,171 @@
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int do_list(unzFile uf) {
+  unz_global_info64 gi;
+  int err;
+  err = unzGetGlobalInfo64(uf, &gi);
+  if (err!=UNZ_OK) {
+- printf("error %d with zipfile in unzGetGlobalInfo \n", err);
++ printf("error %d with zipfile in unzGetGlobalInfo\n", err);
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int do_extract(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char* password) {
+  unz_global_info64 gi;
+  int err;
+  err = unzGetGlobalInfo64(uf, &gi);
+  if (err!=UNZ_OK) {
+- printf("error %d with zipfile in unzGetGlobalInfo \n", err);
++ printf("error %d with zipfile in unzGetGlobalInfo\n", err);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: unzGetGlobalInfo64 — contrib/minizip/unzip.c:727 [gtags_unique] --
+extern int ZEXPORT unzGetGlobalInfo64(unzFile file, unz_global_info64* pglobal_info) {
+   unz64_s* s;
+   if(file==NULL)
+     return UNZ_PARAMERROR;
+   s=(unz64_s*)file;
+   *pglobal_info=s->gi;
+   return UNZ_OK;
+}
+   [reads: file, pglobal_info; writes: pglobal_info*]
+
+-- called macro: UNZ_OK — contrib/minizip/unzip.h:76 [gtags_unique, new version] --
+#define UNZ_OK                          (0)
+
+-- caller of do_list: main — contrib/minizip/miniunz.c:625 --
+int main(int argc, char *argv[]) {
+   const char *zipfilename=NULL;
+   ...
+   char filename_try[MAXFILENAME+16] = "";
+   int i;
+   ...
+   unzFile uf=NULL;
+   ...
+   if(argc==1) {
+   ...
+   } else {
+     for(i=1; i<argc; i++) {
+       if((*argv[i])=='-') {
+   ...
+         while((*p)!='\0') {
+   ...
+           if(((c=='p')||(c=='P'))&&(i+1<argc)) {
+   ...
+             i++;
+           }
+         }
+       } else {
+         if(zipfilename == NULL)
+           zipfilename = argv[i];
+   ...
+         else
+       }
+     }
+   }
+   if(zipfilename!=NULL) {
+     # ...
+     zlib_filefunc64_def ffunc;
+     #endif
+     strncpy(filename_try, zipfilename, MAXFILENAME-1);
+     filename_try[ MAXFILENAME ] = '\0';
+     # ...
+   ...
+     uf = unzOpen2_64(zipfilename, &ffunc);
+   ...
+     uf = unzOpen64(zipfilename);
+     #endif
+     if(uf==NULL) {
+       strcat(filename_try, ".zip");
+       # ...
+       uf = unzOpen2_64(filename_try, &ffunc);
+   ...
+       uf = unzOpen64(filename_try);
+       #endif
+     }
+   }
+   ...
+   if(opt_do_list==1)
+>    ret_value = do_list(uf);
+   else
+   ...
+     return ret_value;
+}
+
+-- caller of do_extract: main — contrib/minizip/miniunz.c:639 --
+int main(int argc, char *argv[]) {
+   const char *zipfilename=NULL;
+   ...
+   const char *password=NULL;
+   char filename_try[MAXFILENAME+16] = "";
+   int i;
+   ...
+   int opt_do_extract_withoutpath=0;
+   int opt_overwrite=0;
+   ...
+   unzFile uf=NULL;
+   ...
+   if(argc==1) {
+   ...
+   } else {
+     for(i=1; i<argc; i++) {
+       if((*argv[i])=='-') {
+   ...
+         while((*p)!='\0') {
+   ...
+           if((c=='e')||(c=='E'))
+             opt_do_extract = opt_do_extract_withoutpath = 1;
+           if((c=='o')||(c=='O'))
+             opt_overwrite=1;
+   ...
+           if(((c=='p')||(c=='P'))&&(i+1<argc)) {
+             password=argv[i+1];
+             i++;
+           }
+         }
+       } else {
+         if(zipfilename == NULL)
+           zipfilename = argv[i];
+   ...
+         else
+       }
+     }
+   }
+   if(zipfilename!=NULL) {
+     # ...
+     zlib_filefunc64_def ffunc;
+     #endif
+     strncpy(filename_try, zipfilename, MAXFILENAME-1);
+     filename_try[ MAXFILENAME ] = '\0';
+     # ...
+   ...
+     uf = unzOpen2_64(zipfilename, &ffunc);
+   ...
+     uf = unzOpen64(zipfilename);
+     #endif
+     if(uf==NULL) {
+       strcat(filename_try, ".zip");
+       # ...
+       uf = unzOpen2_64(filename_try, &ffunc);
+   ...
+       uf = unzOpen64(filename_try);
+       #endif
+     }
+   }
+   ...
+   if(opt_do_list==1)
+   ...
+   else if(opt_do_extract==1) {
+   ...
+     if(filename_to_extract == NULL)
+>      ret_value = do_extract(uf, opt_do_extract_withoutpath, opt_overwrite, password);
+   ...
+     else
+   }
+   ...
+   return ret_value;
+}

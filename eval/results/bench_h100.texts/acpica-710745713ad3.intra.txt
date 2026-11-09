@@ -1,0 +1,8 @@
+Context for merged statement of old file: source/include/actbl1.h with new file: source/include/actbl1.h:
+#ifndef __ACTBL1_H__
+- #define ACPI_CEDT_CFMWS_RESTRICT_TYPE2(1)
++ #define ACPI_CEDT_CFMWS_RESTRICT_DEVMEM(1)
+- #define ACPI_CEDT_CFMWS_RESTRICT_TYPE3(1<<1)
++ #define ACPI_CEDT_CFMWS_RESTRICT_HOSTONLYMEM(1<<1)
+  #endif
+

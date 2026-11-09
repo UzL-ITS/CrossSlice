@@ -1,0 +1,22 @@
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int do_list(unzFile uf) {
+  unz_global_info64 gi;
+  int err;
+  err = unzGetGlobalInfo64(uf, &gi);
+  if (err!=UNZ_OK) {
+- printf("error %d with zipfile in unzGetGlobalInfo \n", err);
++ printf("error %d with zipfile in unzGetGlobalInfo\n", err);
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int do_extract(unzFile uf, int opt_extract_without_path, int opt_overwrite, const char* password) {
+  unz_global_info64 gi;
+  int err;
+  err = unzGetGlobalInfo64(uf, &gi);
+  if (err!=UNZ_OK) {
+- printf("error %d with zipfile in unzGetGlobalInfo \n", err);
++ printf("error %d with zipfile in unzGetGlobalInfo\n", err);
+  }
+}
+

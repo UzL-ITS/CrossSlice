@@ -1,0 +1,17 @@
+@import "tailwindcss";
+
+html, body, #app {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  padding: 1px 5px;
+  border: 1px solid #334155;
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: #1e293b;
+  color: #cbd5e1;
+}

@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+title: "CrossSlice: demand-driven context retrieval for commit and code comprehension"
+message: "If you use this tool, please cite it as below."
+type: software
+version: 0.1.0
+date-released: 2026-11-09
+license: Apache-2.0
+repository-code: "https://github.com/UzL-ITS/CrossSlice.git"
+authors:
+  - family-names: Hempel
+    given-names: Kristoffer
+    orcid: "https://orcid.org/0009-0008-9159-4268"
+  - family-names: Loose
+    given-names: Nils
+    orcid: "https://orcid.org/0009-0003-6243-1623"
+  - family-names: Eisenbarth
+    given-names: Thomas
+    orcid: "https://orcid.org/0000-0003-1116-6973"
+keywords:
+  - program comprehension
+  - program slicing
+  - commit analysis
+  - LLM agents

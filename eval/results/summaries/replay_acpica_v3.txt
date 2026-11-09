@@ -1,0 +1,4 @@
+equivalence  incremental == rebuild in 52/53 queries (98.1 %); consistent (callees equal, callers superset within the index) 52/53 (98.1 %); 1 differing sides
+  1869229dc7fe AcpiInstallMethod resolved: only incremental True  only rebuild False
+incremental  n=40 maintain median=0.186s query median=0.096s total median=0.307s cum=24.8s
+rebuild      n=40 maintain median=0.405s query median=0.200s total median=0.612s cum=24.7s

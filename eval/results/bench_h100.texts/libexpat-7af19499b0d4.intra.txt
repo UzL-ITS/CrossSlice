@@ -1,0 +1,49 @@
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int prolog0(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
++ case XML_TOK_BOM:
++ case XML_TOK_START_TAG_WITH_ATTS:
++ case XML_TOK_START_TAG_NO_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
++ state->handler = error;
++ return XML_ROLE_INSTANCE_START;
+  }
+  return syntaxError(state);
+}
+
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int prolog1(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
++ case XML_TOK_START_TAG_WITH_ATTS:
++ case XML_TOK_START_TAG_NO_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
++ state->handler = error;
++ return XML_ROLE_INSTANCE_START;
+  }
+  return syntaxError(state);
+}
+
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int entity2(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
+  case XML_TOK_LITERAL:
+- state->handler = entity4;
++ state->handler = declClose;
+  }
+  return syntaxError(state);
+}
+

@@ -1,0 +1,141 @@
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int prolog0(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
++ case XML_TOK_BOM:
++ case XML_TOK_START_TAG_WITH_ATTS:
++ case XML_TOK_START_TAG_NO_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
++ state->handler = error;
++ return XML_ROLE_INSTANCE_START;
+  }
+  return syntaxError(state);
+}
+
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int prolog1(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
++ case XML_TOK_START_TAG_WITH_ATTS:
++ case XML_TOK_START_TAG_NO_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
++ case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
++ state->handler = error;
++ return XML_ROLE_INSTANCE_START;
+  }
+  return syntaxError(state);
+}
+
+Context for merged statement of old file: expat/xmltok/xmlrole.c with new file: expat/xmltok/xmlrole.c:
+int entity2(PROLOG_STATE *state,
+	    int tok,
+	    const char *ptr,
+	    const char *end,
+	    const ENCODING *enc) {
+  switch ((tok)) {
+  case XML_TOK_LITERAL:
+- state->handler = entity4;
++ state->handler = declClose;
+  }
+  return syntaxError(state);
+}
+
+
+==== Cross-function context ====
+
+-- called macro: XmlNameMatchesAscii — expat/xmltok/xmltok.h:127 [gtags_unique] --
+#define XmlNameMatchesAscii(enc, ptr1, ptr2) (((enc)->nameMatchesAscii)(enc, ptr1, ptr2))
+
+-- called function: syntaxError — expat/xmltok/xmlrole.c:859 [gtags+ts, old version] --
+static int syntaxError(PROLOG_STATE *state) {
+   state->handler = error;
+   return XML_ROLE_ERROR;
+}
+   [reads: state; writes: state*]
+
+-- called function: syntaxError — expat/xmltok/xmlrole.c:872 [gtags+ts, new version] --
+static int syntaxError(PROLOG_STATE *state) {
+   state->handler = error;
+   return XML_ROLE_ERROR;
+}
+   [reads: state; writes: state*]
+
+-- called macro: XML_TOK_START_TAG_WITH_ATTS — expat/xmltok/xmltok.h:21 [gtags_unique, new version] --
+#define XML_TOK_START_TAG_WITH_ATTS 1
+
+-- called macro: XML_TOK_START_TAG_NO_ATTS — expat/xmltok/xmltok.h:22 [gtags_unique, new version] --
+#define XML_TOK_START_TAG_NO_ATTS 2
+
+-- called macro: XML_TOK_EMPTY_ELEMENT_WITH_ATTS — expat/xmltok/xmltok.h:23 [gtags_unique, new version] --
+#define XML_TOK_EMPTY_ELEMENT_WITH_ATTS 3 /* empty element tag <e/> */
+
+-- called macro: XML_TOK_EMPTY_ELEMENT_NO_ATTS — expat/xmltok/xmltok.h:24 [gtags_unique, new version] --
+#define XML_TOK_EMPTY_ELEMENT_NO_ATTS 4
+
+-- called macro: XML_TOK_BOM — expat/xmltok/xmltok.h:37 [gtags_unique, new version] --
+#define XML_TOK_BOM 12     /* Byte order mark */
+
+-- called macro: XML_TOK_LITERAL — expat/xmltok/xmltok.h:40 [gtags_unique, new version] --
+#define XML_TOK_LITERAL 13
+
+-- caller of prolog0: XmlPrologStateInit — expat/xmltok/xmlrole.c:881 --
+void XmlPrologStateInit(PROLOG_STATE *state) {
+>  state->handler = prolog0;
+}
+
+-- caller of prolog1: doctype1 — expat/xmltok/xmlrole.c:115 --
+int doctype1(PROLOG_STATE *state, int tok, const char *ptr, const char *end, const ENCODING *enc) {
+   switch(tok) {
+   ...
+>    state->handler = prolog1;
+   ...
+   }
+   return syntaxError(state);
+}
+
+-- caller of prolog1: doctype4 — expat/xmltok/xmlrole.c:170 --
+int doctype4(PROLOG_STATE *state, int tok, const char *ptr, const char *end, const ENCODING *enc) {
+   switch(tok) {
+   ...
+>    state->handler = prolog1;
+   ...
+   }
+   return syntaxError(state);
+}
+
+-- caller of prolog1: doctype5 — expat/xmltok/xmlrole.c:184 --
+int doctype5(PROLOG_STATE *state, int tok, const char *ptr, const char *end, const ENCODING *enc) {
+   switch(tok) {
+   ...
+>    state->handler = prolog1;
+   ...
+   }
+   return syntaxError(state);
+}
+
+-- caller of entity2: entity0 — expat/xmltok/xmlrole.c:247 --
+static int entity0(PROLOG_STATE *state, int tok, const char *ptr, const char *end, const ENCODING *enc) {
+   switch(tok) {
+   ...
+>    state->handler = entity2;
+   ...
+   }
+   return syntaxError(state);
+}
+
+-- caller of entity2: entity1 — expat/xmltok/xmlrole.c:262 --
+static int entity1(PROLOG_STATE *state, int tok, const char *ptr, const char *end, const ENCODING *enc) {
+   switch(tok) {
+   ...
+>    state->handler = entity2;
+   ...
+   }
+   return syntaxError(state);
+}

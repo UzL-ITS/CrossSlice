@@ -1,0 +1,25 @@
+Context for merged statement of old file: ext/exif/exif.c with new file: ext/exif/exif.c:
+void exif_process_APP1(image_info_type *ImageInfo, char *CharBuf, size_t length, size_t displacement) {
+- static const uchar ExifHeader[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
++ static const uchar ExifHeader[] = {'E', 'x', 'i', 'f', 0, 0};
+  if (length <= 8 || memcmp(CharBuf+2, ExifHeader, 6)) {
+  return;
+  }
+}
+
+Context for merged statement of old file: ext/exif/exif.c with new file: ext/exif/exif.c:
+bool exif_scan_WEBP_header(image_info_type *ImageInfo, size_t riff_size) {
+- static const uchar ExifHeader[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
++ static const uchar ExifHeader[] = {'E', 'x', 'i', 'f', 0, 0};
+  while ((offset + 8 <= riff_end)) {
+  if (!memcmp(chunk_header, "EXIF", 4)) {
+  if (exif_read_from_stream_file_looped(ImageInfo->infile, data, chunk_size)== chunk_size) {
+  if (chunk_size >= sizeof(ExifHeader)+ 8 && !memcmp(data, ExifHeader, sizeof(ExifHeader))) {
+  skip = sizeof(ExifHeader);
+  }
+  exif_process_TIFF_in_JPEG(ImageInfo, data + skip, chunk_size - skip, payload_offset + skip);
+  }
+  }
+  }
+}
+

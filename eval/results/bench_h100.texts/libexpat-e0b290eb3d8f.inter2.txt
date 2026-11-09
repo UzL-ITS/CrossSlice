@@ -1,0 +1,63 @@
+Context for merged statement of old file: expat/lib/xmltok.c with new file: expat/lib/xmltok.c:
+enum XML_Convert_Result utf8_toUtf8(const ENCODING *UNUSED_P(enc),
+            const char **fromP, const char *fromLim,
+            char **toP, const char *toLim) {
+  const ptrdiff_t bytesStorable = toLim - *toP;
+  if (bytesAvailable > bytesStorable) {
+  fromLim = *fromP + bytesStorable;
+  }
+- input_incomplete = true;
++ const char * const fromLimBefore = fromLim;
++ align_limit_to_full_utf8_characters(*fromP, &fromLim);
++ if (fromLim < fromLimBefore) {
++ input_incomplete = true;
+  }
++ const ptrdiff_t bytesToCopy = fromLim - *fromP;
++ memcpy(*toP, *fromP, bytesToCopy);
++ *fromP += bytesToCopy;
++ *toP += bytesToCopy;
+- *toP += bytesToCopy;
+- *fromP += bytesToCopy;
+- memcpy(*toP, *fromP, bytesToCopy);
+- const ptrdiff_t bytesToCopy = fromLim - *fromP;
+- if (fromLim < fromLimBefore) {
+- input_incomplete = true;
+  }
+- align_limit_to_full_utf8_characters(*fromP, &fromLim);
+- const char * const fromLimBefore = fromLim;
+}
+
+
+==== Cross-function context ====
+
+-- called function: align_limit_to_full_utf8_characters — expat/lib/xmltok.c:356 [gtags_unique] --
+void align_limit_to_full_utf8_characters(const char * from, const char ** fromLimRef) {
+   const char * fromLim = *fromLimRef;
+   size_t walked = 0;
+   for(; fromLim > from; fromLim--, walked++) {
+     const unsigned char prev =(unsigned char)fromLim[-1];
+     if((prev & 0xf8u)== 0xf0u) {
+       if(walked + 1 >= 4) {
+         fromLim += 4 - 1;
+   ...
+       } else {
+       }
+     } else if((prev & 0xf0u)== 0xe0u) {
+       if(walked + 1 >= 3) {
+         fromLim += 3 - 1;
+   ...
+       } else {
+       }
+     } else if((prev & 0xe0u)== 0xc0u) {
+       if(walked + 1 >= 2) {
+         fromLim += 2 - 1;
+   ...
+       } else {
+       }
+     } else if((prev & 0x80u)== 0x00u) {
+   ...
+     }
+   }
+   *fromLimRef = fromLim;
+}
+   [reads: from, fromLimRef; writes: fromLimRef*]

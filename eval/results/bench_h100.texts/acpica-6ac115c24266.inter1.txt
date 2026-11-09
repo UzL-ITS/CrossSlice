@@ -1,0 +1,88 @@
+Context for merged statement of old file: source/components/events/evgpe.c with new file: source/components/events/evgpe.c:
+void AcpiEvAsynchExecuteGpeMethod (
+    void                    *Context) {
+  ACPI_GPE_EVENT_INFO *LocalGpeEventInfo;
+  LocalGpeEventInfo = ACPI_ALLOCATE_ZEROED(sizeof(ACPI_GPE_EVENT_INFO));
+  if (ACPI_FAILURE(Status)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+  if (!AcpiEvValidGpeEvent(GpeEventInfo)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+  if (ACPI_FAILURE(Status)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:167 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called macro: ACPI_ALLOCATE_ZEROED — source/include/actypes.h:415 [lsp] --
+#define ACPI_ALLOCATE_ZEROED(a)         AcpiOsAllocateZeroed ((ACPI_SIZE) (a))
+
+-- called function: AcpiUtReleaseMutex — source/components/utilities/utmutex.c:416 [gtags_unique] --
+ACPI_STATUS AcpiUtReleaseMutex ( ACPI_MUTEX_HANDLE       MutexId) {
+   ...
+   ACPI_DEBUG_PRINT((ACPI_DB_MUTEX, "Thread %u releasing Mutex [%s]\n", (UINT32)AcpiOsGetThreadId(), AcpiUtGetMutexName(MutexId)));
+   if(MutexId > ACPI_MAX_MUTEX) {
+     return(AE_BAD_PARAMETER);
+   }
+   if(AcpiGbl_MutexInfo[MutexId].ThreadId == ACPI_MUTEX_NOT_ACQUIRED) {
+     ACPI_ERROR((AE_INFO, "Mutex [0x%X] is not acquired, cannot release", MutexId));
+     return(AE_NOT_ACQUIRED);
+   }
+   #ifdef ...
+     UINT32 i;
+     for(i = MutexId; i < ACPI_NUM_MUTEX; i++) {
+       if(AcpiGbl_MutexInfo[i].ThreadId == AcpiOsGetThreadId()) {
+         if(i == MutexId) {
+   ...
+         }
+         ACPI_ERROR((AE_INFO, "Invalid release order: owns [%s], releasing [%s]", AcpiUtGetMutexName(i), AcpiUtGetMutexName(MutexId)));
+         return(AE_RELEASE_DEADLOCK);
+       }
+     }
+   #endif
+   AcpiGbl_MutexInfo[MutexId].ThreadId = ACPI_MUTEX_NOT_ACQUIRED;
+   AcpiOsReleaseMutex(AcpiGbl_MutexInfo[MutexId].Mutex);
+   return(AE_OK);
+}
+   [reads: MutexId; writes: -]
+
+-- called function: AcpiEvValidGpeEvent — source/components/events/evgpeutil.c:202 [gtags_unique] --
+BOOLEAN AcpiEvValidGpeEvent ( ACPI_GPE_EVENT_INFO     *GpeEventInfo) {
+   ACPI_GPE_XRUPT_INFO *GpeXruptBlock;
+   ACPI_GPE_BLOCK_INFO *GpeBlock;
+   ...
+   GpeXruptBlock = AcpiGbl_GpeXruptListHead;
+   while(GpeXruptBlock) {
+     GpeBlock = GpeXruptBlock->GpeBlockListHead;
+     while(GpeBlock) {
+       if((&GpeBlock->EventInfo[0] <= GpeEventInfo)&&(&GpeBlock->EventInfo[GpeBlock->GpeCount] > GpeEventInfo)) {
+         return(TRUE);
+   ...
+       }
+     }
+   }
+   return(FALSE);
+}
+   [reads: GpeEventInfo; writes: -]
+
+-- called macro: ACPI_FREE — source/include/actypes.h:416 [lsp, new version] --
+#define ACPI_FREE(a)                    AcpiOsFree (a)
+
+-- caller of AcpiEvAsynchExecuteGpeMethod: AcpiEvGpeDispatch — source/components/events/evgpe.c:900 --
+UINT32 AcpiEvGpeDispatch ( ACPI_NAMESPACE_NODE     *GpeDevice, ACPI_GPE_EVENT_INFO     *GpeEventInfo, UINT32                  GpeNumber) {
+   ...
+   switch(GpeEventInfo->Flags & ACPI_GPE_DISPATCH_MASK) {
+   ...
+     Status = AcpiOsExecute(OSL_GPE_HANDLER, AcpiEvAsynchExecuteGpeMethod, GpeEventInfo);
+     if(ACPI_FAILURE(Status)) {
+       ACPI_EXCEPTION((AE_INFO, Status, "Unable to queue handler for GPE%02X - event disabled", GpeNumber));
+   ...
+     }
+   }
+}

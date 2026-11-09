@@ -1,0 +1,3 @@
+equivalence  incremental == rebuild in 37/37 queries (100.0 %); consistent (callees equal, callers superset within the index) 37/37 (100.0 %); 0 differing sides
+incremental  n=30 maintain median=0.542s query median=0.229s total median=0.805s cum=32.7s
+rebuild      n=30 maintain median=1.932s query median=0.438s total median=2.376s cum=86.2s

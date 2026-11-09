@@ -1,0 +1,7 @@
+{
+ "data/repos/zlib": "eval/compiledb/zlib.json",
+ "data/repos/libexpat": "eval/compiledb/libexpat.json",
+ "data/repos/acpica": "eval/compiledb/acpica.json",
+ "data/repos/ffmpeg": "eval/compiledb/ffmpeg.json",
+ "data/repos/php-src": "eval/compiledb/php-src.json"
+}

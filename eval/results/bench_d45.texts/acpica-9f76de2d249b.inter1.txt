@@ -1,0 +1,266 @@
+Context for merged statement of old file: source/components/utilities/utresrc.c with new file: source/components/utilities/utresrc.c:
+ACPI_STATUS AcpiUtWalkAmlResources (
+    ACPI_WALK_STATE         *WalkState,
+    UINT8                   *Aml,
+    ACPI_SIZE               AmlLength,
+    ACPI_WALK_AML_CALLBACK  UserFunction,
+    void                    **Context) {
+  UINT32 Length;
++ ACPI_SIZE ThisAmlLength = 0;
+- if (AmlLength < sizeof(AML_RESOURCE_END_TAG)) {
++ if (AmlLength <= sizeof(AML_RESOURCE_END_TAG)) {
+  }
+  while ((Aml < EndAml)) {
+  Length = AcpiUtGetDescriptorLength(Aml);
+  if (AcpiUtGetResourceType(Aml)== ACPI_RESOURCE_NAME_END_TAG) {
++ if (AmlLength > ThisAmlLength) {
++ return_ACPI_STATUS(AE_AML_NO_RESOURCE_END_TAG);
+  }
+  }
++ ThisAmlLength += Length;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: return_ACPI_STATUS — source/include/acoutput.h:562 [lsp] --
+#define return_ACPI_STATUS(s)           return(s)
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:167 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: AcpiUtGetResourceType — source/components/utilities/utresrc.c:823 [gtags_unique, old version] --
+UINT8 AcpiUtGetResourceType ( void                    *Aml) {
+   ...
+   if(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_LARGE) {
+     return(ACPI_GET8(Aml));
+   } else {
+     return((UINT8)(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_SMALL_MASK));
+   }
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiUtGetDescriptorLength — source/components/utilities/utresrc.c:942 [gtags_unique, old version] --
+UINT32 AcpiUtGetDescriptorLength ( void                    *Aml) {
+   ...
+   return(AcpiUtGetResourceLength(Aml)+ AcpiUtGetResourceHeaderLength(Aml));
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiUtValidateResource — source/components/utilities/utresrc.c:650 [gtags_unique, old version] --
+ACPI_STATUS AcpiUtValidateResource ( ACPI_WALK_STATE         *WalkState, void                    *Aml, UINT8                   *ReturnIndex) {
+   ...
+   UINT8 ResourceType;
+   UINT8 ResourceIndex;
+   ...
+   ResourceType = ACPI_GET8(Aml);
+   if(ResourceType & ACPI_RESOURCE_NAME_LARGE) {
+     if(ResourceType > ACPI_RESOURCE_NAME_LARGE_MAX) {
+   ...
+     }
+     ResourceIndex =(UINT8)(ResourceType - 0x70);
+   } else {
+     ResourceIndex =(UINT8)((ResourceType & ACPI_RESOURCE_NAME_SMALL_MASK)>> 3);
+   }
+   if(!AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+   }
+   ResourceLength = AcpiUtGetResourceLength(Aml);
+   MinimumResourceLength = AcpiGbl_ResourceAmlSizes[ResourceIndex];
+   switch(AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+     if(ResourceLength != MinimumResourceLength) {
+   ...
+     }
+   ...
+     if(ResourceLength < MinimumResourceLength) {
+   ...
+     }
+   ...
+     if((ResourceLength > MinimumResourceLength)||(ResourceLength <(MinimumResourceLength - 1))) {
+   ...
+     }
+   }
+   AmlResource = ACPI_CAST_PTR(AML_RESOURCE, Aml);
+   if(ResourceType == ACPI_RESOURCE_NAME_SERIAL_BUS) {
+     if((AmlResource->CommonSerialBus.Type == 0)||(AmlResource->CommonSerialBus.Type > AML_RESOURCE_MAX_SERIALBUSTYPE)) {
+       if(WalkState) {
+         ACPI_ERROR((AE_INFO, "Invalid/unsupported SerialBus resource descriptor: BusType 0x%2.2X", AmlResource->CommonSerialBus.Type));
+       }
+       return(AE_AML_INVALID_RESOURCE_TYPE);
+     }
+   }
+   if(ReturnIndex) {
+     *ReturnIndex = ResourceIndex;
+   }
+   return(AE_OK);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid/unsupported resource descriptor: Type 0x%2.2X", ResourceType));
+   }
+   return(AE_AML_INVALID_RESOURCE_TYPE);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid resource descriptor length: Type " "0x%2.2X, Length 0x%4.4X, MinLength 0x%4.4X", ResourceType, ResourceLength, MinimumResourceLength));
+   }
+   return(AE_AML_BAD_RESOURCE_LENGTH);
+}
+   [reads: Aml, ReturnIndex, WalkState; writes: ReturnIndex*]
+
+-- called function: AcpiUtGetResourceType — source/components/utilities/utresrc.c:834 [gtags_unique, new version] --
+UINT8 AcpiUtGetResourceType ( void                    *Aml) {
+   ...
+   if(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_LARGE) {
+     return(ACPI_GET8(Aml));
+   } else {
+     return((UINT8)(ACPI_GET8(Aml)& ACPI_RESOURCE_NAME_SMALL_MASK));
+   }
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiUtGetDescriptorLength — source/components/utilities/utresrc.c:953 [gtags_unique, new version] --
+UINT32 AcpiUtGetDescriptorLength ( void                    *Aml) {
+   ...
+   return(AcpiUtGetResourceLength(Aml)+ AcpiUtGetResourceHeaderLength(Aml));
+}
+   [reads: Aml; writes: -]
+
+-- called function: AcpiUtValidateResource — source/components/utilities/utresrc.c:661 [gtags_unique, new version] --
+ACPI_STATUS AcpiUtValidateResource ( ACPI_WALK_STATE         *WalkState, void                    *Aml, UINT8                   *ReturnIndex) {
+   ...
+   UINT8 ResourceType;
+   UINT8 ResourceIndex;
+   ...
+   ResourceType = ACPI_GET8(Aml);
+   if(ResourceType & ACPI_RESOURCE_NAME_LARGE) {
+     if(ResourceType > ACPI_RESOURCE_NAME_LARGE_MAX) {
+   ...
+     }
+     ResourceIndex =(UINT8)(ResourceType - 0x70);
+   } else {
+     ResourceIndex =(UINT8)((ResourceType & ACPI_RESOURCE_NAME_SMALL_MASK)>> 3);
+   }
+   if(!AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+   }
+   ResourceLength = AcpiUtGetResourceLength(Aml);
+   MinimumResourceLength = AcpiGbl_ResourceAmlSizes[ResourceIndex];
+   switch(AcpiGbl_ResourceTypes[ResourceIndex]) {
+   ...
+     if(ResourceLength != MinimumResourceLength) {
+   ...
+     }
+   ...
+     if(ResourceLength < MinimumResourceLength) {
+   ...
+     }
+   ...
+     if((ResourceLength > MinimumResourceLength)||(ResourceLength <(MinimumResourceLength - 1))) {
+   ...
+     }
+   }
+   AmlResource = ACPI_CAST_PTR(AML_RESOURCE, Aml);
+   if(ResourceType == ACPI_RESOURCE_NAME_SERIAL_BUS) {
+     if((AmlResource->CommonSerialBus.Type == 0)||(AmlResource->CommonSerialBus.Type > AML_RESOURCE_MAX_SERIALBUSTYPE)) {
+       if(WalkState) {
+         ACPI_ERROR((AE_INFO, "Invalid/unsupported SerialBus resource descriptor: BusType 0x%2.2X", AmlResource->CommonSerialBus.Type));
+       }
+       return(AE_AML_INVALID_RESOURCE_TYPE);
+     }
+   }
+   if(ReturnIndex) {
+     *ReturnIndex = ResourceIndex;
+   }
+   return(AE_OK);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid/unsupported resource descriptor: Type 0x%2.2X", ResourceType));
+   }
+   return(AE_AML_INVALID_RESOURCE_TYPE);
+   ...
+   if(WalkState) {
+     ACPI_ERROR((AE_INFO, "Invalid resource descriptor length: Type " "0x%2.2X, Length 0x%4.4X, MinLength 0x%4.4X", ResourceType, ResourceLength, MinimumResourceLength));
+   }
+   return(AE_AML_BAD_RESOURCE_LENGTH);
+}
+   [reads: Aml, ReturnIndex, WalkState; writes: ReturnIndex*]
+
+-- called macro: ACPI_RESOURCE_NAME_END_TAG — source/include/aclocal.h:1308 [gtags_unique, new version] --
+#define ACPI_RESOURCE_NAME_END_TAG              0x78
+
+-- called macro: AE_AML_NO_RESOURCE_END_TAG — source/include/acexcep.h:267 [gtags_unique, new version] --
+#define AE_AML_NO_RESOURCE_END_TAG      EXCEP_AML (0x001C)
+
+-- caller of AcpiUtWalkAmlResources: AcpiDmAddResourcesToNamespace — source/common/dmrestag.c:1066 --
+static void AcpiDmAddResourcesToNamespace ( ACPI_NAMESPACE_NODE     *BufferNode, ACPI_PARSE_OBJECT       *Op) {
+   ACPI_PARSE_OBJECT *NextOp;
+   NextOp = Op->Common.Value.Arg;
+   NextOp = NextOp->Common.Next;
+   ...
+   BufferNode->Op = Op;
+   ...
+>  AcpiUtWalkAmlResources(NULL, (UINT8 *)NextOp->Named.Data, (ACPI_SIZE)NextOp->Common.Value.Integer, AcpiDmAddResourceToNamespace, (void **)BufferNode);
+}
+
+-- caller of AcpiUtWalkAmlResources: AcpiDmIsResourceTemplate — source/components/disassembler/dmresrc.c:515 --
+ACPI_STATUS AcpiDmIsResourceTemplate ( ACPI_WALK_STATE         *WalkState, ACPI_PARSE_OBJECT       *Op) {
+   ...
+   ACPI_PARSE_OBJECT *NextOp;
+   UINT8 *Aml;
+   UINT8 *EndAml;
+   UINT32 BufferLength;
+   ...
+   NextOp = Op->Common.Value.Arg;
+   ...
+   NextOp = NextOp->Common.Next;
+   ...
+   Aml = NextOp->Named.Data;
+   BufferLength = NextOp->Common.Value.Size;
+   ...
+>  Status = AcpiUtWalkAmlResources(WalkState, Aml, BufferLength, NULL, ACPI_CAST_INDIRECT_PTR(void, &EndAml));
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+}
+
+-- caller of AcpiUtWalkAmlResources: AcpiBufferToResource — source/components/resources/rscreate.c:183 --
+ACPI_STATUS AcpiBufferToResource ( UINT8                   *AmlBuffer, UINT16                  AmlBufferLength, ACPI_RESOURCE           **ResourcePtr) {
+   ...
+   ACPI_SIZE ListSizeNeeded;
+   void *Resource;
+   void *CurrentResourcePtr;
+   ...
+   Resource = ACPI_ALLOCATE_ZEROED(ListSizeNeeded);
+   CurrentResourcePtr = Resource;
+   ...
+>  Status = AcpiUtWalkAmlResources(NULL, AmlBuffer, AmlBufferLength, AcpiRsConvertAmlToResources, &CurrentResourcePtr);
+   if(Status == AE_AML_NO_RESOURCE_END_TAG) {
+   ...
+   }
+   if(ACPI_FAILURE(Status)) {
+   ...
+   } else {
+   }
+   ...
+   return_ACPI_STATUS(Status);
+}
+
+-- caller of AcpiUtWalkAmlResources: AcpiRsCreateResourceList — source/components/resources/rscreate.c:271 --
+AcpiRsCreateResourceList ( ACPI_OPERAND_OBJECT     *AmlBuffer, ACPI_BUFFER             *OutputBuffer) {
+   ...
+   UINT8 *AmlStart;
+   ...
+   UINT32 AmlBufferLength;
+   void *Resource;
+   ...
+   AmlBufferLength = AmlBuffer->Buffer.Length;
+   AmlStart = AmlBuffer->Buffer.Pointer;
+   ...
+   Resource = OutputBuffer->Pointer;
+>  Status = AcpiUtWalkAmlResources(NULL, AmlStart, AmlBufferLength, AcpiRsConvertAmlToResources, &Resource);
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   ...
+   }
+}

@@ -1,0 +1,41 @@
+Context for merged statement of old file: gzlib.c with new file: gzlib.c:
+local gz_open(path, fd, mode) {
+  gz_statep state;
++ size_t len;
+  state = malloc(sizeof(gz_state));
++ #ifdef _WIN32
++ if (fd == -2) {
++ len = wcstombs(NULL, path, 0);
++ if (len ==(size_t)-1) {
++ len = 0;
+  }
+  }
+  #endif
++ len = strlen(path);
+- state->path = malloc(strlen(fd == -2 ? WPATH : path)+ 1);
++ state->path = malloc(len + 1);
+  if (state->path == NULL) {
+  free(state);
+  }
++ #ifdef _WIN32
++ if (fd == -2) {
++ if (len) {
++ wcstombs(state->path, path, len + 1);
+  }
++ else {
++ *(state->path)= 0;
++ }
+  }
+  #endif
+- strcpy(state->path, fd == -2 ? WPATH : path);
++ strcpy(state->path, path);
+   #ifdef O_CLOEXEC
+  if (state->fd == -1) {
+  free(state->path);
+  free(state);
+  }
+  gz_reset(state);
+  return(gzFile)state;
+  #endif
+}
+

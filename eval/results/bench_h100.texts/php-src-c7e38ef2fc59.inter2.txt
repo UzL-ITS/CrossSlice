@@ -1,0 +1,49 @@
+Context for merged statement of old file: Zend/zend.h with new file: Zend/zend.h:
+#ifndef ZEND_H
+- #define ZEND_VERSION "4.4.20-dev"
++ #define ZEND_VERSION "4.4.21-dev"
+  #endif
+
+Context for merged statement of old file: main/php_version.h with new file: main/php_version.h:
+- #define PHP_RELEASE_VERSION 20
++ #define PHP_RELEASE_VERSION 21
+- #define PHP_VERSION "8.4.20-dev"
++ #define PHP_VERSION "8.4.21-dev"
+- #define PHP_VERSION_ID 80420
++ #define PHP_VERSION_ID 80421
+
+
+==== Cross-function context ====
+
+-- called macro: ZEND_ATTRIBUTE_FORMAT — Zend/zend_portability.h:247 [priority_fallback] --
+# define ZEND_ATTRIBUTE_FORMAT(type, idx, first) __attribute__ ((format(type, idx, first)))
+
+-- called macro: END_EXTERN_C — Zend/zend_portability.h:26 [priority_fallback] --
+#define END_EXTERN_C() }
+
+-- called macro: BEGIN_EXTERN_C — Zend/zend_portability.h:25 [priority_fallback] --
+#define BEGIN_EXTERN_C() extern "C" {
+
+-- called macro: ZEND_ATTRIBUTE_PTR_FORMAT — Zend/zend_portability.h:253 [priority_fallback] --
+# define ZEND_ATTRIBUTE_PTR_FORMAT(type, idx, first) __attribute__ ((format(type, idx, first)))
+
+-- called macro: ZEND_TSRMLS_CACHE_EXTERN — Zend/zend.h:60 [priority_fallback] --
+#define ZEND_TSRMLS_CACHE_EXTERN() TSRMLS_CACHE_EXTERN()
+
+-- called macro: TSRMLS_MAIN_CACHE_EXTERN — TSRM/TSRM.h:178 [priority_fallback] --
+#define TSRMLS_MAIN_CACHE_EXTERN() extern TSRM_TLS void *TSRMLS_CACHE TSRM_TLS_MODEL_ATTR;
+
+-- called macro: ZEND_H — Zend/zend.h:21 [gtags_unique, new version] --
+#define ZEND_H
+
+-- called macro: ZEND_VERSION — Zend/zend.h:23 [gtags_unique, new version] --
+#define ZEND_VERSION "4.4.21-dev"
+
+-- called macro: PHP_RELEASE_VERSION — main/php_version.h:5 [gtags_unique, new version] --
+#define PHP_RELEASE_VERSION 21
+
+-- called macro: PHP_VERSION — main/php_version.h:7 [gtags_unique, new version] --
+#define PHP_VERSION "8.4.21-dev"
+
+-- called macro: PHP_VERSION_ID — main/php_version.h:8 [gtags_unique, new version] --
+#define PHP_VERSION_ID 80421

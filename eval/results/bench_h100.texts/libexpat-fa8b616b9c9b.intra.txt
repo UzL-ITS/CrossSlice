@@ -1,0 +1,535 @@
+Context for merged statement of old file: expat/xmlparse/xmlparse.c with new file: expat/xmlparse/xmlparse.c:
+- static Processor contentProcessor;
++ static Processor cdataSectionProcessor;
+- static enum XML_Error doContent(XML_Parser parser, int startTagLevel, const ENCODING *enc, const char *start, const char *end, const char **endPtr);
++ static enum XML_Error doCdataSection(XML_Parser parser, const char **startPtr, const char *end, const char **nextPtr);
+
+Context for merged statement of old file: expat/xmlparse/xmlparse.c with new file: expat/xmlparse/xmlparse.c:
++ char *XML_ErrorString(int code) {
++ static const char *message[] = { 0, "out of memory", "syntax error", "no element found", "not well-formed", "unclosed token", "unclosed token", "mismatched tag", "duplicate attribute", "junk after document element", "illegal parameter entity reference", "undefined entity", "recursive entity reference", "asynchronous entity", "reference to invalid character number", "reference to binary entity", "reference to external entity in attribute", "xml processing instruction not at start of external entity", "unknown encoding", "encoding specified in XML declaration is incorrect", "unclosed CDATA section", };
++ if (code > 0 && code < sizeof(message)/sizeof(message[0])) {
++ return message[code];
+  }
++ return 0;
+- char *XML_ErrorString(int code) {
+- static const char *message[] = { 0, "out of memory", "syntax error", "no element found", "not well-formed", "unclosed token", "unclosed token", "mismatched tag", "duplicate attribute", "junk after document element", "illegal parameter entity reference", "undefined entity", "recursive entity reference", "asynchronous entity", "reference to invalid character number", "reference to binary entity", "reference to external entity in attribute", "xml processing instruction not at start of external entity", "unknown encoding", "encoding specified in XML declaration is incorrect" };
+- if (code > 0 && code < sizeof(message)/sizeof(message[0])) {
+  }
+- return 0;
+}
+}
+
+Context for merged statement of old file: expat/xmlparse/xmlparse.c with new file: expat/xmlparse/xmlparse.c:
++ enum XML_Error doContent(XML_Parser parser,
+	  int startTagLevel,
+	  const ENCODING *enc,
+	  const char *s,
+	  const char *end,
+	  const char **nextPtr) {
++ const ENCODING *utf8 = XmlGetInternalEncoding(XML_UTF8_ENCODING);
+  for (; ; ) {
++ const char *next;
++ int tok = XmlContentTok(enc, s, end, &next);
++ switch ((tok)) {
++ case XML_TOK_TRAILING_CR:
++ case XML_TOK_NONE:
++ if (nextPtr) {
++ *nextPtr = s;
++ return XML_ERROR_NONE;
+  }
++ if (startTagLevel > 0) {
++ if (tagLevel != startTagLevel) {
++ errorPtr = s;
++ return XML_ERROR_ASYNC_ENTITY;
+  }
++ return XML_ERROR_NONE;
+  }
++ errorPtr = s;
++ return XML_ERROR_NO_ELEMENTS;
++ case XML_TOK_INVALID:
++ errorPtr = next;
++ return XML_ERROR_INVALID_TOKEN;
++ case XML_TOK_PARTIAL:
++ if (nextPtr) {
++ *nextPtr = s;
++ return XML_ERROR_NONE;
+  }
++ errorPtr = s;
++ return XML_ERROR_UNCLOSED_TOKEN;
++ case XML_TOK_PARTIAL_CHAR:
++ if (nextPtr) {
++ *nextPtr = s;
++ return XML_ERROR_NONE;
+  }
++ errorPtr = s;
++ return XML_ERROR_PARTIAL_CHAR;
++ case XML_TOK_ENTITY_REF:
++ const char *name = poolStoreString(&dtd.pool, enc, s + enc->minBytesPerChar, next - enc->minBytesPerChar);
++ ENTITY *entity;
++ if (!name) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ entity =(ENTITY *)lookup(&dtd.generalEntities, name, 0);
++ poolDiscard(&dtd.pool);
++ if (!entity) {
++ if (dtd.complete || dtd.standalone) {
++ errorPtr = s;
++ return XML_ERROR_UNDEFINED_ENTITY;
+  }
++ break;
+  }
++ if (entity->magic) {
++ if (characterDataHandler) {
++ characterDataHandler(userData, entity->textPtr, entity->textLen);
+  }
++ break;
+  }
++ if (entity->open) {
++ errorPtr = s;
++ return XML_ERROR_RECURSIVE_ENTITY_REF;
+  }
++ if (entity->notation) {
++ errorPtr = s;
++ return XML_ERROR_BINARY_ENTITY_REF;
+  }
++ if (entity) {
++ if (entity->textPtr) {
++ enum XML_Error result;
++ entity->open = 1;
++ result = doContent(parser, tagLevel, utf8, entity->textPtr, entity->textPtr + entity->textLen, 0);
++ entity->open = 0;
++ if (result) {
++ errorPtr = s;
++ return result;
+  }
+  }
+  }
++ break;
++ case XML_TOK_START_TAG_WITH_ATTS:
++ if (!startElementHandler) {
++ enum XML_Error result = storeAtts(parser, enc, 0, s);
++ if (result) {
++ return result;
+  }
+  }
++ case XML_TOK_START_TAG_NO_ATTS:
++ TAG *tag;
++ if (freeTagList) {
++ tag = freeTagList;
++ freeTagList = freeTagList->parent;
+  }
++ else {
++ tag = malloc(sizeof(TAG));
++ if (!tag) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ tag->buf = malloc(INIT_TAG_BUF_SIZE);
++ if (!tag->buf) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ tag->bufEnd = tag->buf + INIT_TAG_BUF_SIZE;
++ }
++ tag->parent = tagStack;
++ tagStack = tag;
++ tag->rawName = s + enc->minBytesPerChar;
++ tag->rawNameLength = XmlNameLength(enc, tag->rawName);
++ if (nextPtr) {
++ if (tag->rawNameLength > tag->bufEnd - tag->buf) {
++ int bufSize = tag->rawNameLength * 4;
++ tag->buf = realloc(tag->buf, bufSize);
++ if (!tag->buf) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ tag->bufEnd = tag->buf + bufSize;
+  }
++ memcpy(tag->buf, tag->rawName, tag->rawNameLength);
++ tag->rawName = tag->buf;
+  }
++ ++tagLevel;
++ if (startElementHandler) {
++ enum XML_Error result;
++ char *toPtr;
+  for (; ; ) {
++ const char *rawNameEnd = tag->rawName + tag->rawNameLength;
++ const char *fromPtr = tag->rawName;
++ int bufSize;
++ toPtr = tag->buf;
++ if (nextPtr) {
++ toPtr += tag->rawNameLength;
+  }
++ tag->name = toPtr;
++ XmlConvert(enc, XML_UTF8_ENCODING, &fromPtr, rawNameEnd, &toPtr, tag->bufEnd - 1);
++ if (fromPtr == rawNameEnd) {
++ break;
+  }
++ bufSize =(tag->bufEnd - tag->buf)<< 1;
++ tag->buf = realloc(tag->buf, bufSize);
++ if (!tag->buf) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ tag->bufEnd = tag->buf + bufSize;
++ if (nextPtr) {
++ tag->rawName = tag->buf;
+  }
+  }
++ *toPtr = 0;
++ result = storeAtts(parser, enc, tag->name, s);
++ if (result) {
++ return result;
+  }
++ startElementHandler(userData, tag->name, (const char **)atts);
++ poolClear(&tempPool);
+  }
++ else {
++ tag->name = 0;
++ }
++ break;
++ case XML_TOK_EMPTY_ELEMENT_WITH_ATTS:
++ if (!startElementHandler) {
++ enum XML_Error result = storeAtts(parser, enc, 0, s);
++ if (result) {
++ return result;
+  }
+  }
++ case XML_TOK_EMPTY_ELEMENT_NO_ATTS:
++ if (startElementHandler || endElementHandler) {
++ const char *rawName = s + enc->minBytesPerChar;
++ const char *name = poolStoreString(&tempPool, enc, rawName, rawName + XmlNameLength(enc, rawName));
++ if (!name) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ poolFinish(&tempPool);
++ if (startElementHandler) {
++ enum XML_Error result = storeAtts(parser, enc, name, s);
++ if (result) {
++ return result;
+  }
++ startElementHandler(userData, name, (const char **)atts);
+  }
++ if (endElementHandler) {
++ endElementHandler(userData, name);
+  }
++ poolClear(&tempPool);
+  }
++ if (tagLevel == 0) {
++ return epilogProcessor(parser, next, end, nextPtr);
+  }
++ break;
++ case XML_TOK_END_TAG:
++ if (tagLevel == startTagLevel) {
++ errorPtr = s;
++ return XML_ERROR_ASYNC_ENTITY;
+  }
++ else {
++ int len;
++ const char *rawName;
++ TAG *tag = tagStack;
++ tagStack = tag->parent;
++ tag->parent = freeTagList;
++ freeTagList = tag;
++ rawName = s + enc->minBytesPerChar*2;
++ len = XmlNameLength(enc, rawName);
++ if (len != tag->rawNameLength || memcmp(tag->rawName, rawName, len)!= 0) {
++ errorPtr = rawName;
++ return XML_ERROR_TAG_MISMATCH;
+  }
++ --tagLevel;
++ if (endElementHandler) {
++ if (tag->name) {
++ endElementHandler(userData, tag->name);
+  }
++ else {
++ const char *name = poolStoreString(&tempPool, enc, rawName, rawName + len);
++ if (!name) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ endElementHandler(userData, name);
++ poolClear(&tempPool);
++ }
+  }
++ if (tagLevel == 0) {
++ return epilogProcessor(parser, next, end, nextPtr);
+  }
++ }
++ break;
++ case XML_TOK_CHAR_REF:
++ int n = XmlCharRefNumber(enc, s);
++ if (n < 0) {
++ errorPtr = s;
++ return XML_ERROR_BAD_CHAR_REF;
+  }
++ if (characterDataHandler) {
++ char buf[XML_MAX_BYTES_PER_CHAR];
++ characterDataHandler(userData, buf, XmlEncode(utf8, n, buf));
+  }
++ break;
++ case XML_TOK_XML_DECL:
++ errorPtr = s;
++ return XML_ERROR_MISPLACED_XML_PI;
++ case XML_TOK_DATA_NEWLINE:
++ if (characterDataHandler) {
++ char c = '\n';
++ characterDataHandler(userData, &c, 1);
+  }
++ break;
++ case XML_TOK_CDATA_SECT_OPEN:
++ enum XML_Error result = doCdataSection(parser, &next, end, nextPtr);
++ if (!next) {
++ processor = cdataSectionProcessor;
++ return result;
+  }
++ break;
++ case XML_TOK_TRAILING_RSQB:
++ if (nextPtr) {
++ *nextPtr = s;
++ return XML_ERROR_NONE;
+  }
++ if (characterDataHandler) {
++ char *dataPtr = dataBuf;
++ XmlConvert(enc, XML_UTF8_ENCODING, &s, end, &dataPtr, dataBufEnd);
++ characterDataHandler(userData, dataBuf, dataPtr - dataBuf);
+  }
++ if (startTagLevel == 0) {
++ errorPtr = end;
++ return XML_ERROR_NO_ELEMENTS;
+  }
++ if (tagLevel != startTagLevel) {
++ errorPtr = end;
++ return XML_ERROR_ASYNC_ENTITY;
+  }
++ return XML_ERROR_NONE;
++ case XML_TOK_DATA_CHARS:
++ if (characterDataHandler) {
+  do {
++ char *dataPtr = dataBuf;
++ XmlConvert(enc, XML_UTF8_ENCODING, &s, next, &dataPtr, dataBufEnd);
++ characterDataHandler(userData, dataBuf, dataPtr - dataBuf);
++ } while ((s != next));
+  }
++ break;
++ case XML_TOK_PI:
++ if (!reportProcessingInstruction(parser, enc, s, next)) {
++ return XML_ERROR_NO_MEMORY;
+  }
++ break;
+  }
++ s = next;
+  }
+- enum XML_Error doContent(XML_Parser parser,
+	  int startTagLevel,
+	  const ENCODING *enc,
+	  const char *s,
+	  const char *end,
+	  const char **nextPtr) {
+- const ENCODING *utf8 = XmlGetInternalEncoding(XML_UTF8_ENCODING);
+  for (; ; ) {
+  }
+}
+}
+
+Context for merged statement of old file: expat/xmlparse/xmlparse.c with new file: expat/xmlparse/xmlparse.c:
++ enum XML_Error cdataSectionProcessor(XML_Parser parser,
+				     const char *start,
+			    	     const char *end,
+				     const char **endPtr) {
++ enum XML_Error result = doCdataSection(parser, &start, end, endPtr);
++ if (start) {
++ processor = contentProcessor;
++ return contentProcessor(parser, start, end, endPtr);
+  }
++ return result;
+}
+
+Context for merged statement of old file: expat/xmlparse/xmlparse.c with new file: expat/xmlparse/xmlparse.c:
++ enum XML_Error doCdataSection(XML_Parser parser,
+			      const char **startPtr,
+			      const char *end,
+			      const char **nextPtr) {
++ const char *s = *startPtr;
++ *startPtr = 0;
+  for (; ; ) {
++ const char *next;
++ int tok = XmlCdataSectionTok(encoding, s, end, &next);
++ switch ((tok)) {
++ case XML_TOK_CDATA_SECT_CLOSE:
++ *startPtr = next;
++ return XML_ERROR_NONE;
++ case XML_TOK_DATA_NEWLINE:
++ if (characterDataHandler) {
++ char c = '\n';
++ characterDataHandler(userData, &c, 1);
+  }
++ break;
++ case XML_TOK_DATA_CHARS:
++ if (characterDataHandler) {
+  do {
++ char *dataPtr = dataBuf;
++ XmlConvert(encoding, XML_UTF8_ENCODING, &s, next, &dataPtr, dataBufEnd);
++ characterDataHandler(userData, dataBuf, dataPtr - dataBuf);
++ } while ((s != next));
+  }
++ break;
++ case XML_TOK_INVALID:
++ errorPtr = next;
++ return XML_ERROR_INVALID_TOKEN;
++ case XML_TOK_PARTIAL:
++ case XML_TOK_NONE:
++ if (nextPtr) {
++ *nextPtr = s;
++ return XML_ERROR_NONE;
+  }
++ errorPtr = s;
++ return XML_ERROR_UNCLOSED_CDATA_SECTION;
++ default:
++ abort();
+  }
++ s = next;
+  }
+}
+
+Context for merged statement of old file: expat/xmlparse/xmlparse.h with new file: expat/xmlparse/xmlparse.h:
+#ifndef XMLPARSEAPI
+- enum XML_Error {
++ enum XML_Error {
++ XML_ERROR_UNCLOSED_CDATA_SECTION
+  }
+  #endif
+
+Context for merged statement of old file: expat/xmltok/xmltok.c with new file: expat/xmltok/xmltok.c:
+- #define VTABLE1 \ { PREFIX(prologTok), PREFIX(contentTok)}, \ { PREFIX(attributeValueTok), PREFIX(entityValueTok)}, \ PREFIX(sameName), \ PREFIX(nameMatchesAscii), \ PREFIX(nameLength), \ PREFIX(skipS), \ PREFIX(getAtts), \ PREFIX(charRefNumber), \ PREFIX(updatePosition), \ PREFIX(isPublicId)
++ #define VTABLE1 \ { PREFIX(prologTok), PREFIX(contentTok), PREFIX(cdataSectionTok)}, \ { PREFIX(attributeValueTok), PREFIX(entityValueTok)}, \ PREFIX(sameName), \ PREFIX(nameMatchesAscii), \ PREFIX(nameLength), \ PREFIX(skipS), \ PREFIX(getAtts), \ PREFIX(charRefNumber), \ PREFIX(updatePosition), \ PREFIX(isPublicId)
+
+Context for merged statement of old file: expat/xmltok/xmltok.h with new file: expat/xmltok/xmltok.h:
+#ifndef XMLTOKAPI
+- #define XML_TOK_CDATA_SECTION 8
++ #define XML_TOK_CDATA_SECT_OPEN 8
++ #define XML_TOK_CDATA_SECT_CLOSE 40
+- #define XML_N_STATES 2
++ #define XML_N_STATES 3
++ #define XML_CDATA_SECTION_STATE 2
+  #define XML_N_LITERAL_TYPES 2
+  #define XML_N_INTERNAL_ENCODINGS 1
+  struct encoding {
+  int(*scanners[XML_N_STATES])(const ENCODING *, const char *, const char *, const char **);
+  int(*getAtts)(const ENCODING *enc, const char *ptr, int attsMax, ATTRIBUTE *atts);
+  int(*charRefNumber)(const ENCODING *enc, const char *ptr);
+  void(*updatePosition)(const ENCODING *, const char *ptr, const char *end, POSITION *);
+  int(*isPublicId)(const ENCODING *enc, const char *ptr, const char *end, const char **badPtr);
+  int(*encode)(const ENCODING *enc, int charNum, char *buf);
+  void(*convert[XML_N_INTERNAL_ENCODINGS])(const ENCODING *enc, const char **fromP, const char *fromLim, char **toP, const char *toLim);
+  }
+  #define XmlTok(enc, state, ptr, end, nextTokPtr)\(((enc)->scanners[state])(enc, ptr, end, nextTokPtr))
+  #define XmlPrologTok(enc, ptr, end, nextTokPtr)\ XmlTok(enc, XML_PROLOG_STATE, ptr, end, nextTokPtr)
+  #define XmlContentTok(enc, ptr, end, nextTokPtr)\ XmlTok(enc, XML_CONTENT_STATE, ptr, end, nextTokPtr)
++ #define XmlCdataSectionTok(enc, ptr, end, nextTokPtr)\ XmlTok(enc, XML_CDATA_SECTION_STATE, ptr, end, nextTokPtr)
+  #define XmlLiteralTok(enc, literalType, ptr, end, nextTokPtr)\(((enc)->literalScanners[literalType])(enc, ptr, end, nextTokPtr))
+  #define XmlAttributeValueTok(enc, ptr, end, nextTokPtr)\ XmlLiteralTok(enc, XML_ATTRIBUTE_VALUE_LITERAL, ptr, end, nextTokPtr)
+  #define XmlEntityValueTok(enc, ptr, end, nextTokPtr)\ XmlLiteralTok(enc, XML_ENTITY_VALUE_LITERAL, ptr, end, nextTokPtr)
+  #define XmlSameName(enc, ptr1, ptr2)(((enc)->sameName)(enc, ptr1, ptr2))
+  #define XmlNameMatchesAscii(enc, ptr1, ptr2)\(((enc)->nameMatchesAscii)(enc, ptr1, ptr2))
+  #define XmlNameLength(enc, ptr)\(((enc)->nameLength)(enc, ptr))
+  #define XmlSkipS(enc, ptr)\(((enc)->skipS)(enc, ptr))
+  #define XmlGetAttributes(enc, ptr, attsMax, atts)\(((enc)->getAtts)(enc, ptr, attsMax, atts))
+  #define XmlCharRefNumber(enc, ptr)\(((enc)->charRefNumber)(enc, ptr))
+  #define XmlUpdatePosition(enc, ptr, end, pos)\(((enc)->updatePosition)(enc, ptr, end, pos))
+  #define XmlIsPublicId(enc, ptr, end, badPtr)\(((enc)->isPublicId)(enc, ptr, end, badPtr))
+  #define XmlEncode(enc, ch, buf)\(((enc)->encode)(enc, ch, buf))
+  #define XmlConvert(enc, targetEnc, fromP, fromLim, toP, toLim)\(((enc)->convert[targetEnc])(enc, fromP, fromLim, toP, toLim))
+  #endif
+
+Context for merged statement of old file: expat/xmltok/xmltok_impl.c with new file: expat/xmltok/xmltok_impl.c:
+int PREFIX(scanCdataSection)(const ENCODING *enc, const char *ptr, const char *end,
+			     const char **nextTokPtr) {
+  int i;
+- if (end - ptr < 9 * MINBPC) {
++ if (end - ptr < 6 * MINBPC) {
+  return XML_TOK_PARTIAL;
+  }
+  for (i = 0; i < 6; i++, ptr += MINBPC) {
+  }
+- end -= 2 * MINBPC;
+- while ((ptr != end)) {
+  }
+- *nextTokPtr = ptr + 3 * MINBPC;
++ *nextTokPtr = ptr;
+- return XML_TOK_CDATA_SECTION;
++ return XML_TOK_CDATA_SECT_OPEN;
+- return XML_TOK_PARTIAL;
+}
+
+Context for merged statement of old file: expat/xmltok/xmltok_impl.c with new file: expat/xmltok/xmltok_impl.c:
++ int PREFIX(cdataSectionTok)(const ENCODING *enc, const char *ptr, const char *end,
+			    const char **nextTokPtr) {
++ if (ptr == end) {
++ return XML_TOK_NONE;
+  }
++ #if MINBPC > 1
++ size_t n = end - ptr;
++ if (n &(MINBPC - 1)) {
++ n &= ~(MINBPC - 1);
++ if (n == 0) {
++ return XML_TOK_PARTIAL;
+  }
++ end = ptr + n;
+  }
+  #endif
++ switch ((BYTE_TYPE(enc, ptr))) {
++ case BT_RSQB:
++ ptr += MINBPC;
++ if (ptr == end) {
++ return XML_TOK_PARTIAL;
+  }
++ if (!CHAR_MATCHES(enc, ptr, ']')) {
++ break;
+  }
++ ptr += MINBPC;
++ if (ptr == end) {
++ return XML_TOK_PARTIAL;
+  }
++ if (!CHAR_MATCHES(enc, ptr, '>')) {
++ ptr -= MINBPC;
++ break;
+  }
++ *nextTokPtr = ptr + MINBPC;
++ return XML_TOK_CDATA_SECT_CLOSE;
++ case BT_CR:
++ ptr += MINBPC;
++ if (ptr == end) {
++ return XML_TOK_PARTIAL;
+  }
++ if (BYTE_TYPE(enc, ptr)== BT_LF) {
++ ptr += MINBPC;
+  }
++ *nextTokPtr = ptr;
++ return XML_TOK_DATA_NEWLINE;
++ case BT_LF:
++ *nextTokPtr = ptr + MINBPC;
++ return XML_TOK_DATA_NEWLINE;
++ INVALID_CASES(ptr, nextTokPtr)
++ default:
++ ptr += MINBPC;
++ break;
+  }
++ while ((ptr != end)) {
++ switch ((BYTE_TYPE(enc, ptr))) {
++ case BT_NONXML:
++ case BT_MALFORM:
++ case BT_TRAIL:
++ case BT_CR:
++ case BT_LF:
++ case BT_RSQB:
++ *nextTokPtr = ptr;
++ return XML_TOK_DATA_CHARS;
++ default:
++ ptr += MINBPC;
++ break;
+  }
++ #define LEAD_CASE(n)\ case BT_LEAD ## n: \ if(end - ptr < n || IS_INVALID_CHAR(enc, ptr, n)){ \ *nextTokPtr = ptr; \ return XML_TOK_DATA_CHARS; \ } \ ptr += n; \ break;
++ LEAD_CASE(2)
++ LEAD_CASE(3)
++ LEAD_CASE(4)
+  }
++ *nextTokPtr = ptr;
++ return XML_TOK_DATA_CHARS;
+}
+

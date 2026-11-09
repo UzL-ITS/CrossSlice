@@ -1,0 +1,53 @@
+Context for merged statement of old file: ext/session/php_session.h with new file: ext/session/php_session.h:
+#ifndef PHP_SESSION_H
+- PHPAPI void session_adapt_url(const char *url, size_t url_len, char **new_url, size_t *new_len);
+- extern PHPAPI zend_class_entry *php_session_class_entry;
++ extern PHPAPI zend_class_entry *php_session_class_entry;
++ extern PHPAPI zend_class_entry *php_session_iface_entry;
+- extern PHPAPI zend_class_entry *php_session_iface_entry;
++ extern PHPAPI zend_class_entry *php_session_id_iface_entry;
+- extern PHPAPI zend_class_entry *php_session_id_iface_entry;
++ extern PHPAPI zend_class_entry *php_session_update_timestamp_iface_entry;
+  #endif
+
+Context for merged statement of old file: ext/session/session.c with new file: ext/session/session.c:
+- PHPAPI session_adapt_url(const char *url, size_t url_len, char **new_url, size_t *new_len) {
+- if (APPLY_TRANS_SID &&(PS(session_status)== php_session_active)) {
+- *new_url = php_url_scanner_adapt_single_url(url, url_len, ZSTR_VAL(PS(session_name)), ZSTR_VAL(PS(id)), new_len, true);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: php_session_create_id — ext/session/session.c:343 [gtags_unique] --
+PHPAPI zend_string *php_session_create_id(PS_CREATE_SID_ARGS) {
+   ...
+   zend_string *outid;
+   if(php_random_bytes_throw(rbuf, PS(sid_length))== FAILURE) {
+     return NULL;
+   }
+   outid = zend_string_alloc(PS(sid_length), false);
+   ...
+   return outid;
+}
+
+-- called macro: ZEND_TSRMLS_CACHE_EXTERN — Zend/zend.h:60 [priority_fallback] --
+#define ZEND_TSRMLS_CACHE_EXTERN() TSRMLS_CACHE_EXTERN()
+
+-- called macro: PS — ext/session/php_session.h:218 [lsp, old version] --
+#define PS(v) (ps_globals.v)
+
+-- called macro: ZSTR_VAL — Zend/zend_string.h:68 [gtags_unique, old version] --
+#define ZSTR_VAL(zstr)  (zstr)->val
+
+-- called macro: APPLY_TRANS_SID — ext/session/session.c:101 [gtags_unique, old version] --
+#define APPLY_TRANS_SID (PS(use_trans_sid) && !PS(use_only_cookies))
+
+-- called macro: PHP_SESSION_H — ext/session/php_session.h:18 [gtags_unique, new version] --
+#define PHP_SESSION_H
+
+-- 2nd-level context (summaries) --
+  zend_string_alloc — Zend/zend_string.h:165 [gtags_unique]: static zend_always_inline zend_string *zend_string_alloc(size_t len, bool persistent)
+    reads: len, persistent; writes: -
+  PS — ext/session/php_session.h:218 [lsp]: #define PS(v) (ps_globals.v)

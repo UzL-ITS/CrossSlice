@@ -1,0 +1,555 @@
+Context for merged statement of old file: libavformat/http.c with new file: libavformat/http.c:
+int http_open_cnx(URLContext *h, AVDictionary **options) {
+  HTTPContext *s = h->priv_data;
+  int reconnect_delay = 0;
+  uint64_t off;
+  off = s->off;
+  if (ret < 0) {
+  if (s->respect_retry_after && s->retry_after > 0) {
+  reconnect_delay = s->retry_after;
+  }
+- av_log(h, AV_LOG_WARNING, "Will reconnect at %"PRIu64" in %d second(s).\n", off, reconnect_delay);
++ av_log(h, AV_LOG_WARNING, "Will %s at %"PRIu64" in %d second(s).\n", s->willclose ? "reconnect" : "retry", off, reconnect_delay);
+  }
+}
+
+Context for merged statement of old file: libavformat/http.c with new file: libavformat/http.c:
+int http_read_stream(URLContext *h, uint8_t *buf, int size) {
+  HTTPContext *s = h->priv_data;
+  int reconnect_delay = 0;
+  read_ret = http_buf_read(h, buf, size);
+  while ((read_ret < 0)) {
+  if (read_ret == AVERROR_EXIT) {
+  }
+  else {
+  if (read_ret == AVERROR(EAGAIN)) {
+  AVDictionary *options = NULL;
+  read_ret = http_open_cnx(h, &options);
+  }
+  }
+- av_log(h, AV_LOG_WARNING, "Will reconnect at %"PRIu64" in %d second(s), error=%s.\n", s->off, reconnect_delay, av_err2str(read_ret));
++ av_log(h, AV_LOG_WARNING, "Will %s at %"PRIu64" in %d second(s), error=%s.\n", s->willclose ? "reconnect" : "retry", s->off, reconnect_delay, av_err2str(read_ret));
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: AVERROR — libavutil/error.h:41 [lsp] --
+#define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+
+-- called function: ffurl_closep — libavformat/avio.c:594 [gtags_unique] --
+int ffurl_closep(URLContext **hh) {
+   URLContext *h= *hh;
+   int ret = 0;
+   if(!h)
+     return 0;
+   if(h->is_connected && h->prot->url_close)
+     ret = h->prot->url_close(h);
+   #if CONFIG_NETWORK
+   if(h->prot->flags & URL_PROTOCOL_FLAG_NETWORK)
+   ...
+   #endif
+   if(h->prot->priv_data_size) {
+     if(h->prot->priv_data_class)
+       av_opt_free(h->priv_data);
+     av_freep(&h->priv_data);
+   }
+   av_opt_free(h);
+   av_freep(hh);
+   return ret;
+}
+   [reads: hh; writes: -]
+
+-- called function: av_log — libavutil/log.c:443 [priority_fallback] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   va_list vl;
+   va_start(vl, fmt);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- called function: av_dict_free — libavutil/dict.c:233 [gtags_unique] --
+void av_dict_free(AVDictionary **pm) {
+   AVDictionary *m = *pm;
+   if(m) {
+     while(m->count--) {
+       av_freep(&m->elems[m->count].key);
+       av_freep(&m->elems[m->count].value);
+     }
+     av_freep(&m->elems);
+   }
+   av_freep(pm);
+}
+   [reads: pm; writes: -]
+
+-- called function: ff_network_sleep_interruptible — libavformat/network.c:98 [gtags_unique] --
+int ff_network_sleep_interruptible(int64_t timeout, AVIOInterruptCB *int_cb) {
+   int64_t wait_start = av_gettime_relative();
+   while(1) {
+   ...
+     if(ff_check_interrupt(int_cb))
+       return AVERROR_EXIT;
+     time_left = timeout -(av_gettime_relative()- wait_start);
+     if(time_left <= 0)
+       return AVERROR(ETIMEDOUT);
+     av_usleep(FFMIN(time_left, POLLING_TIME * 1000));
+   }
+}
+   [reads: int_cb, timeout; writes: -]
+
+-- called macro: av_err2str — libavutil/error.h:122 [gtags_unique] --
+#define av_err2str(errnum) \
+    av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
+
+-- called function: http_should_reconnect — libavformat/http.c:348 [gtags_unique] --
+static int http_should_reconnect(HTTPContext *s, int err) {
+   const char *status_group;
+   char http_code[4];
+   switch(err) {
+   ...
+     status_group = "4xx";
+   ...
+     status_group = "5xx";
+   ...
+     return s->reconnect_on_network_error;
+   }
+   if(!s->reconnect_on_http_error)
+     return 0;
+   if(av_match_list(status_group, s->reconnect_on_http_error, ', ')> 0)
+     return 1;
+   snprintf(http_code, sizeof(http_code), "%d", s->http_code);
+   return av_match_list(http_code, s->reconnect_on_http_error, ', ')> 0;
+}
+   [reads: err, s; writes: -]
+
+-- called function: http_buf_read — libavformat/http.c:1744 [gtags_unique, old version] --
+static int http_buf_read(URLContext *h, uint8_t *buf, int size) {
+   HTTPContext *s = h->priv_data;
+   int len;
+   if(!s->hd)
+     return AVERROR(EIO);
+   if(s->chunksize != UINT64_MAX) {
+     if(s->chunkend) {
+       return AVERROR_EOF;
+     }
+     if(!s->chunksize) {
+       char line[32];
+       int err;
+       do {
+         if((err = http_get_line(s, line, sizeof(line)))< 0)
+           return err;
+       } while(!*line);
+       s->chunksize = strtoull(line, NULL, 16);
+       av_log(h, AV_LOG_TRACE, "Chunked encoding data size: %"PRIu64"\n", s->chunksize);
+       if(!s->chunksize && s->multiple_requests) {
+         http_get_line(s, line, sizeof(line));
+         s->chunkend = 1;
+         return 0;
+       } else if(!s->chunksize) {
+         av_log(h, AV_LOG_DEBUG, "Last chunk received, closing conn\n");
+         ffurl_closep(&s->hd);
+         return 0;
+       } else if(s->chunksize == UINT64_MAX) {
+         av_log(h, AV_LOG_ERROR, "Invalid chunk size %"PRIu64"\n", s->chunksize);
+         return AVERROR(EINVAL);
+       }
+     }
+     size = FFMIN(size, s->chunksize);
+   }
+   len = s->buf_end - s->buf_ptr;
+   if(len > 0) {
+     if(len > size)
+       len = size;
+     memcpy(buf, s->buf_ptr, len);
+     s->buf_ptr += len;
+   } else {
+     uint64_t file_end = s->end_off ? s->end_off : s->filesize;
+     uint64_t target_end = s->range_end ? s->range_end : file_end;
+     if((!s->willclose || s->chunksize == UINT64_MAX)&& s->off >= file_end)
+       return AVERROR_EOF;
+     if(s->off == target_end && target_end < file_end)
+       return AVERROR(EAGAIN);
+     len = ffurl_read(s->hd, buf, size);
+     if((!len || len == AVERROR_EOF)&&(!s->willclose || s->chunksize == UINT64_MAX)&& s->off < target_end) {
+       av_log(h, AV_LOG_ERROR, "Stream ends prematurely at %"PRIu64", should be %"PRIu64"\n", s->off, target_end);
+       return AVERROR(EIO);
+     }
+   }
+   if(len > 0) {
+     s->off += len;
+     if(s->chunksize > 0 && s->chunksize != UINT64_MAX) {
+       av_assert0(s->chunksize >= len);
+       s->chunksize -= len;
+     }
+   }
+   return len;
+}
+   [reads: buf, h, size; writes: buf*, h*]
+
+-- called function: http_seek_internal — libavformat/http.c:2126 [gtags_unique, old version] --
+static int64_t http_seek_internal(URLContext *h, int64_t off, int whence, int force_reconnect) {
+   HTTPContext *s = h->priv_data;
+   ...
+   uint64_t old_off = s->off;
+   ...
+   int old_buf_size, ret;
+   AVDictionary *options = NULL;
+   uint8_t discard[4096];
+   if(whence == AVSEEK_SIZE)
+     return s->filesize == UINT64_MAX ? AVERROR(ENOSYS): s->filesize;
+   else if((s->filesize == UINT64_MAX && whence == SEEK_END))
+     return AVERROR(ENOSYS);
+   if(whence == SEEK_CUR)
+     off += s->off;
+   else if(whence == SEEK_END)
+     off += s->filesize;
+   else if(whence != SEEK_SET)
+     return AVERROR(EINVAL);
+   if(off < 0)
+     return AVERROR(EINVAL);
+   if(!force_reconnect && off == s->off)
+     return s->off;
+   s->off = off;
+   if(s->off && h->is_streamed)
+     return AVERROR(ENOSYS);
+   if(s->end_off || s->filesize != UINT64_MAX) {
+     uint64_t end_pos = s->end_off ? s->end_off : s->filesize;
+     if(s->off >= end_pos)
+       return s->off;
+   }
+   if(strcmp(s->uri, s->location)) {
+   ...
+     new_uri = av_strdup(s->uri);
+     if(!new_uri)
+       return AVERROR(ENOMEM);
+     av_free(s->location);
+     s->location = new_uri;
+   }
+   old_buf_size = s->buf_end - s->buf_ptr;
+   memcpy(old_buf, s->buf_ptr, old_buf_size);
+   int short_seek = ffurl_get_short_seek(h);
+   uint64_t old_read_pos = old_off + old_buf_size;
+   if(s->hd && !s->willclose && s->range_end && short_seek > 0 && old_read_pos + short_seek >= s->range_end) {
+     uint64_t remaining = s->range_end - old_read_pos;
+     av_assert1(remaining <= short_seek);
+     av_log(h, AV_LOG_DEBUG, "Soft-seeking to offset %"PRIu64" by draining " "%"PRIu64" remaining byte(s)\n", s->off, remaining);
+     while(remaining) {
+       ret = ffurl_read(s->hd, discard, FFMIN(remaining, sizeof(discard)));
+       if(ret < 0 || ret == AVERROR_EOF ||(ret == 0 && remaining)) {
+         ffurl_closep(&s->hd);
+   ...
+       }
+       remaining -= ret;
+     }
+     ret = http_open_cnx(h, &options);
+     if(ret >= 0) {
+   ...
+     } else {
+       ffurl_closep(&s->hd);
+   ...
+     }
+   } else {
+     old_hd = s->hd;
+     s->hd = NULL;
+   }
+   if((ret = http_open_cnx(h, &options))< 0) {
+     if(old_hd) {
+       memcpy(s->buffer, old_buf, old_buf_size);
+       s->buf_ptr = s->buffer;
+       s->buf_end = s->buffer + old_buf_size;
+       s->hd = old_hd;
+       s->off = old_off;
+     }
+   ...
+     return ret;
+   }
+   ...
+   ffurl_close(old_hd);
+   return off;
+}
+   [reads: force_reconnect, h, off, whence; writes: h*]
+
+-- called function: http_buf_read — libavformat/http.c:1745 [gtags_unique, new version] --
+static int http_buf_read(URLContext *h, uint8_t *buf, int size) {
+   HTTPContext *s = h->priv_data;
+   int len;
+   if(!s->hd)
+     return AVERROR(EIO);
+   if(s->chunksize != UINT64_MAX) {
+     if(s->chunkend) {
+       return AVERROR_EOF;
+     }
+     if(!s->chunksize) {
+       char line[32];
+       int err;
+       do {
+         if((err = http_get_line(s, line, sizeof(line)))< 0)
+           return err;
+       } while(!*line);
+       s->chunksize = strtoull(line, NULL, 16);
+       av_log(h, AV_LOG_TRACE, "Chunked encoding data size: %"PRIu64"\n", s->chunksize);
+       if(!s->chunksize && s->multiple_requests) {
+         http_get_line(s, line, sizeof(line));
+         s->chunkend = 1;
+         return 0;
+       } else if(!s->chunksize) {
+         av_log(h, AV_LOG_DEBUG, "Last chunk received, closing conn\n");
+         ffurl_closep(&s->hd);
+         return 0;
+       } else if(s->chunksize == UINT64_MAX) {
+         av_log(h, AV_LOG_ERROR, "Invalid chunk size %"PRIu64"\n", s->chunksize);
+         return AVERROR(EINVAL);
+       }
+     }
+     size = FFMIN(size, s->chunksize);
+   }
+   len = s->buf_end - s->buf_ptr;
+   if(len > 0) {
+     if(len > size)
+       len = size;
+     memcpy(buf, s->buf_ptr, len);
+     s->buf_ptr += len;
+   } else {
+     uint64_t file_end = s->end_off ? s->end_off : s->filesize;
+     uint64_t target_end = s->range_end ? s->range_end : file_end;
+     if((!s->willclose || s->chunksize == UINT64_MAX)&& s->off >= file_end)
+       return AVERROR_EOF;
+     if(s->off == target_end && target_end < file_end)
+       return AVERROR(EAGAIN);
+     len = ffurl_read(s->hd, buf, size);
+     if((!len || len == AVERROR_EOF)&&(!s->willclose || s->chunksize == UINT64_MAX)&& s->off < target_end) {
+       av_log(h, AV_LOG_ERROR, "Stream ends prematurely at %"PRIu64", should be %"PRIu64"\n", s->off, target_end);
+       return AVERROR(EIO);
+     }
+   }
+   if(len > 0) {
+     s->off += len;
+     if(s->chunksize > 0 && s->chunksize != UINT64_MAX) {
+       av_assert0(s->chunksize >= len);
+       s->chunksize -= len;
+     }
+   }
+   return len;
+}
+   [reads: buf, h, size; writes: buf*, h*]
+
+-- called function: http_seek_internal — libavformat/http.c:2128 [gtags_unique, new version] --
+static int64_t http_seek_internal(URLContext *h, int64_t off, int whence, int force_reconnect) {
+   HTTPContext *s = h->priv_data;
+   ...
+   uint64_t old_off = s->off;
+   ...
+   int old_buf_size, ret;
+   AVDictionary *options = NULL;
+   uint8_t discard[4096];
+   if(whence == AVSEEK_SIZE)
+     return s->filesize == UINT64_MAX ? AVERROR(ENOSYS): s->filesize;
+   else if((s->filesize == UINT64_MAX && whence == SEEK_END))
+     return AVERROR(ENOSYS);
+   if(whence == SEEK_CUR)
+     off += s->off;
+   else if(whence == SEEK_END)
+     off += s->filesize;
+   else if(whence != SEEK_SET)
+     return AVERROR(EINVAL);
+   if(off < 0)
+     return AVERROR(EINVAL);
+   if(!force_reconnect && off == s->off)
+     return s->off;
+   s->off = off;
+   if(s->off && h->is_streamed)
+     return AVERROR(ENOSYS);
+   if(s->end_off || s->filesize != UINT64_MAX) {
+     uint64_t end_pos = s->end_off ? s->end_off : s->filesize;
+     if(s->off >= end_pos)
+       return s->off;
+   }
+   if(strcmp(s->uri, s->location)) {
+   ...
+     new_uri = av_strdup(s->uri);
+     if(!new_uri)
+       return AVERROR(ENOMEM);
+     av_free(s->location);
+     s->location = new_uri;
+   }
+   old_buf_size = s->buf_end - s->buf_ptr;
+   memcpy(old_buf, s->buf_ptr, old_buf_size);
+   int short_seek = ffurl_get_short_seek(h);
+   uint64_t old_read_pos = old_off + old_buf_size;
+   if(s->hd && !s->willclose && s->range_end && short_seek > 0 && old_read_pos + short_seek >= s->range_end) {
+     uint64_t remaining = s->range_end - old_read_pos;
+     av_assert1(remaining <= short_seek);
+     av_log(h, AV_LOG_DEBUG, "Soft-seeking to offset %"PRIu64" by draining " "%"PRIu64" remaining byte(s)\n", s->off, remaining);
+     while(remaining) {
+       ret = ffurl_read(s->hd, discard, FFMIN(remaining, sizeof(discard)));
+       if(ret < 0 || ret == AVERROR_EOF ||(ret == 0 && remaining)) {
+         ffurl_closep(&s->hd);
+   ...
+       }
+       remaining -= ret;
+     }
+     ret = http_open_cnx(h, &options);
+     if(ret >= 0) {
+   ...
+     } else {
+       ffurl_closep(&s->hd);
+   ...
+     }
+   } else {
+     old_hd = s->hd;
+     s->hd = NULL;
+   }
+   if((ret = http_open_cnx(h, &options))< 0) {
+     if(old_hd) {
+       memcpy(s->buffer, old_buf, old_buf_size);
+       s->buf_ptr = s->buffer;
+       s->buf_end = s->buffer + old_buf_size;
+       s->hd = old_hd;
+       s->off = old_off;
+     }
+   ...
+     return ret;
+   }
+   ...
+   ffurl_close(old_hd);
+   return off;
+}
+   [reads: force_reconnect, h, off, whence; writes: h*]
+
+-- called macro: AV_LOG_WARNING — libavutil/log.h:216 [gtags_unique, new version] --
+#define AV_LOG_WARNING  24
+
+-- caller of http_open_cnx: ff_http_do_new_request2 — libavformat/http.c:610 --
+int ff_http_do_new_request2(URLContext *h, const char *uri, AVDictionary **opts) {
+   ...
+   AVDictionary *options = NULL;
+   ...
+>  ret = http_open_cnx(h, &options);
+   ...
+   return ret;
+}
+
+-- caller of http_open_cnx: http_open — libavformat/http.c:834 --
+static int http_open(URLContext *h, const char *uri, int flags, AVDictionary **options) {
+   ...
+   if(s->seekable == 1)
+     h->is_streamed = 0;
+   else
+     h->is_streamed = 1;
+   ...
+>  ret = http_open_cnx(h, options);
+   ...
+   if(ret < 0) {
+   ...
+   }
+   return ret;
+}
+
+-- caller of http_open_cnx: http_read_stream — libavformat/http.c:1897 --
+static int http_read_stream(URLContext *h, uint8_t *buf, int size) {
+   ...
+   while(read_ret < 0) {
+   ...
+     if(read_ret == AVERROR_EXIT)
+   ...
+     else if(read_ret == AVERROR(EAGAIN)) {
+       AVDictionary *options = NULL;
+   ...
+>      read_ret = http_open_cnx(h, &options);
+   ...
+       if(read_ret == 0)
+   ...
+     }
+   ...
+     if(!(s->reconnect && is_premature)&& !(s->reconnect_at_eof && read_ret == AVERROR_EOF)) {
+   ...
+     }
+   ...
+     av_log(h, AV_LOG_WARNING, "Will %s at %"PRIu64" in %d second(s), error=%s.\n", s->willclose ? "reconnect" : "retry", s->off, reconnect_delay, av_err2str(read_ret));
+   ...
+     if(seek_ret >= 0 && seek_ret != target) {
+   ...
+       return read_ret;
+   ...
+     }
+   }
+   return read_ret;
+}
+
+-- caller of http_open_cnx: http_seek_internal — libavformat/http.c:2201 --
+static int64_t http_seek_internal(URLContext *h, int64_t off, int whence, int force_reconnect) {
+   ...
+   AVDictionary *options = NULL;
+   ...
+   if(s->hd && !s->willclose && s->range_end && short_seek > 0 && old_read_pos + short_seek >= s->range_end) {
+   ...
+>    ret = http_open_cnx(h, &options);
+     if(ret >= 0) {
+   ...
+     } else {
+     }
+   } else {
+   }
+   ...
+   if((ret = http_open_cnx(h, &options))< 0) {
+   ...
+     return ret;
+   ...
+   }
+}
+
+-- caller of http_read_stream: http_read_stream_all — libavformat/http.c:1945 --
+static int http_read_stream_all(URLContext *h, uint8_t *buf, int size) {
+   int pos = 0;
+   while(pos < size) {
+>    int len = http_read_stream(h, buf + pos, size - pos);
+     if(len < 0)
+       return len;
+     pos += len;
+   }
+   return pos;
+}
+
+-- caller of http_read_stream: http_read — libavformat/http.c:2029 --
+static int http_read(URLContext *h, uint8_t *buf, int size) {
+   ...
+   if(s->icy_metaint > 0) {
+     size = store_icy(h, size);
+   ...
+   }
+>  size = http_read_stream(h, buf, size);
+   if(size > 0)
+     s->icy_data_read += size;
+   return size;
+}
+
+-- 2nd-level context (summaries) --
+  av_opt_free — libavutil/opt.c:1942 [gtags_unique]: void av_opt_free(void *obj)
+    reads: obj; writes: -
+  av_freep — libavutil/mem.c:247 [priority_fallback]: void av_freep(void *arg)
+    reads: arg; writes: arg*
+  av_vlog — libavutil/log.c:460 [gtags_unique]: void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+    reads: avcl, fmt, level, vl; writes: -
+  av_gettime_relative — libavutil/time.c:56 [gtags_unique]: int64_t av_gettime_relative(void)
+    reads: -; writes: -
+  av_usleep — libavutil/time.c:84 [gtags_unique]: int av_usleep(unsigned usec)
+    reads: usec; writes: -
+  FFMIN — libavutil/macros.h:49 [lsp]: #define FFMIN(a,b) ((a) > (b) ? (b) : (a))
+  http_get_line — libavformat/http.c:886 [gtags_unique]: static int http_get_line(HTTPContext *s, char *line, int line_size)
+    reads: line, line_size, s; writes: line*
+  ffurl_read — libavformat/url.h:181 [gtags_unique]: static inline int ffurl_read(URLContext *h, uint8_t *buf, int size)
+    reads: buf, h, size; writes: -
+  av_assert0 — libavutil/avassert.h:42 [lsp]: #define av_assert0(cond) do {                                           \
+  av_match_list — libavutil/avstring.c:445 [gtags_unique]: int av_match_list(const char *name, const char *list, char separator)
+    reads: list, name, separator; writes: -
+  av_strdup — libavutil/mem.c:272 [priority_fallback]: char *av_strdup(const char *s)
+    reads: s; writes: -
+  av_free — libavutil/mem.c:238 [priority_fallback]: void av_free(void *ptr)
+    reads: ptr; writes: -
+  ffurl_get_short_seek — libavformat/avio.c:844 [gtags_unique]: int ffurl_get_short_seek(void *urlcontext)
+    reads: urlcontext; writes: -
+  av_assert1 — libavutil/avassert.h:56 [lsp]: #define av_assert1(cond) av_assert0(cond)
+  ffurl_close — libavformat/avio.c:617 [gtags_unique]: int ffurl_close(URLContext *h)
+    reads: h; writes: h*

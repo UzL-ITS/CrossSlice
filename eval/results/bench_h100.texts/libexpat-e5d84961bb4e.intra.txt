@@ -1,0 +1,14 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+XMLCALL external_entity_loader(XML_Parser parser,
+                       const XML_Char *context,
+                       const XML_Char *UNUSED_P(base),
+                       const XML_Char *UNUSED_P(systemId),
+                       const XML_Char *UNUSED_P(publicId)) {
+  XML_Parser extparser;
+  extparser = XML_ExternalEntityParserCreate(parser, context, NULL);
+  if (_XML_Parse_SINGLE_BYTES(extparser, test_data->parse_text, strlen(test_data->parse_text), XML_TRUE)== XML_STATUS_ERROR) {
+- xml_failure(parser);
++ xml_failure(extparser);
+  }
+}
+

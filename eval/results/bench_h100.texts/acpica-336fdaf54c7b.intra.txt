@@ -1,0 +1,10 @@
+Context for merged statement of old file: source/common/adisasm.c with new file: source/common/adisasm.c:
+ACPI_STATUS AdDoExternalFileList (
+    char                    *Filename) {
+  while ((ExternalFileList)) {
+  while ((ExternalListHead)) {
++ AcpiGbl_ParseOpRoot = NULL;
+  }
+  }
+}
+

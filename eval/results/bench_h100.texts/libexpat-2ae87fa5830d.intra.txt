@@ -1,0 +1,76 @@
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void counting_start_element_handler(void *userData, const XML_Char *name,
+                               const XML_Char **atts) {
+  ParserAndElementInfo *const parserAndElementInfos =(ParserAndElementInfo *)userData;
+  ElementInfo *info = parserAndElementInfos->info;
+  AttrInfo *attr;
+  while ((info->name != NULL)) {
+  info++;
+  }
+  id = XML_GetIdAttributeIndex(parserAndElementInfos->parser);
+- if (id != -1 && xcstrcmp(atts[id], info->id_name)) {
++ if (id != -1 && xcstrcmp(atts[id], info->id_name)!= 0) {
+  return;
+  }
+  for (i = 0; i < info->attr_count; i++) {
+  attr = info->attributes;
+  while ((attr->name != NULL)) {
+  attr++;
+  }
+- if (xcstrcmp(atts[1], attr->value)) {
++ if (xcstrcmp(atts[1], attr->value)!= 0) {
+  return;
+  }
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+int external_entity_devaluer(XML_Parser parser, const XML_Char *context,
+                         const XML_Char *base, const XML_Char *systemId,
+                         const XML_Char *publicId) {
+- if (xcstrcmp(systemId, XCS("foo"))) {
++ if (xcstrcmp(systemId, XCS("foo"))!= 0) {
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void verify_attlist_decl_handler(void *userData, const XML_Char *element_name,
+                            const XML_Char *attr_name,
+                            const XML_Char *attr_type,
+                            const XML_Char *default_value, int is_required) {
+  AttTest *at =(AttTest *)userData;
+- if (xcstrcmp(element_name, at->element_name)) {
++ if (xcstrcmp(element_name, at->element_name)!= 0) {
+  }
+- if (xcstrcmp(attr_name, at->attr_name)) {
++ if (xcstrcmp(attr_name, at->attr_name)!= 0) {
+  }
+- if (xcstrcmp(attr_type, at->attr_type)) {
++ if (xcstrcmp(attr_type, at->attr_type)!= 0) {
+  }
+- if ((default_value == NULL && at->default_value != NULL)||(default_value != NULL && at->default_value == NULL)||(default_value != NULL && xcstrcmp(default_value, at->default_value))) {
++ if ((default_value == NULL && at->default_value != NULL)||(default_value != NULL && at->default_value == NULL)||(default_value != NULL && xcstrcmp(default_value, at->default_value)!= 0)) {
+  }
+}
+
+Context for merged statement of old file: expat/tests/handlers.c with new file: expat/tests/handlers.c:
+void param_entity_match_handler(void *userData, const XML_Char *entityName,
+                           int is_parameter_entity, const XML_Char *value,
+                           int value_length, const XML_Char *base,
+                           const XML_Char *systemId, const XML_Char *publicId,
+                           const XML_Char *notationName) {
+  if (! xcstrcmp(entityName, entity_name_to_match)) {
+- if (value_length !=(int)xcstrlen(entity_value_to_match)|| xcstrncmp(value, entity_value_to_match, value_length)) {
++ if (value_length !=(int)xcstrlen(entity_value_to_match)|| xcstrncmp(value, entity_value_to_match, value_length)!= 0) {
+  }
+  }
+}
+
+Context for merged statement of old file: expat/tests/misc_tests.c with new file: expat/tests/misc_tests.c:
+START_TEST (test_misc_version) {
+  const XML_LChar *version_text = XML_ExpatVersion();
+- if (xcstrcmp(version_text, XCS("expat_2.7.1"))) {
++ if (xcstrcmp(version_text, XCS("expat_2.7.1"))!= 0) {
+  }
+}
+

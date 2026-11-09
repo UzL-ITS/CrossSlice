@@ -1,0 +1,53 @@
+Context for merged statement of old file: source/components/utilities/utmath.c with new file: source/components/utilities/utmath.c:
+ACPI_STATUS AcpiUtShortShiftLeft (
+    UINT64                  Operand,
+    UINT32                  Count,
+    UINT64                  *OutResult) {
+  UINT64_OVERLAY OperandOvl;
+  if ((Count & 63)>= 32) {
+- OperandOvl.Part.Lo ^= OperandOvl.Part.Lo;
++ OperandOvl.Part.Lo = 0;
+  }
+  ACPI_SHIFT_LEFT_64_BY_32(OperandOvl.Part.Hi, OperandOvl.Part.Lo, Count);
+}
+
+Context for merged statement of old file: source/components/utilities/utmath.c with new file: source/components/utilities/utmath.c:
+ACPI_STATUS AcpiUtShortShiftRight (
+    UINT64                  Operand,
+    UINT32                  Count,
+    UINT64                  *OutResult) {
+  UINT64_OVERLAY OperandOvl;
+  if ((Count & 63)>= 32) {
+- OperandOvl.Part.Hi ^= OperandOvl.Part.Hi;
++ OperandOvl.Part.Hi = 0;
+  }
+  ACPI_SHIFT_RIGHT_64_BY_32(OperandOvl.Part.Hi, OperandOvl.Part.Lo, Count);
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_SHIFT_LEFT_64_BY_32 — source/include/platform/acefi.h:372 [priority_fallback] --
+#define ACPI_SHIFT_LEFT_64_BY_32(n_hi, n_lo, s32)    \
+    do {                                             \
+        UINT64 __n = ((UINT64) n_hi) << 32 | (n_lo); \
+        UINT64 __r = LShiftU64 (__n, (s32));         \
+        (n_lo) = (UINT32) __r;                       \
+        (n_hi) = (UINT32) (__r >> 32);               \
+    } while (0)
+
+-- called macro: ACPI_SHIFT_RIGHT_64_BY_32 — source/include/platform/acefi.h:382 [priority_fallback] --
+#define ACPI_SHIFT_RIGHT_64_BY_32(n_hi, n_lo, s32)   \
+    do {                                             \
+        UINT64 __n = ((UINT64) n_hi) << 32 | (n_lo); \
+        UINT64 __r = RShiftU64 (__n, (s32));         \
+        (n_lo) = (UINT32) __r;                       \
+        (n_hi) = (UINT32) (__r >> 32);               \
+    } while (0)
+
+-- caller of AcpiUtShortShiftRight: AcpiUtHexToAsciiChar — source/components/utilities/uthex.c:188 --
+char AcpiUtHexToAsciiChar ( UINT64                  Integer, UINT32                  Position) {
+   UINT64 Index;
+>  AcpiUtShortShiftRight(Integer, Position, &Index);
+   ...
+}

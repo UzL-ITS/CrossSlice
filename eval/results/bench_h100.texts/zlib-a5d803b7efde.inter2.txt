@@ -1,0 +1,81 @@
+Context for merged statement of old file: gzlib.c with new file: gzlib.c:
+local gz_open(path, fd, mode) {
+  gz_statep state;
++ size_t len;
+  state = malloc(sizeof(gz_state));
++ #ifdef _WIN32
++ if (fd == -2) {
++ len = wcstombs(NULL, path, 0);
++ if (len ==(size_t)-1) {
++ len = 0;
+  }
+  }
+  #endif
++ len = strlen(path);
+- state->path = malloc(strlen(fd == -2 ? WPATH : path)+ 1);
++ state->path = malloc(len + 1);
+  if (state->path == NULL) {
+  free(state);
+  }
++ #ifdef _WIN32
++ if (fd == -2) {
++ if (len) {
++ wcstombs(state->path, path, len + 1);
+  }
++ else {
++ *(state->path)= 0;
++ }
+  }
+  #endif
+- strcpy(state->path, fd == -2 ? WPATH : path);
++ strcpy(state->path, path);
+   #ifdef O_CLOEXEC
+  if (state->fd == -1) {
+  free(state->path);
+  free(state);
+  }
+  gz_reset(state);
+  return(gzFile)state;
+  #endif
+}
+
+
+==== Cross-function context ====
+
+-- called function: gz_reset — gzlib.c:75 [gtags_unique] --
+local void gz_reset(state) gz_statep state; {
+   ...
+}
+
+-- called macro: LSEEK — gzlib.c:14 [priority_fallback, old version] --
+#  define LSEEK lseek
+
+-- called macro: LSEEK — gzlib.c:12 [lsp, new version] --
+#  define LSEEK lseek64
+
+-- caller of gz_open: gzopen — gzlib.c:266 --
+gzFile ZEXPORT gzopen(path, mode) const char *path; const char *mode; {
+>  return gz_open(path, -1, mode);
+}
+
+-- caller of gz_open: gzopen64 — gzlib.c:274 --
+gzFile ZEXPORT gzopen64(path, mode) const char *path; const char *mode; {
+>  return gz_open(path, -1, mode);
+}
+
+-- caller of gz_open: gzdopen — gzlib.c:288 --
+gzFile ZEXPORT gzdopen(fd, mode) int fd; const char *mode; {
+   char *path;
+   ...
+   if(fd == -1 ||(path = malloc(7 + 3 * sizeof(int)))== NULL)
+   ...
+   sprintf(path, "<fd:%d>", fd);
+>  gz = gz_open(path, fd, mode);
+   ...
+   return gz;
+}
+
+-- caller of gz_open: gzopen_w — gzlib.c:299 --
+gzFile ZEXPORT gzopen_w(path, mode) const wchar_t *path; const char *mode; {
+>  return gz_open(path, -2, mode);
+}

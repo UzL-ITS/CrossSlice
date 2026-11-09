@@ -1,0 +1,13 @@
+Context for merged statement of old file: expat/lib/xmlparse.c with new file: expat/lib/xmlparse.c:
+enum XML_Error internalEntityProcessor(XML_Parser parser, const char *s, const char *end,
+                        const char **nextPtr) {
+  ENTITY *entity;
+  OPEN_INTERNAL_ENTITY *openEntity = parser->m_openInternalEntities;
+  entity = openEntity->entity;
+  if (entity->hasMore) {
++ if (! entity->is_param &&(openEntity->startTagLevel != parser->m_tagLevel)) {
++ return XML_ERROR_ASYNC_ENTITY;
+  }
+  }
+}
+

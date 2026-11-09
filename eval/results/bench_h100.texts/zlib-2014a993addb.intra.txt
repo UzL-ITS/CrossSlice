@@ -1,0 +1,896 @@
+Context for merged statement of old file: contrib/minizip/crypt.h with new file: contrib/minizip/crypt.h:
+- #define zencode(pkeys, pcrc_32_tab, c, t)\(t=decrypt_byte(pkeys, pcrc_32_tab), update_keys(pkeys, pcrc_32_tab, c), t^(c))
++ #define zencode(pkeys, pcrc_32_tab, c, t)\(t=decrypt_byte(pkeys, pcrc_32_tab), update_keys(pkeys, pcrc_32_tab, c), (Byte)t^(c))
+   #ifdef INCLUDECRYPTINGCODE_IFCRYPTALLOWED
+   #ifdef ZCR_SEED2
+- # define ZCR_SEED2 3141592654UL
++ # define ZCR_SEED2 3141592654L
+  #endif
+  #endif
+
+Context for merged statement of old file: contrib/minizip/crypt.h with new file: contrib/minizip/crypt.h:
+- int crypthead(const char* passwd,      /* password string */
+                     unsigned char* buf,      /* where to write header */
+                     int bufSize,
+                     unsigned long* pkeys,
+                     const z_crc_t* pcrc_32_tab,
+                     unsigned long crcForCrypting) {
++ unsigned crypthead(const char* passwd,       /* password string */
+                          unsigned char* buf,       /* where to write header */
+                          int bufSize,
+                          unsigned long* pkeys,
+                          const z_crc_t* pcrc_32_tab,
+                          unsigned long crcForCrypting) {
+- int n;
++ unsigned n;
+  for (n = 0; n < RAND_HEAD_LEN-2; n++) {
+  header[n] =(unsigned char)zencode(pkeys, pcrc_32_tab, c, t);
+  }
+  for (n = 0; n < RAND_HEAD_LEN-2; n++) {
+  buf[n] =(unsigned char)zencode(pkeys, pcrc_32_tab, header[n], t);
+  }
+  buf[n++] =(unsigned char)zencode(pkeys, pcrc_32_tab, (int)(crcForCrypting >> 16)& 0xff, t);
+  buf[n++] =(unsigned char)zencode(pkeys, pcrc_32_tab, (int)(crcForCrypting >> 24)& 0xff, t);
+  return n;
+}
+}
+
+Context for merged statement of old file: contrib/minizip/ioapi.c with new file: contrib/minizip/ioapi.c:
+ZPOS64_T call_ztell64 (const zlib_filefunc64_32_def* pfilefunc,voidpf filestream) {
+  if (pfilefunc->zfile_func64.zseek64_file != NULL) {
+  return(*(pfilefunc->zfile_func64.ztell64_file))(pfilefunc->zfile_func64.opaque, filestream);
+  }
+  else {
+- uLong tell_uLong =(*(pfilefunc->ztell32_file))(pfilefunc->zfile_func64.opaque, filestream);
++ uLong tell_uLong =(uLong)(*(pfilefunc->ztell32_file))(pfilefunc->zfile_func64.opaque, filestream);
+  if ((tell_uLong)== MAXU32) {
+  return(ZPOS64_T)-1;
+  }
+  else {
+  return tell_uLong;
+  }
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/ioapi.c with new file: contrib/minizip/ioapi.c:
+ZPOS64_T ftell64_file_func (voidpf opaque, voidpf stream) {
+- ret = FTELLO_FUNC((FILE *)stream);
++ ret =(ZPOS64_T)FTELLO_FUNC((FILE *)stream);
+  return ret;
+}
+
+Context for merged statement of old file: contrib/minizip/ioapi.c with new file: contrib/minizip/ioapi.c:
+long ZCALLBACK fseek_file_func (voidpf  opaque, voidpf stream, uLong offset, int origin) {
+  int fseek_origin=0;
+  switch ((origin)) {
+  fseek_origin = SEEK_CUR;
+  fseek_origin = SEEK_END;
+  fseek_origin = SEEK_SET;
+  }
+- if (fseek((FILE *)stream, offset, fseek_origin)!= 0) {
++ if (fseek((FILE *)stream, (long)offset, fseek_origin)!= 0) {
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/ioapi.c with new file: contrib/minizip/ioapi.c:
+long ZCALLBACK fseek64_file_func (voidpf  opaque, voidpf stream, ZPOS64_T offset, int origin) {
+  int fseek_origin=0;
+  switch ((origin)) {
+  fseek_origin = SEEK_CUR;
+  fseek_origin = SEEK_END;
+  fseek_origin = SEEK_SET;
+  }
+- if (FSEEKO_FUNC((FILE *)stream, offset, fseek_origin)!= 0) {
++ if (FSEEKO_FUNC((FILE *)stream, (long)offset, fseek_origin)!= 0) {
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int makedir (newdir) {
+- int len =(int)strlen(newdir);
++ size_t len = strlen(newdir);
+- if (len <= 0) {
++ if (len == 0) {
+  return 0;
+  }
+  buffer =(char*)malloc(len+1);
+  if (buffer==NULL) {
+  return UNZ_INTERNALERROR;
+  }
+  strcpy(buffer, newdir);
+  if (buffer[len-1] == '/') {
+  buffer[len-1] = '\0';
+  }
+  if (mymkdir(buffer)== 0) {
+  free(buffer);
+  }
+  p = buffer+1;
+  while ((1)) {
+  while ((*p && *p != '\\' && *p != '/')) {
+  p++;
+  }
+  hold = *p;
+  *p = 0;
+  if ((mymkdir(buffer)== -1)&&(errno == ENOENT)) {
+  printf("couldn't create directory %s\n", buffer);
+  free(buffer);
+  }
+  if (hold == 0) {
+  }
+  *p++ = hold;
+  }
+  free(buffer);
+}
+
+Context for merged statement of old file: contrib/minizip/miniunz.c with new file: contrib/minizip/miniunz.c:
+int do_extract_currentfile(uf,popt_extract_without_path,popt_overwrite,password) {
+  char filename_inzip[256];
+  char* filename_withoutpath;
+  char* p;
+  int err=UNZ_OK;
+  FILE *fout=NULL;
+  void* buf;
+  uInt size_buf;
+  unz_file_info64 file_info;
+  err = unzGetCurrentFileInfo64(uf, &file_info, filename_inzip, sizeof(filename_inzip), NULL, 0, NULL, 0);
+  size_buf = WRITEBUFFERSIZE;
+  buf =(void*)malloc(size_buf);
+  p = filename_withoutpath = filename_inzip;
+  while (((*p)!= '\0')) {
+  if (((*p)=='/')||((*p)=='\\')) {
+  filename_withoutpath = p+1;
+  }
+  }
+  if ((*filename_withoutpath)=='\0') {
+  }
+  else {
+  const char* write_filename;
+  if ((*popt_extract_without_path)==0) {
+  write_filename = filename_inzip;
+  }
+  else {
+  write_filename = filename_withoutpath;
+  }
+  err = unzOpenCurrentFilePassword(uf, password);
+  if ((skip==0)&&(err==UNZ_OK)) {
+  fout=FOPEN_FUNC(write_filename, "wb");
+  if ((fout==NULL)&&((*popt_extract_without_path)==0)&&(filename_withoutpath!=(char*)filename_inzip)) {
+  fout=FOPEN_FUNC(write_filename, "wb");
+  }
+  }
+  if (fout!=NULL) {
+  do {
+  err = unzReadCurrentFile(uf, buf, size_buf);
+  if (err>0) {
+- if (fwrite(buf, err, 1, fout)!=1) {
++ if (fwrite(buf, (unsigned)err, 1, fout)!=1) {
+  }
+  }
+  } while ((err>0));
+  }
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/minizip.c with new file: contrib/minizip/minizip.c:
+- uLong filetime(f, tmzip, dt) {
++ int filetime(f, tmzip, dt) {
+  if (strcmp(f, "-")!=0) {
+- int len = strlen(f);
++ size_t len = strlen(f);
+  if (len > MAXFILENAME) {
+  }
+  if (name[len - 1] == '/') {
+  name[len - 1] = '\0';
+  }
+  if (stat(name, &s)==0) {
+  }
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/minizip.c with new file: contrib/minizip/minizip.c:
+int getFileCrc(const char* filenameinzip,void*buf,unsigned long size_buf,unsigned long* result_crc) {
+  unsigned long calculate_crc=0;
+  FILE * fin = FOPEN_FUNC(filenameinzip, "rb");
+  unsigned long size_read = 0;
+  if (err == ZIP_OK) {
+  do {
+- size_read =(int)fread(buf, 1, size_buf, fin);
++ size_read = fread(buf, 1, size_buf, fin);
+  if (size_read < size_buf) {
+  }
+  if (size_read>0) {
+- calculate_crc = crc32(calculate_crc, buf, size_read);
++ calculate_crc = crc32_z(calculate_crc, buf, size_read);
+  }
+  total_read += size_read;
+  } while (((err == ZIP_OK)&&(size_read>0)));
+  }
+  *result_crc=calculate_crc;
+  printf("file %s crc %lx\n", filenameinzip, calculate_crc);
+}
+
+Context for merged statement of old file: contrib/minizip/minizip.c with new file: contrib/minizip/minizip.c:
+int isLargeFile(const char* filename) {
+  FILE* pFile = FOPEN_FUNC(filename, "rb");
+  if (pFile != NULL) {
+- pos = FTELLO_FUNC(pFile);
++ pos =(ZPOS64_T)FTELLO_FUNC(pFile);
+  printf("File : %s is %lld bytes\n", filename, pos);
+  if (pos >= 0xffffffff) {
+  }
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/minizip.c with new file: contrib/minizip/minizip.c:
+int main(argc,argv) {
+  int i;
+  int opt_overwrite=0;
+  int zipfilenamearg = 0;
+  char filename_try[MAXFILENAME+16];
+  int err=0;
+- int size_buf=0;
++ size_t size_buf=0;
+  void* buf=NULL;
+  if (argc==1) {
+  return 0;
+  }
+  else {
+  for (i=1; i<argc; i++) {
+  if ((*argv[i])=='-') {
+  while (((*p)!='\0')) {
+  if ((c=='o')||(c=='O')) {
+  opt_overwrite = 1;
+  }
+  if ((c=='a')||(c=='A')) {
+  opt_overwrite = 2;
+  }
+  if (((c=='p')||(c=='P'))&&(i+1<argc)) {
+  i++;
+  }
+  }
+  }
+  else {
+  if (zipfilenamearg == 0) {
+  zipfilenamearg = i ;
+  }
+  }
+  }
+  }
+  size_buf = WRITEBUFFERSIZE;
+  buf =(void*)malloc(size_buf);
+  if (buf==NULL) {
+  return ZIP_INTERNALERROR;
+  }
+  if (zipfilenamearg==0) {
+  }
+  else {
+  strncpy(filename_try, argv[zipfilenamearg], MAXFILENAME-1);
+  filename_try[ MAXFILENAME ] = '\0';
+  if (dot_found==0) {
+  strcat(filename_try, ".zip");
+  }
+  if (opt_overwrite==2) {
+  if (check_exist_file(filename_try)==0) {
+  opt_overwrite=1;
+  }
+  }
+  else {
+  if (opt_overwrite==0) {
+  if (check_exist_file(filename_try)!=0) {
+  if (rep=='A') {
+  opt_overwrite = 2;
+  }
+  }
+  }
+  }
+  }
+  if (zipok==1) {
+  zipFile zf;
+   #ifdef USEWIN32IOAPI
+  zlib_filefunc64_def ffunc;
+  zf = zipOpen2_64(filename_try, (opt_overwrite==2)? 2 : 0, NULL, &ffunc);
+  #else
+  zf = zipOpen64(filename_try, (opt_overwrite==2)? 2 : 0);
+  #endif
+  if (zf == NULL) {
+  err= ZIP_ERRNO;
+  }
+  for (i=zipfilenamearg+1; (i<argc)&&(err==ZIP_OK); i++) {
+  if (!((((*(argv[i]))=='-')||((*(argv[i]))=='/'))&&((argv[i][1]=='o')||(argv[i][1]=='O')||(argv[i][1]=='a')||(argv[i][1]=='A')||(argv[i][1]=='p')||(argv[i][1]=='P')||((argv[i][1]>='0')||(argv[i][1]<='9')))&&(strlen(argv[i])== 2))) {
+  FILE * fin;
+- int size_read;
++ size_t size_read;
+  const char* filenameinzip = argv[i];
+  if ((password != NULL)&&(err==ZIP_OK)) {
+  err = getFileCrc(filenameinzip, buf, size_buf, &crcFile);
+  }
+  if (err != ZIP_OK) {
+  }
+  else {
+  fin = FOPEN_FUNC(filenameinzip, "rb");
+  }
+  if (err == ZIP_OK) {
+  do {
+- size_read =(int)fread(buf, 1, size_buf, fin);
++ size_read = fread(buf, 1, size_buf, fin);
+  if (size_read < size_buf) {
+  }
+  if (size_read>0) {
+- err = zipWriteInFileInZip(zf, buf, size_read);
++ err = zipWriteInFileInZip(zf, buf, (unsigned)size_read);
+  if (err<0) {
+  }
+  }
+  } while (((err == ZIP_OK)&&(size_read>0)));
+  }
+  if (err<0) {
+  }
+  else {
+  if (err!=ZIP_OK) {
+  }
+  }
+  }
+  }
+  }
+  free(buf);
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+local unz64local_SearchCentralDir(const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream) {
+  ZPOS64_T uSizeFile;
+  ZPOS64_T uBackRead;
+  ZPOS64_T uMaxBack=0xffff;
+  uSizeFile = ZTELL64(*pzlib_filefunc_def, filestream);
+  if (uMaxBack>uSizeFile) {
+  uMaxBack = uSizeFile;
+  }
+  uBackRead = 4;
+  while ((uBackRead<uMaxBack)) {
+  uLong uReadSize;
+  ZPOS64_T uReadPos ;
+  int i;
+  if (uBackRead+BUFREADCOMMENT>uMaxBack) {
+  uBackRead = uMaxBack;
+  }
+  else {
+  uBackRead+=BUFREADCOMMENT;
+  }
+  uReadPos = uSizeFile-uBackRead ;
+  uReadSize =((BUFREADCOMMENT+4)<(uSizeFile-uReadPos))?(BUFREADCOMMENT+4):(uLong)(uSizeFile-uReadPos);
+  for (i=(int)uReadSize-3; (i--)>0; ) {
+  if (((*(buf+i))==0x50)&&((*(buf+i+1))==0x4b)&&((*(buf+i+2))==0x05)&&((*(buf+i+3))==0x06)) {
+- uPosFound = uReadPos+i;
++ uPosFound = uReadPos+(unsigned)i;
+  }
+  }
+  if (uPosFound!=0) {
+  }
+  }
+  return uPosFound;
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+local unz64local_SearchCentralDir64(const zlib_filefunc64_32_def* pzlib_filefunc_def,
+                                      voidpf filestream) {
+  ZPOS64_T uSizeFile;
+  ZPOS64_T uBackRead;
+  ZPOS64_T uMaxBack=0xffff;
+  uSizeFile = ZTELL64(*pzlib_filefunc_def, filestream);
+  if (uMaxBack>uSizeFile) {
+  uMaxBack = uSizeFile;
+  }
+  uBackRead = 4;
+  while ((uBackRead<uMaxBack)) {
+  uLong uReadSize;
+  ZPOS64_T uReadPos;
+  int i;
+  if (uBackRead+BUFREADCOMMENT>uMaxBack) {
+  uBackRead = uMaxBack;
+  }
+  else {
+  uBackRead+=BUFREADCOMMENT;
+  }
+  uReadPos = uSizeFile-uBackRead ;
+  uReadSize =((BUFREADCOMMENT+4)<(uSizeFile-uReadPos))?(BUFREADCOMMENT+4):(uLong)(uSizeFile-uReadPos);
+  for (i=(int)uReadSize-3; (i--)>0; ) {
+  if (((*(buf+i))==0x50)&&((*(buf+i+1))==0x4b)&&((*(buf+i+2))==0x06)&&((*(buf+i+3))==0x07)) {
+- uPosFound = uReadPos+i;
++ uPosFound = uReadPos+(unsigned)i;
+  }
+  }
+  if (uPosFound!=0) {
+  }
+  }
+  if (uPosFound == 0) {
+  return 0;
+  }
+  if (ZSEEK64(*pzlib_filefunc_def, filestream, uPosFound, ZLIB_FILEFUNC_SEEK_SET)!=0) {
+  return 0;
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+local unz64local_DosDateToTmuDate (ZPOS64_T ulDosDate, tm_unz* ptm) {
+  ZPOS64_T uDate;
+  uDate =(ZPOS64_T)(ulDosDate>>16);
+- ptm->tm_mday =(uInt)(uDate&0x1f);
++ ptm->tm_mday =(int)(uDate&0x1f);
+- ptm->tm_mon =(uInt)((((uDate)&0x1E0)/0x20)-1);
++ ptm->tm_mon =(int)((((uDate)&0x1E0)/0x20)-1);
+- ptm->tm_year =(uInt)(((uDate&0x0FE00)/0x0200)+1980);
++ ptm->tm_year =(int)(((uDate&0x0FE00)/0x0200)+1980);
+- ptm->tm_hour =(uInt)((ulDosDate &0xF800)/0x800);
++ ptm->tm_hour =(int)((ulDosDate &0xF800)/0x800);
+- ptm->tm_min =(uInt)((ulDosDate&0x7E0)/0x20);
++ ptm->tm_min =(int)((ulDosDate&0x7E0)/0x20);
+- ptm->tm_sec =(uInt)(2*(ulDosDate&0x1f));
++ ptm->tm_sec =(int)(2*(ulDosDate&0x1f));
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+local unz64local_GetCurrentFileInfoInternal (unzFile file,
+                                                  unz_file_info64 *pfile_info,
+                                                  unz_file_info64_internal
+                                                  *pfile_info_internal,
+                                                  char *szFileName,
+                                                  uLong fileNameBufferSize,
+                                                  void *extraField,
+                                                  uLong extraFieldBufferSize,
+                                                  char *szComment,
+                                                  uLong commentBufferSize) {
+  unz64_s* s;
+  unz_file_info64 file_info;
+  long lSeek=0;
+  s=(unz64_s*)file;
+  lSeek+=file_info.size_filename;
+  if ((err==UNZ_OK)&&(szFileName!=NULL)) {
+  uLong uSizeRead ;
+  if (file_info.size_filename<fileNameBufferSize) {
+  uSizeRead = file_info.size_filename;
+  }
+  else {
+  uSizeRead = fileNameBufferSize;
+  }
+  lSeek -= uSizeRead;
+  }
+  if ((err==UNZ_OK)&&(extraField!=NULL)) {
+  ZPOS64_T uSizeRead ;
+  if (file_info.size_file_extra<extraFieldBufferSize) {
+  uSizeRead = file_info.size_file_extra;
+  }
+  else {
+  uSizeRead = extraFieldBufferSize;
+  }
+  if (lSeek!=0) {
+- if (ZSEEK64(s->z_filefunc, s->filestream, lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
++ if (ZSEEK64(s->z_filefunc, s->filestream, (ZPOS64_T)lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
+  lSeek=0;
+  }
+  }
+  lSeek += file_info.size_file_extra -(uLong)uSizeRead;
+  }
+  else {
+  lSeek += file_info.size_file_extra;
+  }
+  if ((err==UNZ_OK)&&(file_info.size_file_extra != 0)) {
+  lSeek -= file_info.size_file_extra;
+  if (lSeek!=0) {
+- if (ZSEEK64(s->z_filefunc, s->filestream, lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
++ if (ZSEEK64(s->z_filefunc, s->filestream, (ZPOS64_T)lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
+  lSeek=0;
+  }
+  }
+  }
+  if ((err==UNZ_OK)&&(szComment!=NULL)) {
+  if (lSeek!=0) {
+- if (ZSEEK64(s->z_filefunc, s->filestream, lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
++ if (ZSEEK64(s->z_filefunc, s->filestream, (ZPOS64_T)lSeek, ZLIB_FILEFUNC_SEEK_CUR)==0) {
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len) {
+  uInt iRead = 0;
+  unz64_s* s;
+  file_in_zip64_read_info_s* pfile_in_zip_read_info;
+  s=(unz64_s*)file;
+  pfile_in_zip_read_info=s->pfile_in_zip_read;
+  pfile_in_zip_read_info->stream.avail_out =(uInt)len;
+  if ((len>pfile_in_zip_read_info->rest_read_uncompressed)&&(!(pfile_in_zip_read_info->raw))) {
+  pfile_in_zip_read_info->stream.avail_out =(uInt)pfile_in_zip_read_info->rest_read_uncompressed;
+  }
+  if ((len>pfile_in_zip_read_info->rest_read_compressed+ pfile_in_zip_read_info->stream.avail_in)&&(pfile_in_zip_read_info->raw)) {
+  pfile_in_zip_read_info->stream.avail_out =(uInt)pfile_in_zip_read_info->rest_read_compressed+ pfile_in_zip_read_info->stream.avail_in;
+  }
+  while ((pfile_in_zip_read_info->stream.avail_out>0)) {
+  if ((pfile_in_zip_read_info->stream.avail_in==0)&&(pfile_in_zip_read_info->rest_read_compressed>0)) {
+  uInt uReadThis = UNZ_BUFSIZE;
+  if (pfile_in_zip_read_info->rest_read_compressed<uReadThis) {
+  uReadThis =(uInt)pfile_in_zip_read_info->rest_read_compressed;
+  }
+   #ifdef NOUNCRYPT
+  if (s->encrypted) {
+  uInt i;
+  for (i=0; i<uReadThis; i++) {
+  }
+  }
+  #endif
+  pfile_in_zip_read_info->stream.avail_in =(uInt)uReadThis;
+  }
+  if ((pfile_in_zip_read_info->compression_method==0)||(pfile_in_zip_read_info->raw)) {
+  uInt uDoCopy, i ;
+  if ((pfile_in_zip_read_info->stream.avail_in == 0)&&(pfile_in_zip_read_info->rest_read_compressed == 0)) {
+- return(iRead==0)? UNZ_EOF : iRead;
++ return(iRead==0)? UNZ_EOF :(int)iRead;
+  }
+  if (pfile_in_zip_read_info->stream.avail_out < pfile_in_zip_read_info->stream.avail_in) {
+  uDoCopy = pfile_in_zip_read_info->stream.avail_out ;
+  }
+  else {
+  uDoCopy = pfile_in_zip_read_info->stream.avail_in ;
+  }
+  pfile_in_zip_read_info->stream.total_out += uDoCopy;
+  iRead += uDoCopy;
+  }
+  else {
+  if (pfile_in_zip_read_info->compression_method==Z_BZIP2ED) {
+   #ifdef HAVE_BZIP2
+  uLong uTotalOutBefore, uTotalOutAfter;
+  pfile_in_zip_read_info->bstream.total_out_lo32 = pfile_in_zip_read_info->stream.total_out;
+  uTotalOutBefore = pfile_in_zip_read_info->bstream.total_out_lo32;
+  uTotalOutAfter = pfile_in_zip_read_info->bstream.total_out_lo32;
+  iRead +=(uInt)(uTotalOutAfter - uTotalOutBefore);
+  pfile_in_zip_read_info->stream.total_out = pfile_in_zip_read_info->bstream.total_out_lo32;
+  #endif
+  }
+  else {
+  ZPOS64_T uTotalOutBefore, uTotalOutAfter;
+  uTotalOutBefore = pfile_in_zip_read_info->stream.total_out;
+  uTotalOutAfter = pfile_in_zip_read_info->stream.total_out;
+  if (uTotalOutAfter<uTotalOutBefore) {
+  uTotalOutAfter += 1LL << 32;
+  }
+  iRead +=(uInt)(uTotalOutAfter - uTotalOutBefore);
+  if (err==Z_STREAM_END) {
+- return(iRead==0)? UNZ_EOF : iRead;
++ return(iRead==0)? UNZ_EOF :(int)iRead;
+  }
+  }
+  }
+  }
+  if (err==Z_OK) {
+- return iRead;
++ return(int)iRead;
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/unzip.h with new file: contrib/minizip/unzip.h:
+#ifndef _unz64_H
+   #ifndef __cplusplus
+- extern "C" { #endif #ifndef _ZLIB_H #include "zlib.h" #endif #ifndef _ZLIBIOAPI_H #include "ioapi.h" #endif #ifdef HAVE_BZIP2 #include "bzlib.h" #endif #define Z_BZIP2ED 12 #if defined(STRICTUNZIP)|| defined(STRICTZIPUNZIP)typedef struct TagunzFile__ { int unused; } unzFile__; typedef unzFile__ *unzFile; #else typedef voidp unzFile; #endif #define UNZ_OK(0)#define UNZ_END_OF_LIST_OF_FILE(-100)#define UNZ_ERRNO(Z_ERRNO)#define UNZ_EOF(0)#define UNZ_PARAMERROR(-102)#define UNZ_BADZIPFILE(-103)#define UNZ_INTERNALERROR(-104)#define UNZ_CRCERROR(-105)typedef struct tm_unz_s { uInt tm_sec; uInt tm_min; uInt tm_hour; uInt tm_mday; uInt tm_mon; uInt tm_year; } tm_unz; typedef struct unz_global_info64_s { ZPOS64_T number_entry; uLong size_comment; } unz_global_info64; typedef struct unz_global_info_s { uLong number_entry; uLong size_comment; } unz_global_info; typedef struct unz_file_info64_s { uLong version; uLong version_needed; uLong flag; uLong compression_method; uLong dosDate; uLong crc; ZPOS64_T compressed_size; ZPOS64_T uncompressed_size; uLong size_filename; uLong size_file_extra; uLong size_file_comment; uLong disk_num_start; uLong internal_fa; uLong external_fa; tm_unz tmu_date; } unz_file_info64; typedef struct unz_file_info_s { uLong version; uLong version_needed; uLong flag; uLong compression_method; uLong dosDate; uLong crc; uLong compressed_size; uLong uncompressed_size; uLong size_filename; uLong size_file_extra; uLong size_file_comment; uLong disk_num_start; uLong internal_fa; uLong external_fa; tm_unz tmu_date; } unz_file_info; extern int ZEXPORT unzStringFileNameCompare OF((const char* fileName1, const char* fileName2, int iCaseSensitivity)); extern unzFile ZEXPORT unzOpen OF((const char *path)); extern unzFile ZEXPORT unzOpen64 OF((const void *path)); extern unzFile ZEXPORT unzOpen2 OF((const char *path, zlib_filefunc_def* pzlib_filefunc_def)); extern unzFile ZEXPORT unzOpen2_64 OF((const void *path, zlib_filefunc64_def* pzlib_filefunc_def)); extern int ZEXPORT unzClose OF((unzFile file)); extern int ZEXPORT unzGetGlobalInfo OF((unzFile file, unz_global_info *pglobal_info)); extern int ZEXPORT unzGetGlobalInfo64 OF((unzFile file, unz_global_info64 *pglobal_info)); extern int ZEXPORT unzGetGlobalComment OF((unzFile file, char *szComment, uLong uSizeBuf)); extern int ZEXPORT unzGoToFirstFile OF((unzFile file)); extern int ZEXPORT unzGoToNextFile OF((unzFile file)); extern int ZEXPORT unzLocateFile OF((unzFile file, const char *szFileName, int iCaseSensitivity)); typedef struct unz_file_pos_s { uLong pos_in_zip_directory; uLong num_of_file; } unz_file_pos; extern int ZEXPORT unzGetFilePos(unzFile file, unz_file_pos* file_pos); extern int ZEXPORT unzGoToFilePos(unzFile file, unz_file_pos* file_pos); typedef struct unz64_file_pos_s { ZPOS64_T pos_in_zip_directory; ZPOS64_T num_of_file; } unz64_file_pos; extern int ZEXPORT unzGetFilePos64(unzFile file, unz64_file_pos* file_pos); extern int ZEXPORT unzGoToFilePos64(unzFile file, const unz64_file_pos* file_pos); extern int ZEXPORT unzGetCurrentFileInfo64 OF((unzFile file, unz_file_info64 *pfile_info, char *szFileName, uLong fileNameBufferSize, void *extraField, uLong extraFieldBufferSize, char *szComment, uLong commentBufferSize)); extern int ZEXPORT unzGetCurrentFileInfo OF((unzFile file, unz_file_info *pfile_info, char *szFileName, uLong fileNameBufferSize, void *extraField, uLong extraFieldBufferSize, char *szComment, uLong commentBufferSize)); extern ZPOS64_T ZEXPORT unzGetCurrentFileZStreamPos64 OF((unzFile file)); extern int ZEXPORT unzOpenCurrentFile OF((unzFile file)); extern int ZEXPORT unzOpenCurrentFilePassword OF((unzFile file, const char* password)); extern int ZEXPORT unzOpenCurrentFile2 OF((unzFile file, int* method, int* level, int raw)); extern int ZEXPORT unzOpenCurrentFile3 OF((unzFile file, int* method, int* level, int raw, const char* password)); extern int ZEXPORT unzCloseCurrentFile OF((unzFile file)); extern int ZEXPORT unzReadCurrentFile OF((unzFile file, voidp buf, unsigned len)); extern z_off_t ZEXPORT unztell OF((unzFile file)); extern ZPOS64_T ZEXPORT unztell64 OF((unzFile file)); extern int ZEXPORT unzeof OF((unzFile file)); extern int ZEXPORT unzGetLocalExtrafield OF((unzFile file, voidp buf, unsigned len)); extern ZPOS64_T ZEXPORT unzGetOffset64(unzFile file); extern uLong ZEXPORT unzGetOffset(unzFile file); extern int ZEXPORT unzSetOffset64(unzFile file, ZPOS64_T pos); extern int ZEXPORT unzSetOffset(unzFile file, uLong pos); #ifdef __cplusplus }
++ extern "C" { #endif #ifndef _ZLIB_H #include "zlib.h" #endif #ifndef _ZLIBIOAPI_H #include "ioapi.h" #endif #ifdef HAVE_BZIP2 #include "bzlib.h" #endif #define Z_BZIP2ED 12 #if defined(STRICTUNZIP)|| defined(STRICTZIPUNZIP)typedef struct TagunzFile__ { int unused; } unzFile__; typedef unzFile__ *unzFile; #else typedef voidp unzFile; #endif #define UNZ_OK(0)#define UNZ_END_OF_LIST_OF_FILE(-100)#define UNZ_ERRNO(Z_ERRNO)#define UNZ_EOF(0)#define UNZ_PARAMERROR(-102)#define UNZ_BADZIPFILE(-103)#define UNZ_INTERNALERROR(-104)#define UNZ_CRCERROR(-105)typedef struct tm_unz_s { int tm_sec; int tm_min; int tm_hour; int tm_mday; int tm_mon; int tm_year; } tm_unz; typedef struct unz_global_info64_s { ZPOS64_T number_entry; uLong size_comment; } unz_global_info64; typedef struct unz_global_info_s { uLong number_entry; uLong size_comment; } unz_global_info; typedef struct unz_file_info64_s { uLong version; uLong version_needed; uLong flag; uLong compression_method; uLong dosDate; uLong crc; ZPOS64_T compressed_size; ZPOS64_T uncompressed_size; uLong size_filename; uLong size_file_extra; uLong size_file_comment; uLong disk_num_start; uLong internal_fa; uLong external_fa; tm_unz tmu_date; } unz_file_info64; typedef struct unz_file_info_s { uLong version; uLong version_needed; uLong flag; uLong compression_method; uLong dosDate; uLong crc; uLong compressed_size; uLong uncompressed_size; uLong size_filename; uLong size_file_extra; uLong size_file_comment; uLong disk_num_start; uLong internal_fa; uLong external_fa; tm_unz tmu_date; } unz_file_info; extern int ZEXPORT unzStringFileNameCompare OF((const char* fileName1, const char* fileName2, int iCaseSensitivity)); extern unzFile ZEXPORT unzOpen OF((const char *path)); extern unzFile ZEXPORT unzOpen64 OF((const void *path)); extern unzFile ZEXPORT unzOpen2 OF((const char *path, zlib_filefunc_def* pzlib_filefunc_def)); extern unzFile ZEXPORT unzOpen2_64 OF((const void *path, zlib_filefunc64_def* pzlib_filefunc_def)); extern int ZEXPORT unzClose OF((unzFile file)); extern int ZEXPORT unzGetGlobalInfo OF((unzFile file, unz_global_info *pglobal_info)); extern int ZEXPORT unzGetGlobalInfo64 OF((unzFile file, unz_global_info64 *pglobal_info)); extern int ZEXPORT unzGetGlobalComment OF((unzFile file, char *szComment, uLong uSizeBuf)); extern int ZEXPORT unzGoToFirstFile OF((unzFile file)); extern int ZEXPORT unzGoToNextFile OF((unzFile file)); extern int ZEXPORT unzLocateFile OF((unzFile file, const char *szFileName, int iCaseSensitivity)); typedef struct unz_file_pos_s { uLong pos_in_zip_directory; uLong num_of_file; } unz_file_pos; extern int ZEXPORT unzGetFilePos(unzFile file, unz_file_pos* file_pos); extern int ZEXPORT unzGoToFilePos(unzFile file, unz_file_pos* file_pos); typedef struct unz64_file_pos_s { ZPOS64_T pos_in_zip_directory; ZPOS64_T num_of_file; } unz64_file_pos; extern int ZEXPORT unzGetFilePos64(unzFile file, unz64_file_pos* file_pos); extern int ZEXPORT unzGoToFilePos64(unzFile file, const unz64_file_pos* file_pos); extern int ZEXPORT unzGetCurrentFileInfo64 OF((unzFile file, unz_file_info64 *pfile_info, char *szFileName, uLong fileNameBufferSize, void *extraField, uLong extraFieldBufferSize, char *szComment, uLong commentBufferSize)); extern int ZEXPORT unzGetCurrentFileInfo OF((unzFile file, unz_file_info *pfile_info, char *szFileName, uLong fileNameBufferSize, void *extraField, uLong extraFieldBufferSize, char *szComment, uLong commentBufferSize)); extern ZPOS64_T ZEXPORT unzGetCurrentFileZStreamPos64 OF((unzFile file)); extern int ZEXPORT unzOpenCurrentFile OF((unzFile file)); extern int ZEXPORT unzOpenCurrentFilePassword OF((unzFile file, const char* password)); extern int ZEXPORT unzOpenCurrentFile2 OF((unzFile file, int* method, int* level, int raw)); extern int ZEXPORT unzOpenCurrentFile3 OF((unzFile file, int* method, int* level, int raw, const char* password)); extern int ZEXPORT unzCloseCurrentFile OF((unzFile file)); extern int ZEXPORT unzReadCurrentFile OF((unzFile file, voidp buf, unsigned len)); extern z_off_t ZEXPORT unztell OF((unzFile file)); extern ZPOS64_T ZEXPORT unztell64 OF((unzFile file)); extern int ZEXPORT unzeof OF((unzFile file)); extern int ZEXPORT unzGetLocalExtrafield OF((unzFile file, voidp buf, unsigned len)); extern ZPOS64_T ZEXPORT unzGetOffset64(unzFile file); extern uLong ZEXPORT unzGetOffset(unzFile file); extern int ZEXPORT unzSetOffset64(unzFile file, ZPOS64_T pos); extern int ZEXPORT unzSetOffset(unzFile file, uLong pos); #ifdef __cplusplus }
+- typedef struct tm_unz_s { uInt tm_sec; uInt tm_min; uInt tm_hour; uInt tm_mday; uInt tm_mon; uInt tm_year; } tm_unz;
++ typedef struct tm_unz_s { int tm_sec; int tm_min; int tm_hour; int tm_mday; int tm_mon; int tm_year; } tm_unz;
+- struct tm_unz_s {
++ struct tm_unz_s {
+- uInt tm_sec;
++ int tm_sec;
+- uInt tm_min;
++ int tm_min;
+- uInt tm_hour;
++ int tm_hour;
+- uInt tm_mday;
++ int tm_mday;
+- uInt tm_mon;
++ int tm_mon;
+- uInt tm_year;
++ int tm_year;
+  }
+  extern int ZEXPORT unzGetFilePos(unzFile file, unz_file_pos* file_pos);
+  extern int ZEXPORT unzGoToFilePos(unzFile file, unz_file_pos* file_pos);
+  extern int ZEXPORT unzGetFilePos64(unzFile file, unz64_file_pos* file_pos);
+  extern int ZEXPORT unzGoToFilePos64(unzFile file, const unz64_file_pos* file_pos);
+  extern ZPOS64_T ZEXPORT unzGetOffset64(unzFile file);
+  extern uLong ZEXPORT unzGetOffset(unzFile file);
+  extern int ZEXPORT unzSetOffset64(unzFile file, ZPOS64_T pos);
+  extern int ZEXPORT unzSetOffset(unzFile file, uLong pos);
+  #endif
+  #endif
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- typedef struct { z_stream stream; #ifdef HAVE_BZIP2 bz_stream bstream; #endif int stream_initialised; uInt pos_in_buffered_data; ZPOS64_T pos_local_header; char* central_header; uLong size_centralExtra; uLong size_centralheader; uLong size_centralExtraFree; uLong flag; int method; int raw; Byte buffered_data[Z_BUFSIZE]; uLong dosDate; uLong crc32; int encrypt; int zip64; ZPOS64_T pos_zip64extrainfo; ZPOS64_T totalCompressedData; ZPOS64_T totalUncompressedData; #ifndef NOCRYPT unsigned long keys[3]; const z_crc_t* pcrc_32_tab; int crypt_header_size; #endif } curfile64_info;
++ typedef struct { z_stream stream; #ifdef HAVE_BZIP2 bz_stream bstream; #endif int stream_initialised; uInt pos_in_buffered_data; ZPOS64_T pos_local_header; char* central_header; uLong size_centralExtra; uLong size_centralheader; uLong size_centralExtraFree; uLong flag; int method; int raw; Byte buffered_data[Z_BUFSIZE]; uLong dosDate; uLong crc32; int encrypt; int zip64; ZPOS64_T pos_zip64extrainfo; ZPOS64_T totalCompressedData; ZPOS64_T totalUncompressedData; #ifndef NOCRYPT unsigned long keys[3]; const z_crc_t* pcrc_32_tab; unsigned crypt_header_size; #endif } curfile64_info;
+- struct {
++ struct {
+   #ifndef NOCRYPT
+- int crypt_header_size;
++ unsigned crypt_header_size;
++ unsigned
+  #endif
+  }
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+local zip64local_putValue (const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream, ZPOS64_T x, int nbByte) {
+  unsigned char buf[8];
+  int n;
+  for (n = 0; n < nbByte; n++) {
+  buf[n] =(unsigned char)(x & 0xff);
+  }
+  if (x != 0) {
+  for (n = 0; n < nbByte; n++) {
+  buf[n] = 0xff;
+  }
+  }
+- if (ZWRITE64(*pzlib_filefunc_def, filestream, buf, nbByte)!=(uLong)nbByte) {
++ if (ZWRITE64(*pzlib_filefunc_def, filestream, buf, (uLong)nbByte)!=(uLong)nbByte) {
+  return ZIP_ERRNO;
+  }
+  else {
+  return ZIP_OK;
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+local zip64local_TmzDateToDosDate(const tm_zip* ptm) {
+  uLong year =(uLong)ptm->tm_year;
+  if (year>=1980) {
+  year-=1980;
+  }
+  else {
+  if (year>=80) {
+  year-=80;
+  }
+  }
+- return(uLong)(((ptm->tm_mday)+(32 *(ptm->tm_mon+1))+(512 * year))<< 16)|((ptm->tm_sec/2)+(32* ptm->tm_min)+(2048 *(uLong)ptm->tm_hour));
++ return(uLong)(((uLong)(ptm->tm_mday)+(32 *(uLong)(ptm->tm_mon+1))+(512 * year))<< 16)|(((uLong)ptm->tm_sec/2)+(32 *(uLong)ptm->tm_min)+(2048 *(uLong)ptm->tm_hour));
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+local zip64local_SearchCentralDir(const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream) {
+  ZPOS64_T uSizeFile;
+  ZPOS64_T uBackRead;
+  ZPOS64_T uMaxBack=0xffff;
+  uSizeFile = ZTELL64(*pzlib_filefunc_def, filestream);
+  if (uMaxBack>uSizeFile) {
+  uMaxBack = uSizeFile;
+  }
+  uBackRead = 4;
+  while ((uBackRead<uMaxBack)) {
+  uLong uReadSize;
+  ZPOS64_T uReadPos ;
+  int i;
+  if (uBackRead+BUFREADCOMMENT>uMaxBack) {
+  uBackRead = uMaxBack;
+  }
+  else {
+  uBackRead+=BUFREADCOMMENT;
+  }
+  uReadPos = uSizeFile-uBackRead ;
+  uReadSize =((BUFREADCOMMENT+4)<(uSizeFile-uReadPos))?(BUFREADCOMMENT+4):(uLong)(uSizeFile-uReadPos);
+  for (i=(int)uReadSize-3; (i--)>0; ) {
+  if (((*(buf+i))==0x50)&&((*(buf+i+1))==0x4b)&&((*(buf+i+2))==0x05)&&((*(buf+i+3))==0x06)) {
+- uPosFound = uReadPos+i;
++ uPosFound = uReadPos+(unsigned)i;
+  }
+  }
+  if (uPosFound!=0) {
+  }
+  }
+  return uPosFound;
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+local zip64local_SearchCentralDir64(const zlib_filefunc64_32_def* pzlib_filefunc_def, voidpf filestream) {
+  ZPOS64_T uSizeFile;
+  ZPOS64_T uBackRead;
+  ZPOS64_T uMaxBack=0xffff;
+  uSizeFile = ZTELL64(*pzlib_filefunc_def, filestream);
+  if (uMaxBack>uSizeFile) {
+  uMaxBack = uSizeFile;
+  }
+  uBackRead = 4;
+  while ((uBackRead<uMaxBack)) {
+  uLong uReadSize;
+  ZPOS64_T uReadPos;
+  int i;
+  if (uBackRead+BUFREADCOMMENT>uMaxBack) {
+  uBackRead = uMaxBack;
+  }
+  else {
+  uBackRead+=BUFREADCOMMENT;
+  }
+  uReadPos = uSizeFile-uBackRead ;
+  uReadSize =((BUFREADCOMMENT+4)<(uSizeFile-uReadPos))?(BUFREADCOMMENT+4):(uLong)(uSizeFile-uReadPos);
+  for (i=(int)uReadSize-3; (i--)>0; ) {
+  if (((*(buf+i))==0x50)&&((*(buf+i+1))==0x4b)&&((*(buf+i+2))==0x06)&&((*(buf+i+3))==0x07)) {
+- uPosFound = uReadPos+i;
++ uPosFound = uReadPos+(unsigned)i;
+  }
+  }
+  if (uPosFound!=0) {
+  }
+  }
+  if (uPosFound == 0) {
+  return 0;
+  }
+  if (ZSEEK64(*pzlib_filefunc_def, filestream, uPosFound, ZLIB_FILEFUNC_SEEK_SET)!=0) {
+  return 0;
+  }
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int LoadCentralDirectoryRecord(zip64_internal* pziinit) {
++ local LoadCentralDirectoryRecord(zip64_internal* pziinit) {
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int Write_LocalFileHeader(zip64_internal* zi, const char* filename, uInt size_extrafield_local, const void* extrafield_local) {
++ local Write_LocalFileHeader(zip64_internal* zi, const char* filename, uInt size_extrafield_local, const void* extrafield_local) {
+  if ((err==ZIP_OK)&&(zi->ci.zip64)) {
+  short HeaderID = 1;
+  short DataSize = 16;
+- err = zip64local_putValue(&zi->z_filefunc, zi->filestream, (short)HeaderID, 2);
++ err = zip64local_putValue(&zi->z_filefunc, zi->filestream, (ZPOS64_T)HeaderID, 2);
+- err = zip64local_putValue(&zi->z_filefunc, zi->filestream, (short)DataSize, 2);
++ err = zip64local_putValue(&zi->z_filefunc, zi->filestream, (ZPOS64_T)DataSize, 2);
+  }
+  return err;
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+int zipCloseFileInZipRaw64 (zipFile file, ZPOS64_T uncompressed_size, uLong crc32) {
+- short datasize = 0;
++ unsigned datasize = 0;
+  if (uncompressed_size >= 0xffffffff) {
+  datasize += 8;
+  }
+  if (compressed_size >= 0xffffffff) {
+  datasize += 8;
+  }
+  if (zi->ci.pos_local_header >= 0xffffffff) {
+  datasize += 8;
+  }
+  if (datasize > 0) {
+  if ((uLong)(datasize + 4)> zi->ci.size_centralExtraFree) {
+  return ZIP_BADZIPFILE;
+  }
+  zip64local_putValue_inmemory(p, datasize, 2);
+  zi->ci.size_centralExtraFree -= datasize + 4;
+  zi->ci.size_centralheader += datasize + 4;
+  zi->ci.size_centralExtra += datasize + 4;
+  zip64local_putValue_inmemory(zi->ci.central_header+30, (uLong)zi->ci.size_centralExtra, 2);
+  }
+  if (err==ZIP_OK) {
+  err = add_data_in_datablock(&zi->central_dir, zi->ci.central_header, (uLong)zi->ci.size_centralheader);
+  }
+  if (err==ZIP_OK) {
+  if (err==ZIP_OK) {
+  }
+  if (uncompressed_size >= 0xffffffff || compressed_size >= 0xffffffff) {
+  if (zi->ci.pos_zip64extrainfo > 0) {
+  if (err==ZIP_OK) {
+  }
+  if (err==ZIP_OK) {
+  }
+  }
+  }
+  else {
+  if (err==ZIP_OK) {
+  }
+  if (err==ZIP_OK) {
+  }
+  }
+  }
+  return err;
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int Write_Zip64EndOfCentralDirectoryLocator(zip64_internal* zi, ZPOS64_T zip64eocd_pos_inzip) {
++ local Write_Zip64EndOfCentralDirectoryLocator(zip64_internal* zi, ZPOS64_T zip64eocd_pos_inzip) {
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int Write_Zip64EndOfCentralDirectoryRecord(zip64_internal* zi, uLong size_centraldir, ZPOS64_T centraldir_pos_inzip) {
++ local Write_Zip64EndOfCentralDirectoryRecord(zip64_internal* zi, uLong size_centraldir, ZPOS64_T centraldir_pos_inzip) {
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int Write_EndOfCentralDirectoryRecord(zip64_internal* zi, uLong size_centraldir, ZPOS64_T centraldir_pos_inzip) {
++ local Write_EndOfCentralDirectoryRecord(zip64_internal* zi, uLong size_centraldir, ZPOS64_T centraldir_pos_inzip) {
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+- int Write_GlobalComment(zip64_internal* zi, const char* global_comment) {
++ local Write_GlobalComment(zip64_internal* zi, const char* global_comment) {
+}
+
+Context for merged statement of old file: contrib/minizip/zip.c with new file: contrib/minizip/zip.c:
+int zipRemoveExtraInfoBlock (char* pData, int* dataLen, short sHeader) {
+- pNewHeader =(char*)ALLOC(*dataLen);
++ pNewHeader =(char*)ALLOC((unsigned)*dataLen);
+  pTmp = pNewHeader;
+  while ((p <(pData + *dataLen))) {
+  if (header == sHeader) {
+  }
+  else {
+  memcpy(pTmp, p, dataSize + 4);
+  }
+  }
+  if (size < *dataLen) {
+  if (size > 0) {
+  memcpy(pData, pNewHeader, size);
+  }
+  }
+  TRYFREE(pNewHeader);
+}
+
+Context for merged statement of old file: contrib/minizip/zip.h with new file: contrib/minizip/zip.h:
+#ifndef _zip12_H
+   #ifndef __cplusplus
+- extern "C" { #endif #ifndef _ZLIB_H #include "zlib.h" #endif #ifndef _ZLIBIOAPI_H #include "ioapi.h" #endif #ifdef HAVE_BZIP2 #include "bzlib.h" #endif #define Z_BZIP2ED 12 #if defined(STRICTZIP)|| defined(STRICTZIPUNZIP)typedef struct TagzipFile__ { int unused; } zipFile__; typedef zipFile__ *zipFile; #else typedef voidp zipFile; #endif #define ZIP_OK(0)#define ZIP_EOF(0)#define ZIP_ERRNO(Z_ERRNO)#define ZIP_PARAMERROR(-102)#define ZIP_BADZIPFILE(-103)#define ZIP_INTERNALERROR(-104)#ifndef DEF_MEM_LEVEL # if MAX_MEM_LEVEL >= 8 # define DEF_MEM_LEVEL 8 # else # define DEF_MEM_LEVEL MAX_MEM_LEVEL # endif #endif typedef struct tm_zip_s { uInt tm_sec; uInt tm_min; uInt tm_hour; uInt tm_mday; uInt tm_mon; uInt tm_year; } tm_zip; typedef struct { tm_zip tmz_date; uLong dosDate; uLong internal_fa; uLong external_fa; } zip_fileinfo; typedef const char* zipcharpc; #define APPEND_STATUS_CREATE(0)#define APPEND_STATUS_CREATEAFTER(1)#define APPEND_STATUS_ADDINZIP(2)extern zipFile ZEXPORT zipOpen OF((const char *pathname, int append)); extern zipFile ZEXPORT zipOpen64 OF((const void *pathname, int append)); extern zipFile ZEXPORT zipOpen2 OF((const char *pathname, int append, zipcharpc* globalcomment, zlib_filefunc_def* pzlib_filefunc_def)); extern zipFile ZEXPORT zipOpen2_64 OF((const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_def* pzlib_filefunc_def)); extern int ZEXPORT zipOpenNewFileInZip OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level)); extern int ZEXPORT zipOpenNewFileInZip64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int zip64)); extern int ZEXPORT zipOpenNewFileInZip2 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw)); extern int ZEXPORT zipOpenNewFileInZip2_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int zip64)); extern int ZEXPORT zipOpenNewFileInZip3 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting)); extern int ZEXPORT zipOpenNewFileInZip3_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, int zip64)); extern int ZEXPORT zipOpenNewFileInZip4 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase)); extern int ZEXPORT zipOpenNewFileInZip4_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase, int zip64)); extern int ZEXPORT zipWriteInFileInZip OF((zipFile file, const void* buf, unsigned len)); extern int ZEXPORT zipCloseFileInZip OF((zipFile file)); extern int ZEXPORT zipCloseFileInZipRaw OF((zipFile file, uLong uncompressed_size, uLong crc32)); extern int ZEXPORT zipCloseFileInZipRaw64 OF((zipFile file, ZPOS64_T uncompressed_size, uLong crc32)); extern int ZEXPORT zipClose OF((zipFile file, const char* global_comment)); extern int ZEXPORT zipRemoveExtraInfoBlock OF((char* pData, int* dataLen, short sHeader)); #ifdef __cplusplus }
++ extern "C" { #endif #ifndef _ZLIB_H #include "zlib.h" #endif #ifndef _ZLIBIOAPI_H #include "ioapi.h" #endif #ifdef HAVE_BZIP2 #include "bzlib.h" #endif #define Z_BZIP2ED 12 #if defined(STRICTZIP)|| defined(STRICTZIPUNZIP)typedef struct TagzipFile__ { int unused; } zipFile__; typedef zipFile__ *zipFile; #else typedef voidp zipFile; #endif #define ZIP_OK(0)#define ZIP_EOF(0)#define ZIP_ERRNO(Z_ERRNO)#define ZIP_PARAMERROR(-102)#define ZIP_BADZIPFILE(-103)#define ZIP_INTERNALERROR(-104)#ifndef DEF_MEM_LEVEL # if MAX_MEM_LEVEL >= 8 # define DEF_MEM_LEVEL 8 # else # define DEF_MEM_LEVEL MAX_MEM_LEVEL # endif #endif typedef struct tm_zip_s { int tm_sec; int tm_min; int tm_hour; int tm_mday; int tm_mon; int tm_year; } tm_zip; typedef struct { tm_zip tmz_date; uLong dosDate; uLong internal_fa; uLong external_fa; } zip_fileinfo; typedef const char* zipcharpc; #define APPEND_STATUS_CREATE(0)#define APPEND_STATUS_CREATEAFTER(1)#define APPEND_STATUS_ADDINZIP(2)extern zipFile ZEXPORT zipOpen OF((const char *pathname, int append)); extern zipFile ZEXPORT zipOpen64 OF((const void *pathname, int append)); extern zipFile ZEXPORT zipOpen2 OF((const char *pathname, int append, zipcharpc* globalcomment, zlib_filefunc_def* pzlib_filefunc_def)); extern zipFile ZEXPORT zipOpen2_64 OF((const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_def* pzlib_filefunc_def)); extern zipFile ZEXPORT zipOpen3 OF((const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_32_def* pzlib_filefunc64_32_def)); extern int ZEXPORT zipOpenNewFileInZip OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level)); extern int ZEXPORT zipOpenNewFileInZip64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int zip64)); extern int ZEXPORT zipOpenNewFileInZip2 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw)); extern int ZEXPORT zipOpenNewFileInZip2_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int zip64)); extern int ZEXPORT zipOpenNewFileInZip3 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting)); extern int ZEXPORT zipOpenNewFileInZip3_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, int zip64)); extern int ZEXPORT zipOpenNewFileInZip4 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase)); extern int ZEXPORT zipOpenNewFileInZip4_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase, int zip64)); extern int ZEXPORT zipWriteInFileInZip OF((zipFile file, const void* buf, unsigned len)); extern int ZEXPORT zipCloseFileInZip OF((zipFile file)); extern int ZEXPORT zipCloseFileInZipRaw OF((zipFile file, uLong uncompressed_size, uLong crc32)); extern int ZEXPORT zipCloseFileInZipRaw64 OF((zipFile file, ZPOS64_T uncompressed_size, uLong crc32)); extern int ZEXPORT zipClose OF((zipFile file, const char* global_comment)); extern int ZEXPORT zipRemoveExtraInfoBlock OF((char* pData, int* dataLen, short sHeader)); #ifdef __cplusplus }
+- typedef struct tm_zip_s { uInt tm_sec; uInt tm_min; uInt tm_hour; uInt tm_mday; uInt tm_mon; uInt tm_year; } tm_zip;
++ typedef struct tm_zip_s { int tm_sec; int tm_min; int tm_hour; int tm_mday; int tm_mon; int tm_year; } tm_zip;
+- struct tm_zip_s {
++ struct tm_zip_s {
+- uInt tm_sec;
++ int tm_sec;
+- uInt tm_min;
++ int tm_min;
+- uInt tm_hour;
++ int tm_hour;
+- uInt tm_mday;
++ int tm_mday;
+- uInt tm_mon;
++ int tm_mon;
+- uInt tm_year;
++ int tm_year;
+  }
++ extern zipFile ZEXPORT
++ zipOpen3 OF((const void *pathname, int append, zipcharpc* globalcomment, zlib_filefunc64_32_def* pzlib_filefunc64_32_def));
+  extern int ZEXPORT
++ zipOpenNewFileInZip OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level));
+  extern int ZEXPORT
++ zipOpenNewFileInZip64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int zip64));
+  extern int ZEXPORT
++ zipOpenNewFileInZip2 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw));
+  extern int ZEXPORT
++ zipOpenNewFileInZip2_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int zip64));
+  extern int ZEXPORT
++ zipOpenNewFileInZip3 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting));
+  extern int ZEXPORT
++ zipOpenNewFileInZip3_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, int zip64));
+  extern int ZEXPORT
++ zipOpenNewFileInZip4 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase));
+  extern int ZEXPORT
++ zipOpenNewFileInZip4_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase, int zip64));
+  extern int ZEXPORT
++ zipWriteInFileInZip OF((zipFile file, const void* buf, unsigned len));
+  extern int ZEXPORT
++ zipCloseFileInZip OF((zipFile file));
+  extern int ZEXPORT
++ zipCloseFileInZipRaw OF((zipFile file, uLong uncompressed_size, uLong crc32));
+  extern int ZEXPORT
++ zipCloseFileInZipRaw64 OF((zipFile file, ZPOS64_T uncompressed_size, uLong crc32));
+  extern int ZEXPORT
++ zipClose OF((zipFile file, const char* global_comment));
++ extern int ZEXPORT
+  #endif
+  #endif
+- extern int ZEXPORT
+- zipOpenNewFileInZip OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level));
+- zipOpenNewFileInZip64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int zip64));
+- zipOpenNewFileInZip2 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw));
+- zipOpenNewFileInZip2_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int zip64));
+- zipOpenNewFileInZip3 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting));
+- zipOpenNewFileInZip3_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, int zip64));
+- zipOpenNewFileInZip4 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase));
+- zipOpenNewFileInZip4_64 OF((zipFile file, const char* filename, const zip_fileinfo* zipfi, const void* extrafield_local, uInt size_extrafield_local, const void* extrafield_global, uInt size_extrafield_global, const char* comment, int method, int level, int raw, int windowBits, int memLevel, int strategy, const char* password, uLong crcForCrypting, uLong versionMadeBy, uLong flagBase, int zip64));
+- zipWriteInFileInZip OF((zipFile file, const void* buf, unsigned len));
+- zipCloseFileInZip OF((zipFile file));
+- zipCloseFileInZipRaw OF((zipFile file, uLong uncompressed_size, uLong crc32));
+- zipCloseFileInZipRaw64 OF((zipFile file, ZPOS64_T uncompressed_size, uLong crc32));
+- zipClose OF((zipFile file, const char* global_comment));
+

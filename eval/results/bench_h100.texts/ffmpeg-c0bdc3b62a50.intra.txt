@@ -1,0 +1,17 @@
+Context for merged statement of old file: libavformat/avformat.h with new file: libavformat/avformat.h:
+#ifndef AVFORMAT_AVFORMAT_H
++ #define AVFMT_FIXED_FRAMESIZE 0x80000
+  #endif
+
+Context for merged statement of old file: libavformat/iamfenc.c with new file: libavformat/iamfenc.c:
+- const FFOutputFormat ff_iamf_muxer = { .p.name = "iamf", .p.long_name = NULL_IF_CONFIG_SMALL("Raw Immersive Audio Model and Formats"), .p.extensions = "iamf", .priv_data_size = sizeof(IAMFMuxContext), .p.audio_codec = AV_CODEC_ID_OPUS, .init = iamf_init, .deinit = iamf_deinit, .write_header = iamf_write_header, .write_packet = iamf_write_packet, .write_trailer = iamf_write_trailer, .p.codec_tag =(const AVCodecTag* const []){ iamf_codec_tags, NULL }, .p.flags = AVFMT_GLOBALHEADER | AVFMT_NOTIMESTAMPS, };
++ const FFOutputFormat ff_iamf_muxer = { .p.name = "iamf", .p.long_name = NULL_IF_CONFIG_SMALL("Raw Immersive Audio Model and Formats"), .p.extensions = "iamf", .priv_data_size = sizeof(IAMFMuxContext), .p.audio_codec = AV_CODEC_ID_OPUS, .init = iamf_init, .deinit = iamf_deinit, .write_header = iamf_write_header, .write_packet = iamf_write_packet, .write_trailer = iamf_write_trailer, .p.codec_tag =(const AVCodecTag* const []){ iamf_codec_tags, NULL }, .p.flags = AVFMT_GLOBALHEADER | AVFMT_NOTIMESTAMPS | AVFMT_FIXED_FRAMESIZE, };
+
+Context for merged statement of old file: libavformat/version.h with new file: libavformat/version.h:
+#ifndef AVFORMAT_VERSION_H
+- #define LIBAVFORMAT_VERSION_MINOR 15
++ #define LIBAVFORMAT_VERSION_MINOR 16
+- #define LIBAVFORMAT_VERSION_MICRO 101
++ #define LIBAVFORMAT_VERSION_MICRO 100
+  #endif
+

@@ -1,0 +1,10 @@
+Impact task, open-weight agents over OpenRouter, run 1 (ANALYSIS_VERSION 2026-11-03.7+), 18 cases, budget 20k, truth eval/cases_impact_all_v2.jsonl
+run 2026-11-03/04
+
+model                      arm        prec recall    F1  exact  mean tok   median  calls   cost budget stops
+Qwen3.8 2.4T-A95B          self       0.90   0.82  0.84  11/18    33,023   34,887    7.9   0.87           15
+Qwen3.8 2.4T-A95B          tool       1.00   1.00  1.00  18/18    23,892   24,968    6.4   0.57            9
+Qwen3.8 2.4T-A95B          semantic   1.00   1.00  1.00  18/18    23,382   25,878    6.8   0.53            7
+DeepSeek V4 Pro            self       0.96   0.86  0.89  13/18    26,325   28,822   10.1   0.44           11
+DeepSeek V4 Pro            tool       0.98   0.98  0.98  17/18    15,361   10,410    4.8   0.20            2
+DeepSeek V4 Pro            semantic   1.00   1.00  1.00  18/18    14,299    9,634    4.3   0.21            3

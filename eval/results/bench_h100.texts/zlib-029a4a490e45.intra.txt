@@ -1,0 +1,128 @@
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ void MyDoMinus64(LARGE_INTEGER *R,LARGE_INTEGER A,LARGE_INTEGER B) {
++ R->HighPart = A.HighPart - B.HighPart;
++ if (A.LowPart >= B.LowPart) {
++ R->LowPart = A.LowPart - B.LowPart;
+  }
++ else {
++ R->LowPart = A.LowPart - B.LowPart;
++ R->HighPart --;
++ }
+- void MyDoMinus64(LARGE_INTEGER *R,LARGE_INTEGER A,LARGE_INTEGER B) {
+- R->HighPart = A.HighPart - B.HighPart;
+- if (A.LowPart >= B.LowPart) {
+  }
+- else { R->LowPart = A.LowPart - B.LowPart; R->HighPart --; }
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ void BeginCountRdtsc(LARGE_INTEGER * pbeginTime64) {
+- void BeginCountRdtsc(LARGE_INTEGER * pbeginTime64) {
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ LARGE_INTEGER GetResRdtsc(LARGE_INTEGER beginTime64,BOOL fComputeTimeQueryPerf) {
++ LARGE_INTEGER lr;
++ lr.QuadPart=0;
++ return lr;
+- LARGE_INTEGER GetResRdtsc(LARGE_INTEGER beginTime64,BOOL fComputeTimeQueryPerf) {
+- LARGE_INTEGER lr;
+- lr.QuadPart=0;
+- return lr;
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ void myGetRDTSC32(LARGE_INTEGER * pbeginTime64) {
+- void myGetRDTSC32(LARGE_INTEGER * pbeginTime64) {
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ void BeginCountPerfCounter(LARGE_INTEGER * pbeginTime64,BOOL fComputeTimeQueryPerf) {
++ if ((!fComputeTimeQueryPerf)||(!QueryPerformanceCounter(pbeginTime64))) {
++ pbeginTime64->LowPart = GetTickCount();
++ pbeginTime64->HighPart = 0;
+  }
+- void BeginCountPerfCounter(LARGE_INTEGER * pbeginTime64,BOOL fComputeTimeQueryPerf) {
+- if ((!fComputeTimeQueryPerf)||(!QueryPerformanceCounter(pbeginTime64))) {
+  }
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ DWORD GetMsecSincePerfCounter(LARGE_INTEGER beginTime64,BOOL fComputeTimeQueryPerf) {
++ LARGE_INTEGER endTime64, ticksPerSecond, ticks;
++ DWORDLONG ticksShifted, tickSecShifted;
++ DWORD dwLog=16+0;
++ DWORD dwRet;
++ if ((!fComputeTimeQueryPerf)||(!QueryPerformanceCounter(&endTime64))) {
++ dwRet =(GetTickCount()- beginTime64.LowPart)*1;
+  }
++ else {
++ MyDoMinus64(&ticks, endTime64, beginTime64);
++ QueryPerformanceFrequency(&ticksPerSecond);
++ ticksShifted = Int64ShrlMod32(*(DWORDLONG*)&ticks, dwLog);
++ tickSecShifted = Int64ShrlMod32(*(DWORDLONG*)&ticksPerSecond, dwLog);
++ dwRet =(DWORD)((((DWORD)ticksShifted)*1000)/(DWORD)(tickSecShifted));
++ dwRet *=1;
++ }
++ return dwRet;
+- DWORD GetMsecSincePerfCounter(LARGE_INTEGER beginTime64,BOOL fComputeTimeQueryPerf) {
+- LARGE_INTEGER endTime64, ticksPerSecond, ticks;
+- DWORDLONG ticksShifted, tickSecShifted;
+- DWORD dwLog=16+0;
+- DWORD dwRet;
+- if ((!fComputeTimeQueryPerf)||(!QueryPerformanceCounter(&endTime64))) {
+  }
+- else { MyDoMinus64(&ticks, endTime64, beginTime64); QueryPerformanceFrequency(&ticksPerSecond); { ticksShifted = Int64ShrlMod32(*(DWORDLONG*)&ticks, dwLog); tickSecShifted = Int64ShrlMod32(*(DWORDLONG*)&ticksPerSecond, dwLog); } dwRet =(DWORD)((((DWORD)ticksShifted)*1000)/(DWORD)(tickSecShifted)); dwRet *=1; }
+- return dwRet;
+}
+}
+
+Context for merged statement of old file: contrib/testzlib/testzlib.c with new file: contrib/testzlib/testzlib.c:
++ int ReadFileMemory(const char* filename,long* plFileSize,unsigned char** pFilePtr) {
++ FILE* stream;
++ unsigned char* ptr;
++ int retVal=1;
++ stream=fopen(filename, "rb");
++ if (stream==NULL) {
++ return 0;
+  }
++ fseek(stream, 0, SEEK_END);
++ *plFileSize=ftell(stream);
++ fseek(stream, 0, SEEK_SET);
++ ptr=malloc((*plFileSize)+1);
++ if (ptr==NULL) {
++ retVal=0;
+  }
++ else {
++ if (fread(ptr, 1, *plFileSize, stream)!=(*plFileSize)) {
++ retVal=0;
+  }
++ }
++ fclose(stream);
++ *pFilePtr=ptr;
++ return retVal;
+- int ReadFileMemory(const char* filename,long* plFileSize,unsigned char** pFilePtr) {
+- FILE* stream;
+- unsigned char* ptr;
+- int retVal=1;
+- stream=fopen(filename, "rb");
+- if (stream==NULL) {
+  }
+- fseek(stream, 0, SEEK_END);
+- *plFileSize=ftell(stream);
+- fseek(stream, 0, SEEK_SET);
+- ptr=malloc((*plFileSize)+1);
+- if (ptr==NULL) {
+  }
+- else { if(fread(ptr, 1, *plFileSize, stream)!=(*plFileSize))retVal=0; }
+- fclose(stream);
+- *pFilePtr=ptr;
+- return retVal;
+}
+}
+

@@ -1,0 +1,230 @@
+Context for merged statement of old file: ext/exif/exif.c with new file: ext/exif/exif.c:
+void exif_process_APP1(image_info_type *ImageInfo, char *CharBuf, size_t length, size_t displacement) {
+- static const uchar ExifHeader[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
++ static const uchar ExifHeader[] = {'E', 'x', 'i', 'f', 0, 0};
+  if (length <= 8 || memcmp(CharBuf+2, ExifHeader, 6)) {
+  return;
+  }
+}
+
+Context for merged statement of old file: ext/exif/exif.c with new file: ext/exif/exif.c:
+bool exif_scan_WEBP_header(image_info_type *ImageInfo, size_t riff_size) {
+- static const uchar ExifHeader[] = {0x45, 0x78, 0x69, 0x66, 0x00, 0x00};
++ static const uchar ExifHeader[] = {'E', 'x', 'i', 'f', 0, 0};
+  while ((offset + 8 <= riff_end)) {
+  if (!memcmp(chunk_header, "EXIF", 4)) {
+  if (exif_read_from_stream_file_looped(ImageInfo->infile, data, chunk_size)== chunk_size) {
+  if (chunk_size >= sizeof(ExifHeader)+ 8 && !memcmp(data, ExifHeader, sizeof(ExifHeader))) {
+  skip = sizeof(ExifHeader);
+  }
+  exif_process_TIFF_in_JPEG(ImageInfo, data + skip, chunk_size - skip, payload_offset + skip);
+  }
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: exif_process_TIFF_in_JPEG — ext/exif/exif.c:3694 [gtags_unique] --
+static void exif_process_TIFF_in_JPEG(image_info_type *ImageInfo, char *CharBuf, size_t length, size_t displacement) {
+   ...
+   exif_offset_info info;
+   if(length < 2) {
+     exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "Missing TIFF alignment marker");
+   ...
+   }
+   if(memcmp(CharBuf, "II", 2)== 0) {
+     ImageInfo->motorola_intel = 0;
+   } else if(memcmp(CharBuf, "MM", 2)== 0) {
+     ImageInfo->motorola_intel = 1;
+   } else {
+     exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "Invalid TIFF alignment marker");
+   ...
+   }
+   if(length < 8) {
+   ...
+   }
+   exif_value_2a = php_ifd_get16u(CharBuf+2, ImageInfo->motorola_intel);
+   offset_of_ifd = php_ifd_get32u(CharBuf+4, ImageInfo->motorola_intel);
+   if(exif_value_2a != 0x2a || offset_of_ifd < 0x08) {
+   ...
+   }
+   if(offset_of_ifd > length) {
+     exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "Invalid IFD start");
+   ...
+   }
+   ImageInfo->sections_found |= FOUND_IFD0;
+   exif_offset_info_init(&info, CharBuf, CharBuf, length);
+   exif_process_IFD_in_JPEG(ImageInfo, CharBuf+offset_of_ifd, &info, displacement, SECTION_IFD0, 0);
+   #ifdef ...
+   exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_NOTICE, "Process TIFF in JPEG done");
+   #endif
+   if(ImageInfo->FocalplaneXRes != 0) {
+     ImageInfo->CCDWidth =(float)(ImageInfo->ExifImageWidth * ImageInfo->FocalplaneUnits / ImageInfo->FocalplaneXRes);
+   }
+}
+   [reads: CharBuf, ImageInfo, displacement, length; writes: ImageInfo*]
+
+-- called macro: efree — Zend/zend_alloc.h:154 [gtags_unique] --
+#define efree(ptr)							_efree((ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called macro: emalloc — Zend/zend_alloc.h:150 [gtags_unique] --
+#define emalloc(size)						_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called function: php_ifd_get32u — ext/exif/exif.c:1468 [lsp] --
+static unsigned php_ifd_get32u(void *void_value, int motorola_intel) {
+   uchar *value =(uchar *)void_value;
+   if(motorola_intel) {
+     return((unsigned)value[0] << 24)|((unsigned)value[1] << 16)|((unsigned)value[2] << 8)|((unsigned)value[3]);
+   } else {
+     return((unsigned)value[3] << 24)|((unsigned)value[2] << 16)|((unsigned)value[1] << 8)|((unsigned)value[0]);
+   }
+}
+   [reads: motorola_intel, void_value; writes: -]
+
+-- called macro: php_stream_seek — main/php_streams.h:362 [gtags_unique] --
+#define php_stream_seek(stream, offset, whence)	_php_stream_seek((stream), (offset), (whence))
+
+-- caller of exif_process_APP1: exif_scan_JPEG_header — ext/exif/exif.c:3900 --
+static bool exif_scan_JPEG_header(image_info_type *ImageInfo) {
+   int sn;
+   int marker = 0, last_marker = M_PSEUDO, comment_correction=1;
+   unsigned int ll, lh;
+   uchar *Data;
+   size_t fpos, size, got, itemlen;
+   ...
+   while(true) {
+     #ifdef ...
+     fpos = php_stream_tell(ImageInfo->infile);
+   ...
+     #endif
+   ...
+     do {
+       if((marker = php_stream_getc(ImageInfo->infile))== EOF) {
+   ...
+       }
+       if(last_marker==M_COM && comment_correction>0) {
+         if(marker!=0xFF) {
+           marker = 0xff;
+   ...
+         } else {
+         }
+       }
+     } while(marker == 0xff);
+   ...
+     fpos = php_stream_tell(ImageInfo->infile);
+   ...
+     if((lh = php_stream_getc(ImageInfo->infile))==(unsigned int)EOF) {
+   ...
+     }
+     if((ll = php_stream_getc(ImageInfo->infile))==(unsigned int)EOF) {
+   ...
+     }
+     itemlen =(lh << 8)| ll;
+   ...
+     sn = exif_file_sections_add(ImageInfo, marker, itemlen, NULL);
+     Data = ImageInfo->file.list[sn].data;
+     Data[0] =(uchar)lh;
+     Data[1] =(uchar)ll;
+   ...
+     switch(marker) {
+   ...
+       if(ImageInfo->read_all) {
+         fpos = php_stream_tell(ImageInfo->infile);
+         size = ImageInfo->FileSize - fpos;
+         sn = exif_file_sections_add(ImageInfo, M_PSEUDO, size, NULL);
+         Data = ImageInfo->file.list[sn].data;
+   ...
+       }
+   ...
+       if(!(ImageInfo->sections_found&FOUND_IFD0)) {
+>        exif_process_APP1(ImageInfo, (char *)Data, itemlen, fpos);
+   ...
+       }
+     }
+   }
+}
+
+-- caller of exif_process_APP1: exif_scan_HEIF_header — ext/exif/exif.c:4433 --
+static bool exif_scan_HEIF_header(image_info_type *ImageInfo, unsigned char *buf) {
+   isobmff_box_type box;
+   isobmff_item_pos_type pos;
+   unsigned char *data;
+   uint64_t limit;
+   int box_header_size, remain;
+   ...
+   for(size_t offset = php_ifd_get32u(buf, 1);; ImageInfo->FileSize - 16 > offset; offset += box.size) {
+   ...
+     box_header_size = exif_isobmff_parse_box(buf, &box);
+   ...
+     if(box.type == FOURCC("meta")) {
+       limit = box.size - box_header_size;
+   ...
+       data =(unsigned char *)emalloc(limit);
+       remain = 16 - box_header_size;
+       if(remain) {
+         memcpy(data, buf + box_header_size, remain);
+       }
+       memset(&pos, 0, sizeof(pos));
+   ...
+       if((pos.size >= 2)&&(pos.size < ImageInfo->FileSize)&&(ImageInfo->FileSize - pos.size >= pos.offset)&&(php_stream_seek(ImageInfo->infile, pos.offset + 2, SEEK_SET)>= 0)) {
+         if(limit >= pos.size - 2) {
+           limit = pos.size - 2;
+         } else {
+           limit = pos.size - 2;
+   ...
+           data =(unsigned char *)emalloc(limit);
+         }
+         if(exif_read_from_stream_file_looped(ImageInfo->infile, (char*)data, limit)== limit) {
+>          exif_process_APP1(ImageInfo, (char*)data, limit, pos.offset + 2);
+   ...
+         }
+       }
+     }
+   }
+}
+
+-- caller of exif_scan_WEBP_header: exif_scan_FILE_header — ext/exif/exif.c:4575 --
+static bool exif_scan_FILE_header(image_info_type *ImageInfo) {
+   unsigned char file_header[16];
+   ImageInfo->FileType = IMAGE_FILETYPE_UNKNOWN;
+   ...
+   if((file_header[0]==0xff)&&(file_header[1]==M_SOI)) {
+     ImageInfo->FileType = IMAGE_FILETYPE_JPEG;
+   ...
+   } else if(ImageInfo->FileSize >= 8) {
+   ...
+     if(!memcmp(file_header, "II\x2A\x00", 4)) {
+       ImageInfo->FileType = IMAGE_FILETYPE_TIFF_II;
+       ImageInfo->motorola_intel = 0;
+   ...
+       ImageInfo->sections_found |= FOUND_IFD0;
+   ...
+     } else if(!memcmp(file_header, "MM\x00\x2a", 4)) {
+       ImageInfo->FileType = IMAGE_FILETYPE_TIFF_MM;
+       ImageInfo->motorola_intel = 1;
+   ...
+       ImageInfo->sections_found |= FOUND_IFD0;
+   ...
+     } else if((ImageInfo->FileSize > 16)&&(!memcmp(file_header + 4, "ftyp", 4))&&(exif_read_from_stream_file_looped(ImageInfo->infile, (char*)(file_header + 8), 4)== 4)&&((!memcmp(file_header + 8, "heic", 4))||(!memcmp(file_header + 8, "heix", 4))||(!memcmp(file_header + 8, "mif1", 4)))) {
+       if(exif_scan_HEIF_header(ImageInfo, file_header)) {
+         ImageInfo->FileType = IMAGE_FILETYPE_HEIF;
+   ...
+       } else {
+       }
+     } else if((ImageInfo->FileSize >= 16)&&(!memcmp(file_header, "RIFF", 4))&&(exif_read_from_stream_file_looped(ImageInfo->infile, (char*)(file_header + 8), 4)== 4)&&(!memcmp(file_header + 8, "WEBP", 4))) {
+>      if(exif_scan_WEBP_header(ImageInfo, php_ifd_get32u(file_header + 4, 0))) {
+   ...
+       }
+     }
+   }
+}
+
+-- 2nd-level context (summaries) --
+  php_ifd_get16u — ext/exif/exif.c:1448 [lsp]: static int php_ifd_get16u(void *value, int motorola_intel)
+    reads: motorola_intel, value; writes: -
+  exif_offset_info_init — ext/exif/exif.c:2070 [gtags_unique]: static inline void exif_offset_info_init( exif_offset_info *info, char *offset_base, char *valid_start, size_t valid_length)
+    reads: info, offset_base, valid_length, valid_start; writes: info*
+  exif_process_IFD_in_JPEG — ext/exif/exif.c:3612 [gtags_unique]: static bool exif_process_IFD_in_JPEG(image_info_type *ImageInfo, char *dir_start, const exif_offset_info *info, size_t displacement, int section_index, int tag)
+    reads: ImageInfo, dir_start, displacement, info, section_index, tag; writes: ImageInfo*

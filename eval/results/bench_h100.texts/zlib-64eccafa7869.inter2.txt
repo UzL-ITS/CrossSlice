@@ -1,0 +1,20 @@
+Context for merged statement of old file: zconf.h with new file: zconf.h:
+#ifndef ZCONF_H
+   #ifndef STDC
+   #if !defined(_WIN32)&&(defined(_LARGEFILE64_SOURCE)&& _LFS64_LARGEFILE-0)
+  #else
++ #if defined(_WIN32)
++ # define z_off64_t __int64
+  #endif
+  #endif
+  #endif
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: ZCONF_H — zconf.h:9 [gtags_unique, new version] --
+#define ZCONF_H
+
+-- called macro: STDC — zconf.h:193 [priority_fallback, new version] --
+#  define STDC

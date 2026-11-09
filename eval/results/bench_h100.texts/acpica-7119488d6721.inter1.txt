@@ -1,0 +1,137 @@
+Context for merged statement of old file: source/compiler/dtio.c with new file: source/compiler/dtio.c:
+char *
+DtTrim (
+    char                    *String) {
+- if (!strcmp(String, " ")) {
++ if (*String == 0 || !strcmp(String, " ")) {
+  return(ReturnString);
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: UtLocalCacheCalloc — source/compiler/aslcache.c:177 [gtags_unique] --
+char * UtLocalCacheCalloc ( UINT32                  Length) {
+   char *Buffer;
+   ASL_CACHE_INFO *Cache;
+   UINT32 CacheSize = ASL_STRING_CACHE_SIZE;
+   if(Length > CacheSize) {
+     CacheSize = Length;
+     if(AslGbl_StringCacheList) {
+       Cache = UtLocalCalloc(sizeof(Cache->Next)+ CacheSize);
+       Cache->Next = AslGbl_StringCacheList->Next;
+       AslGbl_StringCacheList->Next = Cache;
+   ...
+       AslGbl_StringSize += Length;
+       return(Cache->Buffer);
+     }
+   }
+   if((AslGbl_StringCacheNext + Length)>= AslGbl_StringCacheLast) {
+     Cache = UtLocalCalloc(sizeof(Cache->Next)+ CacheSize);
+     Cache->Next = AslGbl_StringCacheList;
+     AslGbl_StringCacheList = Cache;
+     AslGbl_StringCacheNext = Cache->Buffer;
+     AslGbl_StringCacheLast = AslGbl_StringCacheNext + CacheSize;
+   }
+   ...
+   AslGbl_StringSize += Length;
+   Buffer = AslGbl_StringCacheNext;
+   AslGbl_StringCacheNext += Length;
+   return(Buffer);
+}
+   [reads: Length; writes: -]
+
+-- caller of DtTrim: DtParseLine — source/compiler/dtio.c:424 --
+static ACPI_STATUS DtParseLine ( char                    *LineBuffer, UINT32                  Line, UINT32                  Offset) {
+   char *Start;
+   char *End;
+   char *TmpName;
+   ...
+   char *Colon;
+   UINT32 Length;
+   ...
+   Colon = strchr(LineBuffer, ':');
+   ...
+   Start = LineBuffer;
+   End = Colon;
+   while(Start < Colon) {
+     if(*Start == '[') {
+       while(Start < Colon && *Start != ']') {
+         Start++;
+       }
+     } else
+   ...
+       Start++;
+   }
+   ...
+   Length = ACPI_PTR_DIFF(End, Start);
+   TmpName = UtLocalCalloc(Length + 1);
+   strncpy(TmpName, Start, Length);
+>  Name = DtTrim(TmpName);
+   ...
+   if((Value && *Value)|| IsNullString) {
+   ...
+     Field->Name = Name;
+   ...
+     DtLinkField(Field);
+   ...
+   }
+}
+
+-- caller of DtTrim: DtParseLine — source/compiler/dtio.c:472 --
+static ACPI_STATUS DtParseLine ( char                    *LineBuffer, UINT32                  Line, UINT32                  Offset) {
+   char *Start;
+   char *End;
+   ...
+   char *TmpValue;
+   ...
+   char *Colon;
+   UINT32 Length;
+   ...
+   Colon = strchr(LineBuffer, ':');
+   ...
+   Start = LineBuffer;
+   End = Colon;
+   while(Start < Colon) {
+     if(*Start == '[') {
+       while(Start < Colon && *Start != ']') {
+         Start++;
+       }
+     } else
+   ...
+       Start++;
+   }
+   ...
+   Length = ACPI_PTR_DIFF(End, Start);
+   ...
+   Start = End =(Colon + 1);
+   while(*End) {
+     if(*End == '"') {
+       End++;
+   ...
+       while(*End &&(*End != '"')) {
+         End++;
+       }
+       End++;
+   ...
+     }
+     if(*End == '[') {
+       End--;
+   ...
+     }
+     End++;
+   }
+   Length = ACPI_PTR_DIFF(End, Start);
+   TmpValue = UtLocalCalloc(Length + 1);
+   strncpy(TmpValue, Start, Length);
+>  Value = DtTrim(TmpValue);
+   ...
+   if((Value && *Value)|| IsNullString) {
+   ...
+     Field->Value = Value;
+   ...
+     DtLinkField(Field);
+   ...
+   }
+}

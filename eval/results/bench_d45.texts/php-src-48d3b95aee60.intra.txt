@@ -1,0 +1,25 @@
+Context for merged statement of old file: ext/mbstring/php_mbregex.c with new file: ext/mbstring/php_mbregex.c:
+void _php_mb_regex_ereg_replace_exec(INTERNAL_FUNCTION_PARAMETERS, OnigOptionType options, int is_callable) {
+  smart_str eval_buf = {0};
+  while ((err >= 0)) {
+  if (err >= 0) {
+  if (eval) {
+  eval_buf.s->len = 0;
+  }
+  else {
+  if (is_callable) {
+  if (zend_call_function(&arg_replace_fci, &arg_replace_fci_cache TSRMLS_CC)== SUCCESS && !ZVAL_IS_UNDEF(&retval)) {
++ if (eval_buf.s) {
++ eval_buf.s->len = 0;
+  }
+  }
+  else {
+- eval_buf.s->len = 0;
+  }
+  }
+  }
+  }
+  }
+  smart_str_free(&eval_buf);
+}
+

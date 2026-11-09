@@ -1,0 +1,12 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+END_TEST ee_parse_flags {
+- END_TEST START_TEST(test_alloc_set_base){ const XML_Char *new_base = "/local/file/name.xml"; int i; const int max_alloc_count = 5; for(i = 0; i < max_alloc_count; i++){ allocation_count = i; if(XML_SetBase(parser, new_base)== XML_STATUS_OK)break; } if(i == 0)fail("Base set despite failing allocator"); else if(i == max_alloc_count)fail("Base not set with max allocation count"); }
++ END_TEST START_TEST(test_alloc_set_base){ const XML_Char *new_base = XCS("/local/file/name.xml"); int i; const int max_alloc_count = 5; for(i = 0; i < max_alloc_count; i++){ allocation_count = i; if(XML_SetBase(parser, new_base)== XML_STATUS_OK)break; } if(i == 0)fail("Base set despite failing allocator"); else if(i == max_alloc_count)fail("Base not set with max allocation count"); }
+- const XML_Char *new_base = "/local/file/name.xml";
++ const XML_Char *new_base = XCS("/local/file/name.xml");
+  for (i = 0; i < max_alloc_count; i++) {
+  if (XML_SetBase(parser, new_base)== XML_STATUS_OK) {
+  }
+  }
+}
+

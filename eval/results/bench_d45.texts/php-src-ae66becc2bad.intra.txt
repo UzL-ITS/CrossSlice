@@ -1,0 +1,13 @@
+Context for merged statement of old file: ext/standard/file.c with new file: ext/standard/file.c:
+PHP_FUNCTION (tempnam) {
+  zval **ppdir, **ppprefix;
+  char *dir, *prefix;
+- int dir_len;
++ int dir_len, tmp_prefix_len;
+- if (php_stream_path_param_encode(ppdir, &dir, &dir_len, REPORT_ERRORS, FG(default_context))== FAILURE || php_stream_path_param_encode(ppprefix, &prefix, (int *)&prefix_len, REPORT_ERRORS, FG(default_context))== FAILURE) {
++ if (php_stream_path_param_encode(ppdir, &dir, &dir_len, REPORT_ERRORS, FG(default_context))== FAILURE || php_stream_path_param_encode(ppprefix, &prefix, &tmp_prefix_len, REPORT_ERRORS, FG(default_context))== FAILURE) {
+  }
++ prefix_len = tmp_prefix_len;
+  php_basename(prefix, prefix_len, NULL, 0, &p, &p_len TSRMLS_CC);
+}
+

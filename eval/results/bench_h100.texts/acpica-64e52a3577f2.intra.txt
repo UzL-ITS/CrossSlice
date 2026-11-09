@@ -1,0 +1,54 @@
+Context for merged statement of old file: source/common/adwalk.c with new file: source/common/adwalk.c:
+ACPI_STATUS AcpiDmXrefDescendingOp (
+    ACPI_PARSE_OBJECT       *Op,
+    UINT32                  Level,
+    void                    *Context) {
+- if (ACPI_SUCCESS(Status)&&(Node->Flags & ANOBJ_IS_EXTERNAL)) {
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmAddToExternalList (
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *Path,
+    UINT8                   Type,
+    UINT32                  Value) {
++ if (Op && Op->Asl.Parent) {
++ if (Op->Asl.Parent->Asl.AmlOpcode == AML_COND_REF_OF_OP) {
++ return;
+  }
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmGetExternalsFromFile (
+    void) {
+  if (!ExternalRefFile) {
++ Gbl_ExternalRefFilename = NULL;
+  }
+  while ((fgets(StringBuffer, ASL_MSG_BUFFER_SIZE, ExternalRefFile))) {
+  AcpiOsPrintf("%s: Importing method external(%u arguments)%s\n", Gbl_ExternalRefFilename, ArgCount, MethodName);
+  }
+  if (!ImportCount) {
+  fprintf(stderr, "Did not find any external methods in reference file \"%s\"\n", Gbl_ExternalRefFilename);
+  }
+  else {
+  AcpiOsPrintf("%s: Imported %u external method definitions\n", Gbl_ExternalRefFilename, ImportCount);
+  }
+}
+
+Context for merged statement of old file: source/common/dmextern.c with new file: source/common/dmextern.c:
+void AcpiDmEmitExternals (
+    void) {
+  if (Gbl_ExternalRefFilename) {
+- AcpiOsPrintf(" /*\n * External declarations that were imported from\n" " * the reference file [%s]\n */\n", Gbl_ExternalRefFilename);
++ AcpiOsPrintf(" /*\n * External declarations that were imported from\n" " * input reference file [%s]\n */\n", Gbl_ExternalRefFilename);
+  }
+}
+
+Context for merged statement of old file: source/include/acopcode.h with new file: source/include/acopcode.h:
+#ifndef __ACOPCODE_H__
+- #define ARGP_COND_REF_OF_OP ARGP_LIST2(ARGP_SUPERNAME, ARGP_SUPERNAME)
++ #define ARGP_COND_REF_OF_OP ARGP_LIST2(ARGP_NAMESTRING, ARGP_SUPERNAME)
+  #endif
+

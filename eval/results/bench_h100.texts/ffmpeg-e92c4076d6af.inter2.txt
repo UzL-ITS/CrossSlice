@@ -1,0 +1,76 @@
+Context for merged statement of old file: libavcodec/vmnc.c with new file: libavcodec/vmnc.c:
++ #include "libavutil/attributes.h"
+
+Context for merged statement of old file: libavcodec/vmnc.c with new file: libavcodec/vmnc.c:
+av_cold decode_init(AVCodecContext *avctx) {
+  switch ((c->bpp)) {
+  case 24:
++ av_fallthrough;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: av_log — libavutil/log.c:443 [priority_fallback] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   va_list vl;
+   va_start(vl, fmt);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- caller of decode_init: wmapro_decode_init — libavcodec/wmaprodec.c:604 --
+static av_cold int wmapro_decode_init(AVCodecContext *avctx) {
+   WMAProDecodeCtx *s = avctx->priv_data;
+   ...
+>  return decode_init(s, avctx, 0);
+}
+
+-- caller of decode_init: xma_decode_init — libavcodec/wmaprodec.c:2002 --
+static av_cold int xma_decode_init(AVCodecContext *avctx) {
+   XMADecodeCtx *s = avctx->priv_data;
+   int i, ret, start_channels = 0;
+   avctx->block_align = 2048;
+   ...
+   if(avctx->codec_id == AV_CODEC_ID_XMA2 && avctx->extradata_size == 34) {
+   ...
+     if(channel_mask) {
+   ...
+     } else
+       avctx->ch_layout.order = AV_CHANNEL_ORDER_UNSPEC;
+     s->num_streams = AV_RL16(avctx->extradata);
+   } else if(avctx->codec_id == AV_CODEC_ID_XMA2 && avctx->extradata_size >= 2) {
+     s->num_streams = avctx->extradata[1];
+     if(avctx->extradata_size !=(32 +((avctx->extradata[0]==3)?0:8)+ 4*s->num_streams)) {
+   ...
+       s->num_streams = 0;
+   ...
+     }
+   } else if(avctx->codec_id == AV_CODEC_ID_XMA1 && avctx->extradata_size >= 4) {
+     s->num_streams = avctx->extradata[4];
+     if(avctx->extradata_size !=(8 + 20*s->num_streams)) {
+   ...
+       s->num_streams = 0;
+   ...
+     }
+   } else {
+   }
+   ...
+   if(avctx->ch_layout.nb_channels > XMA_MAX_CHANNELS || s->num_streams > XMA_MAX_STREAMS || s->num_streams <= 0) {
+   ...
+     s->num_streams = 0;
+   ...
+   }
+   for(i = 0; i < s->num_streams; i++) {
+>    ret = decode_init(&s->xma[i], avctx, i);
+     if(ret < 0)
+       return ret;
+   ...
+   }
+}
+
+-- 2nd-level context (summaries) --
+  av_vlog — libavutil/log.c:460 [gtags_unique]: void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+    reads: avcl, fmt, level, vl; writes: -

@@ -1,0 +1,10 @@
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
++ #undef MAX_ALLOC_COUNT
+
+Context for merged statement of old file: expat/tests/runtests.c with new file: expat/tests/runtests.c:
+END_TEST *
+make_suite(void) {
+  TCase *tc_alloc = tcase_create("allocation tests");
++ tcase_add_test(tc_alloc, test_alloc_attribute_whitespace);
+}
+

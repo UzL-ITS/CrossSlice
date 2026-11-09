@@ -1,0 +1,157 @@
+Context for merged statement of old file: main/SAPI.c with new file: main/SAPI.c:
+SAPI_API sapi_apply_default_charset(char **mimetype, size_t len TSRMLS_DC) {
+  char *charset, *newtype;
+  size_t newlen;
+  charset = SG(default_charset)? SG(default_charset): SAPI_DEFAULT_CHARSET;
+  if (*mimetype != NULL) {
+  if (*charset && strncmp(*mimetype, "text/", 5)== 0 && strstr(*mimetype, "charset=")== NULL) {
+  newlen = len +(sizeof(";charset=")-1)+ strlen(charset);
+  newtype = emalloc(newlen + 1);
++ strlcat(newtype, charset, newlen + 1);
+  *mimetype = newtype;
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: emalloc — Zend/zend_alloc.h:87 [priority_fallback] --
+#define emalloc(size)					_emalloc((size) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called macro: SG — main/SAPI.h:127 [lsp] --
+# define SG(v) (sapi_globals.v)
+
+-- called macro: efree — Zend/zend_alloc.h:88 [priority_fallback] --
+#define efree(ptr)						_efree((ptr) ZEND_FILE_LINE_CC ZEND_FILE_LINE_EMPTY_CC)
+
+-- called macro: strlcat — main/php.h:123 [gtags_unique] --
+#define strlcat php_strlcat
+
+-- called macro: PHP_STRLCPY — main/php.h:104 [gtags_unique] --
+#define PHP_STRLCPY(dst, src, size, src_size)	\
+	{											\
+		size_t php_str_len;						\
+												\
+		if (src_size >= size)					\
+			php_str_len = size - 1;				\
+		else									\
+			php_str_len = src_size;				\
+		memcpy(dst, src, php_str_len);			\
+		dst[php_str_len] = '\0';				\
+	}
+
+-- caller of sapi_apply_default_charset: sapi_header_op — main/SAPI.c:523 --
+SAPI_API int sapi_header_op(sapi_header_op_enum op, void *arg TSRMLS_DC) {
+   ...
+   char *colon_offset;
+   ...
+   char *header_line;
+   uint header_line_len;
+   ...
+   switch(op) {
+   ...
+       sapi_header_line *p = arg;
+       header_line = p->line;
+       header_line_len = p->line_len;
+   ...
+   }
+   header_line = estrndup(header_line, header_line_len);
+   while(isspace(header_line[header_line_len-1]))
+     header_line[--header_line_len]='\0';
+   ...
+   if(header_line_len>=5 && !strncasecmp(header_line, "HTTP/", 5)) {
+     sapi_update_response_code(sapi_extract_response_code(header_line)TSRMLS_CC);
+   ...
+   } else {
+     colon_offset = strchr(header_line, ':');
+     if(colon_offset) {
+   ...
+       if(!STRCASECMP(header_line, "Content-Type")) {
+         char *ptr = colon_offset+1, *mimetype = NULL, *newheader;
+   ...
+         while(*ptr == ' ' && *ptr != '\0') {
+           ptr++;
+         }
+   ...
+         mimetype = estrdup(ptr);
+>        newlen = sapi_apply_default_charset(&mimetype, len TSRMLS_CC);
+   ...
+         if(newlen != 0) {
+           newlen += sizeof("Content-type: ");
+           newheader = emalloc(newlen);
+           PHP_STRLCPY(newheader, "Content-type: ", newlen, sizeof("Content-type: ")-1);
+           strlcat(newheader, mimetype, newlen);
+           sapi_header.header = newheader;
+           sapi_header.header_len = newlen - 1;
+   ...
+         }
+       } else if(!STRCASECMP(header_line, "Location")) {
+   ...
+       } else if(!STRCASECMP(header_line, "WWW-Authenticate")) {
+   ...
+         char *result, *newheader;
+   ...
+         #if (HAVE_PCRE || HAVE_BUNDLED_PCRE)&& !defined(COMPILE_DL_PCRE)
+   ...
+           if(result_len==ptr_len) {
+             efree(result);
+   ...
+             if(result_len==ptr_len) {
+   ...
+               if(!strstr(lower_temp, "realm")) {
+                 efree(result);
+   ...
+                 memcpy(result, ptr, ptr_len);
+                 memcpy(result+ptr_len, conv_temp, conv_len);
+                 *(result+ptr_len+conv_len)= '\0';
+   ...
+               }
+             }
+           }
+   ...
+           newheader = emalloc(newlen+1);
+           sprintf(newheader, "WWW-Authenticate: %s", result);
+   ...
+           sapi_header.header = newheader;
+           sapi_header.header_len = newlen;
+           efree(result);
+   ...
+           newlen = sprintf(result, "WWW-Authenticate: %ld", myuid);
+           newheader = estrndup(result, newlen);
+   ...
+           sapi_header.header = newheader;
+           sapi_header.header_len = newlen;
+           efree(result);
+         #endif
+       }
+       if(sapi_header.header==header_line) {
+   ...
+       }
+     }
+   }
+   ...
+   if(sapi_module.header_handler) {
+     retval = sapi_module.header_handler(&sapi_header, &SG(sapi_headers)TSRMLS_CC);
+   } else {
+   }
+   ...
+   if(retval & SAPI_HEADER_DELETE_ALL) {
+   ...
+   }
+   if(retval & SAPI_HEADER_ADD) {
+     if(replace) {
+       colon_offset = strchr(sapi_header.header, ':');
+       if(colon_offset) {
+   ...
+         colon_offset++;
+         sav = *colon_offset;
+         *colon_offset = 0;
+         zend_llist_del_element(&SG(sapi_headers).headers, sapi_header.header, (int(*)(void*, void*))sapi_find_matching_header);
+         *colon_offset = sav;
+       }
+     }
+     zend_llist_add_element(&SG(sapi_headers).headers, (void *)&sapi_header);
+   ...
+   }
+}

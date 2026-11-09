@@ -1,0 +1,192 @@
+Context for merged statement of old file: libavcodec/aac_adtstoasc_bsf.c with new file: libavcodec/aac_adtstoasc_bsf.c:
+int aac_adtstoasc_filter(AVBitStreamFilterContext *bsfc,
+                                AVCodecContext *avctx, const char *args,
+                                uint8_t  **poutbuf, int *poutbuf_size,
+                                const uint8_t *buf, int      buf_size,
+                                int keyframe) {
+  PutBitContext pb;
+  if (!ctx->first_frame_done) {
++ av_free(avctx->extradata);
+  put_bits(&pb, 1, 0);
+  put_bits(&pb, 1, 0);
++ put_bits(&pb, 1, 0);
+  }
+- put_bits(&pb, 1, 0);
+}
+
+
+==== Cross-function context ====
+
+-- called function: put_bits — libavcodec/put_bits.h:140 [lsp] --
+static inline void put_bits(PutBitContext *s, int n, unsigned int value) {
+   unsigned int bit_buf;
+   int bit_left;
+   ...
+   bit_buf = s->bit_buf;
+   bit_left = s->bit_left;
+   #ifdef ...
+   bit_buf |= value <<(32 - bit_left);
+   if(n >= bit_left) {
+     av_assert2(s->buf_ptr+3<s->buf_end);
+     AV_WL32(s->buf_ptr, bit_buf);
+     s->buf_ptr += 4;
+     bit_buf =(bit_left == 32)? 0 : value >> bit_left;
+     bit_left += 32;
+   }
+   bit_left -= n;
+   ...
+   if(n < bit_left) {
+     bit_buf =(bit_buf << n)| value;
+     bit_left -= n;
+   } else {
+     bit_buf <<= bit_left;
+     bit_buf |= value >>(n - bit_left);
+     av_assert2(s->buf_ptr+3<s->buf_end);
+     AV_WB32(s->buf_ptr, bit_buf);
+     s->buf_ptr += 4;
+     bit_left += 32 - n;
+     bit_buf = value;
+   }
+   #endif
+   s->bit_buf = bit_buf;
+   s->bit_left = bit_left;
+}
+   [reads: n, s, value; writes: s*]
+
+-- called function: flush_put_bits — libavcodec/put_bits.h:89 [gtags_unique] --
+static inline void flush_put_bits(PutBitContext *s) {
+   #ifndef ...
+   if(s->bit_left < 32)
+     s->bit_buf <<= s->bit_left;
+   #endif
+   while(s->bit_left < 32) {
+     #ifdef ...
+     *s->buf_ptr++ = s->bit_buf;
+     s->bit_buf >>= 8;
+   ...
+     *s->buf_ptr++ = s->bit_buf >> 24;
+     s->bit_buf <<= 8;
+     #endif
+     s->bit_left += 8;
+   }
+   s->bit_left = 32;
+   s->bit_buf = 0;
+}
+   [reads: s; writes: s*]
+
+-- called function: init_put_bits — libavcodec/put_bits.h:54 [gtags_unique] --
+static inline void init_put_bits(PutBitContext *s, uint8_t *buffer, int buffer_size) {
+   if(buffer_size < 0) {
+     buffer_size = 0;
+     buffer = NULL;
+   }
+   s->size_in_bits = 8 * buffer_size;
+   s->buf = buffer;
+   s->buf_end = s->buf + buffer_size;
+   s->buf_ptr = s->buf;
+   s->bit_left = 32;
+   s->bit_buf = 0;
+}
+   [reads: buffer, buffer_size, s; writes: s*]
+
+-- called function: get_bits_count — libavcodec/get_bits.h:207 [gtags_unique] --
+static inline int get_bits_count(const GetBitContext *s) {
+   return s->index;
+}
+   [reads: s; writes: -]
+
+-- called function: av_mallocz — libavutil/mem.c:242 [gtags_unique] --
+void *av_mallocz(size_t size) {
+   void *ptr = av_malloc(size);
+   if(ptr)
+     memset(ptr, 0, size);
+   return ptr;
+}
+   [reads: size; writes: -]
+
+-- called function: avpriv_copy_pce_data — libavcodec/mpeg4audio.c:161 [gtags_unique] --
+int avpriv_copy_pce_data(PutBitContext *pb, GetBitContext *gb) {
+   int five_bit_ch, four_bit_ch, comment_size, bits;
+   int offset = put_bits_count(pb);
+   copy_bits(pb, gb, 10);
+   five_bit_ch = copy_bits(pb, gb, 4);
+   five_bit_ch += copy_bits(pb, gb, 4);
+   five_bit_ch += copy_bits(pb, gb, 4);
+   four_bit_ch = copy_bits(pb, gb, 2);
+   four_bit_ch += copy_bits(pb, gb, 3);
+   five_bit_ch += copy_bits(pb, gb, 4);
+   if(copy_bits(pb, gb, 1))
+     copy_bits(pb, gb, 4);
+   if(copy_bits(pb, gb, 1))
+     copy_bits(pb, gb, 4);
+   if(copy_bits(pb, gb, 1))
+     copy_bits(pb, gb, 3);
+   for(bits = five_bit_ch*5+four_bit_ch*4; bits > 16; bits -= 16)
+     copy_bits(pb, gb, 16);
+   if(bits)
+     copy_bits(pb, gb, bits);
+   avpriv_align_put_bits(pb);
+   align_get_bits(gb);
+   comment_size = copy_bits(pb, gb, 8);
+   for(; comment_size > 0; comment_size--)
+     copy_bits(pb, gb, 8);
+   return put_bits_count(pb)- offset;
+}
+   [reads: gb, pb; writes: -]
+
+-- called function: avpriv_report_missing_feature — libavutil/log.c:343 [gtags_unique] --
+void avpriv_report_missing_feature(void *avc, const char *msg, ...) {
+   va_list argument_list;
+   va_start(argument_list, msg);
+   missing_feature_sample(0, avc, msg, argument_list);
+   ...
+}
+   [reads: avc, msg; writes: -]
+
+-- called function: get_bits — libavcodec/get_bits.h:255 [lsp] --
+static inline unsigned int get_bits(GetBitContext *s, int n) {
+   register int tmp;
+   OPEN_READER(re, s);
+   av_assert2(n>0 && n<=25);
+   UPDATE_CACHE(re, s);
+   tmp = SHOW_UBITS(re, s, n);
+   LAST_SKIP_BITS(re, s, n);
+   CLOSE_READER(re, s);
+   return tmp;
+}
+   [reads: n, s; writes: s*]
+
+-- called function: init_get_bits — libavcodec/get_bits.h:405 [gtags_unique] --
+static inline int init_get_bits(GetBitContext *s, const uint8_t *buffer, int bit_size) {
+   int buffer_size;
+   int ret = 0;
+   if(bit_size >= INT_MAX - 7 || bit_size < 0 || !buffer) {
+     buffer_size = bit_size = 0;
+     buffer = NULL;
+     ret = AVERROR_INVALIDDATA;
+   }
+   buffer_size =(bit_size + 7)>> 3;
+   s->buffer = buffer;
+   s->size_in_bits = bit_size;
+   s->size_in_bits_plus8 = bit_size + 8;
+   s->buffer_end = buffer + buffer_size;
+   s->index = 0;
+   return ret;
+}
+   [reads: bit_size, buffer, s; writes: s*]
+
+-- called function: av_free — libavutil/mem.c:220 [gtags_unique, new version] --
+void av_free(void *ptr) {
+   #if CONFIG_MEMALIGN_HACK
+   if(ptr) {
+     int v=((char *)ptr)[-1];
+     av_assert0(v>0 && v<=ALIGN);
+     free((char *)ptr - v);
+   }
+   #elif HAVE_ALIGNED_MALLOC
+   _aligned_free(ptr);
+   ...
+   free(ptr);
+   #endif
+}
+   [reads: ptr; writes: -]

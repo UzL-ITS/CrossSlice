@@ -1,0 +1,8 @@
+Context for merged statement of old file: libavcodec/j2k_dwt.c with new file: libavcodec/j2k_dwt.c:
+int ff_j2k_dwt_init(DWTContext *s, uint16_t border[2][2], int decomp_levels, int type) {
+- if (decomp_levels >= FF_DWT_MAX_DECLVLS) {
++ if ((unsigned)decomp_levels >= FF_DWT_MAX_DECLVLS) {
+  return AVERROR_INVALIDDATA;
+  }
+}
+

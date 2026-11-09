@@ -1,0 +1,10 @@
+Context for merged statement of old file: source/include/platform/acfreebsd.h with new file: source/include/platform/acfreebsd.h:
+#ifndef __ACFREEBSD_H__
+   #ifdef _KERNEL
+  #else
+   #if __STDC_HOSTED__
++ #include <unistd.h>
+  #endif
+  #endif
+  #endif
+

@@ -1,0 +1,17 @@
+Context for merged statement of old file: libavcodec/libgsm.c with new file: libavcodec/libgsm.c:
+int libgsm_decode_frame(AVCodecContext *avctx,
+                               void *data, int *data_size,
+                               AVPacket *avpkt) {
++ int out_size = avctx->frame_size * av_get_bytes_per_sample(avctx->sample_fmt);
++ if (*data_size < out_size) {
++ av_log(avctx, AV_LOG_ERROR, "Output buffer is too small\n");
++ return AVERROR(EINVAL);
+  }
+  switch ((avctx->codec_id)) {
+  case CODEC_ID_GSM:
+  case CODEC_ID_GSM_MS:
+  }
+- *data_size = GSM_FRAME_SIZE*sizeof(int16_t)*2;
++ *data_size = out_size;
+}
+

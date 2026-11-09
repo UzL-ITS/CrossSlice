@@ -1,0 +1,8 @@
+Context for merged statement of old file: ext/phar/stream.c with new file: ext/phar/stream.c:
+int phar_stream_close(php_stream *stream, int close_handle) {
+- phar_stream_flush(stream);
++ int ret = phar_stream_flush(stream);
+- return 0;
++ return ret;
+}
+

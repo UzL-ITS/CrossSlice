@@ -1,0 +1,49 @@
+Context for merged statement of old file: fftools/cmdutils.c with new file: fftools/cmdutils.c:
+FILE *get_preset_file(char *filename, size_t filename_size,
+                      const char *preset_name, int is_path,
+                      const char *codec_name) {
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  char *datadir = NULL;
+  #endif
+  if (is_path) {
+  }
+  else {
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  if (wchartoutf8(datadir_w, &datadir)) {
+  datadir = NULL;
+  }
+  if (datadir) {
+  char *ls;
+  for (ls = datadir; *ls; ls++) {
+  }
+  if (ls = strrchr(datadir, '/')) {
+  ptrdiff_t datadir_len = ls - datadir;
+  size_t desired_size = datadir_len + strlen("/ffpresets")+ 1;
+  char *new_datadir = av_realloc_array(datadir, desired_size, sizeof *datadir);
+  if (new_datadir) {
+  datadir = new_datadir;
+- datadir[datadir_len] = 0;
+- strncat(datadir, "/ffpresets", desired_size - 1 - datadir_len);
++ strcpy(datadir + datadir_len, "/ffpresets");
+  base[2] = datadir;
+  }
+  }
+  }
+  #endif
+  for (i = 0; i < 3 && !f; i++) {
+  if (!base[i]) {
+  }
+  snprintf(filename, filename_size, "%s%s/%s.ffpreset", base[i], i != 1 ? "" : "/.ffmpeg", preset_name);
+  f = fopen_utf8(filename, "r");
+  if (!f && codec_name) {
+  snprintf(filename, filename_size, "%s%s/%s-%s.ffpreset", base[i], i != 1 ? "" : "/.ffmpeg", codec_name, preset_name);
+  f = fopen_utf8(filename, "r");
+  }
+  }
+  }
+   #if HAVE_GETMODULEHANDLE && defined(_WIN32)
+  av_free(datadir);
+  #endif
+  return f;
+}
+

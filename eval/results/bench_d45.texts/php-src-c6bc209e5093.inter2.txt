@@ -1,0 +1,218 @@
+Context for merged statement of old file: ext/standard/array.c with new file: ext/standard/array.c:
+PHP_FUNCTION (array_unshift) {
+  zval *args, *stack;
+- HashTable *new_hash;
++ HashTable new_hash;
+- HashTable old_hash;
+  int argc;
++ int i;
++ zend_string *key;
++ zval *value;
++ zend_hash_init(&new_hash, zend_hash_num_elements(Z_ARRVAL_P(stack))+ argc, NULL, ZVAL_PTR_DTOR, 0);
+  for (i = 0; i < argc; i++) {
++ if (Z_REFCOUNTED(args[i])) {
++ Z_ADDREF(args[i]);
+  }
++ zend_hash_next_index_insert_new(&new_hash, &args[i]);
+  }
++ ZEND_HASH_FOREACH_STR_KEY_VAL_IND(Z_ARRVAL_P(stack), key, value)
++ if (key) {
+- new_hash = php_splice(Z_ARRVAL_P(stack), 0, 0, &args[0], argc, NULL);
++ zend_hash_add_new(&new_hash, key, value);
+  }
++ else {
+- old_hash = *Z_ARRVAL_P(stack);
++ zend_hash_next_index_insert_new(&new_hash, value);
++ }
++ ZEND_HASH_FOREACH_END();
++ Z_ARRVAL_P(stack)->pDestructor = NULL;
+- FREE_HASHTABLE(new_hash);
++ zend_hash_destroy(Z_ARRVAL_P(stack));
+- *Z_ARRVAL_P(stack)= *new_hash;
++ *Z_ARRVAL_P(stack)= new_hash;
+- zend_hash_destroy(&old_hash);
+}
+
+
+==== Cross-function context ====
+
+-- called macro: Z_ARRVAL_P — Zend/zend_types.h:413 [gtags_unique] --
+#define Z_ARRVAL_P(zval_p)			Z_ARRVAL(*(zval_p))
+
+-- called function: zend_hash_destroy — Zend/zend_hash.c:856 [gtags_unique] --
+ZEND_API void zend_hash_destroy(HashTable *ht) {
+   Bucket *p, *end;
+   IS_CONSISTENT(ht);
+   if(ht->nNumUsed) {
+     p = ht->arData;
+     end = p + ht->nNumUsed;
+     if(ht->pDestructor) {
+   ...
+       if(ht->u.flags & HASH_FLAG_PACKED) {
+         do {
+           if(EXPECTED(Z_TYPE(p->val)!= IS_UNDEF)) {
+             ht->pDestructor(&p->val);
+           }
+         } while(++p != end);
+       } else {
+         do {
+           if(EXPECTED(Z_TYPE(p->val)!= IS_UNDEF)) {
+             ht->pDestructor(&p->val);
+             if(EXPECTED(p->key)) {
+               zend_string_release(p->key);
+   ...
+             }
+           }
+         } while(++p != end);
+       }
+     } else {
+       if(!(ht->u.flags & HASH_FLAG_PACKED)) {
+         do {
+           if(EXPECTED(Z_TYPE(p->val)!= IS_UNDEF)) {
+             if(EXPECTED(p->key)) {
+               zend_string_release(p->key);
+             }
+           }
+         } while(++p != end);
+       }
+     }
+   } else if(EXPECTED(!(ht->u.flags & HASH_FLAG_INITIALIZED))) {
+   ...
+   }
+   pefree(ht->arData, ht->u.flags & HASH_FLAG_PERSISTENT);
+}
+   [reads: ht; writes: ht*]
+
+-- called function: php_splice — ext/standard/array.c:1910 [gtags_unique, old version] --
+PHPAPI HashTable* php_splice(HashTable *in_hash, int offset, int length, zval *list, int list_count, HashTable *removed) /* {
+   HashTable *out_hash = NULL;
+   int num_in, pos, i;
+   uint idx;
+   ...
+   if(!in_hash) {
+     return NULL;
+   }
+   num_in = zend_hash_num_elements(in_hash);
+   if(offset > num_in) {
+     offset = num_in;
+   } else if(offset < 0 &&(offset =(num_in + offset))< 0) {
+     offset = 0;
+   }
+   if(length < 0) {
+     length = num_in - offset + length;
+   } else if(((unsigned)offset +(unsigned)length)>(unsigned)num_in) {
+     length = num_in - offset;
+   }
+   ...
+   zend_hash_init(out_hash, (length > 0 ? num_in - length : 0)+ list_count, NULL, ZVAL_PTR_DTOR, 0);
+   for(pos = 0, idx = 0; pos < offset && idx < in_hash->nNumUsed; idx++) {
+     p = in_hash->arData + idx;
+     if(Z_TYPE(p->val)== IS_UNDEF)
+   ...
+     pos++;
+     entry = &p->val;
+     if(Z_REFCOUNTED_P(entry)) {
+       Z_ADDREF_P(entry);
+     }
+     if(p->key == NULL) {
+       zend_hash_next_index_insert(out_hash, entry);
+     } else {
+       zend_hash_update(out_hash, p->key, entry);
+     }
+   }
+   if(removed != NULL) {
+     for(; pos < offset + length && idx < in_hash->nNumUsed; idx++) {
+       p = in_hash->arData + idx;
+       if(Z_TYPE(p->val)== IS_UNDEF)
+   ...
+       pos++;
+       entry = &p->val;
+       if(Z_REFCOUNTED_P(entry)) {
+         Z_ADDREF_P(entry);
+       }
+       if(p->key == NULL) {
+         zend_hash_next_index_insert(removed, entry);
+       } else {
+         zend_hash_update(removed, p->key, entry);
+       }
+     }
+   } else {
+     for(; pos < offset + length && idx < in_hash->nNumUsed; pos++, idx++)
+   ...
+   }
+   if(list != NULL) {
+     for(i = 0; i < list_count; i++) {
+       entry = &list[i];
+       if(Z_REFCOUNTED_P(entry))
+         Z_ADDREF_P(entry);
+       zend_hash_next_index_insert(out_hash, entry);
+     }
+   }
+   for(; idx < in_hash->nNumUsed; idx++) {
+     p = in_hash->arData + idx;
+     if(Z_TYPE(p->val)== IS_UNDEF)
+   ...
+     entry = &p->val;
+     if(Z_REFCOUNTED_P(entry)) {
+       Z_ADDREF_P(entry);
+     }
+     if(p->key == NULL) {
+       zend_hash_next_index_insert(out_hash, entry);
+     } else {
+       zend_hash_update(out_hash, p->key, entry);
+     }
+   }
+   ...
+   return out_hash;
+}
+   [reads: in_hash, length, list, list_count, offset, removed; writes: in_hash*]
+
+-- called macro: FREE_HASHTABLE — Zend/zend_alloc.h:227 [gtags_unique, old version] --
+#define FREE_HASHTABLE(ht)	\
+	efree_size(ht, sizeof(HashTable))
+
+-- called macro: zend_hash_next_index_insert_new — Zend/zend_hash.h:115 [gtags_unique, new version] --
+#define zend_hash_next_index_insert_new(ht, pData) \
+		_zend_hash_next_index_insert_new(ht, pData ZEND_FILE_LINE_CC)
+
+-- called macro: Z_ADDREF — Zend/zend_types.h:665 [gtags_unique, new version] --
+#define Z_ADDREF(z)					Z_ADDREF_P(&(z))
+
+-- called macro: Z_REFCOUNTED — Zend/zend_types.h:351 [gtags_unique, new version] --
+#define Z_REFCOUNTED(zval)			((Z_TYPE_FLAGS(zval) & IS_TYPE_REFCOUNTED) != 0)
+
+-- called macro: zend_hash_add_new — Zend/zend_hash.h:82 [gtags_unique, new version] --
+#define zend_hash_add_new(ht, key, pData) \
+		_zend_hash_add_new(ht, key, pData ZEND_FILE_LINE_CC)
+
+-- called macro: zend_hash_init — Zend/zend_hash.h:62 [gtags_unique, new version] --
+#define zend_hash_init(ht, nSize, pHashFunction, pDestructor, persistent)						_zend_hash_init((ht), (nSize), (pDestructor), (persistent) ZEND_FILE_LINE_CC)
+
+-- called macro: zend_hash_num_elements — Zend/zend_hash.h:211 [gtags_unique, new version] --
+#define zend_hash_num_elements(ht) \
+	(ht)->nNumOfElements
+
+-- called macro: ZVAL_PTR_DTOR — Zend/zend_variables.h:148 [gtags_unique, new version] --
+#define ZVAL_PTR_DTOR zval_ptr_dtor_wrapper
+
+-- called macro: ZEND_HASH_FOREACH_STR_KEY_VAL_IND — Zend/zend_hash.h:704 [gtags_unique, new version] --
+#define ZEND_HASH_FOREACH_STR_KEY_VAL_IND(ht, _key, _val) \
+	ZEND_HASH_FOREACH(ht, 1); \
+	_key = _p->key; \
+	_val = _z;
+
+-- called macro: ZEND_HASH_FOREACH_END — Zend/zend_hash.h:655 [gtags_unique, new version] --
+#define ZEND_HASH_FOREACH_END() \
+		} \
+	} while (0)
+
+-- 2nd-level context (summaries) --
+  zend_hash_num_elements — Zend/zend_hash.h:211 [gtags_unique]: #define zend_hash_num_elements(ht) \
+  zend_hash_init — Zend/zend_hash.h:62 [gtags_unique]: #define zend_hash_init(ht, nSize, pHashFunction, pDestructor, persistent)						_zend_hash_init((ht), (nSize), (pDestructor), (persistent) ZEND_FILE_LINE_CC)
+  Z_ADDREF_P — Zend/zend_types.h:660 [lsp]: #define Z_ADDREF_P(pz)				zval_addref_p(pz)
+  zend_hash_next_index_insert — Zend/zend_hash.h:113 [gtags_unique]: #define zend_hash_next_index_insert(ht, pData) \
+  zend_hash_update — Zend/zend_hash.h:76 [gtags_unique]: #define zend_hash_update(ht, key, pData) \
+  IS_CONSISTENT — Zend/zend_hash.c:61 [lsp]: #define IS_CONSISTENT(a)
+  zend_string_release — Zend/zend_string.h:203 [gtags_unique]: static zend_always_inline void zend_string_release(zend_string *s)
+    reads: s; writes: -
+  pefree — Zend/zend_alloc.h:198 [gtags_unique]: #define pefree(ptr, persistent)  ((persistent)?free(ptr):efree(ptr))

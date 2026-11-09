@@ -1,0 +1,27 @@
+Context for merged statement of old file: ext/xml/compat.c with new file: ext/xml/compat.c:
+- PHP_XML_API *XML_ExpatVersion(void) {
+- return(const XML_Char *)"1.0";
+}
+
+Context for merged statement of old file: ext/xml/expat_compat.h with new file: ext/xml/expat_compat.h:
+#ifndef PHP_EXPAT_COMPAT_H
+   #if !defined(HAVE_LIBEXPAT)&& defined(HAVE_LIBXML)
+- PHP_XML_API const XML_Char *XML_ExpatVersion(void);
+  #endif
+  #endif
+
+
+==== Cross-function context ====
+
+-- called macro: PHP_EXPAT_COMPAT_H — ext/xml/expat_compat.h:18 [gtags_unique, new version] --
+#define PHP_EXPAT_COMPAT_H
+
+-- caller of XML_ExpatVersion: PHP_MINFO_FUNCTION(xml) — ext/xml/xml.c:258 --
+PHP_MINFO_FUNCTION(xml) {
+   ...
+   #if defined(LIBXML_DOTTED_VERSION)&& defined(LIBXML_EXPAT_COMPAT)
+   ...
+>  php_info_print_table_row(2, "EXPAT Version", XML_ExpatVersion());
+   ...
+   #endif
+}

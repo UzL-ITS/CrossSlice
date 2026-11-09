@@ -1,0 +1,16 @@
+Context for merged statement of old file: source/components/events/evgpe.c with new file: source/components/events/evgpe.c:
+void AcpiEvAsynchExecuteGpeMethod (
+    void                    *Context) {
+  ACPI_GPE_EVENT_INFO *LocalGpeEventInfo;
+  LocalGpeEventInfo = ACPI_ALLOCATE_ZEROED(sizeof(ACPI_GPE_EVENT_INFO));
+  if (ACPI_FAILURE(Status)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+  if (!AcpiEvValidGpeEvent(GpeEventInfo)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+  if (ACPI_FAILURE(Status)) {
++ ACPI_FREE(LocalGpeEventInfo);
+  }
+}
+

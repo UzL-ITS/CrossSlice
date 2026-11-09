@@ -1,0 +1,69 @@
+Context for merged statement of old file: contrib/minizip/unzip.c with new file: contrib/minizip/unzip.c:
+int unzReadCurrentFile  (unzFile file, voidp buf, unsigned len) {
+  unz64_s* s;
+  file_in_zip64_read_info_s* pfile_in_zip_read_info;
+  s=(unz64_s*)file;
+  pfile_in_zip_read_info=s->pfile_in_zip_read;
+  pfile_in_zip_read_info->stream.avail_out =(uInt)len;
+  if ((len>pfile_in_zip_read_info->rest_read_uncompressed)&&(!(pfile_in_zip_read_info->raw))) {
+  pfile_in_zip_read_info->stream.avail_out =(uInt)pfile_in_zip_read_info->rest_read_uncompressed;
+  }
+  if ((len>pfile_in_zip_read_info->rest_read_compressed+ pfile_in_zip_read_info->stream.avail_in)&&(pfile_in_zip_read_info->raw)) {
+  pfile_in_zip_read_info->stream.avail_out =(uInt)pfile_in_zip_read_info->rest_read_compressed+ pfile_in_zip_read_info->stream.avail_in;
+  }
+  while ((pfile_in_zip_read_info->stream.avail_out>0)) {
+  if ((pfile_in_zip_read_info->stream.avail_in==0)&&(pfile_in_zip_read_info->rest_read_compressed>0)) {
+  uInt uReadThis = UNZ_BUFSIZE;
+  if (pfile_in_zip_read_info->rest_read_compressed<uReadThis) {
+  uReadThis =(uInt)pfile_in_zip_read_info->rest_read_compressed;
+  }
+   #ifdef NOUNCRYPT
+  if (s->encrypted) {
+  uInt i;
+  for (i=0; i<uReadThis; i++) {
+  }
+  }
+  #endif
+  pfile_in_zip_read_info->stream.avail_in =(uInt)uReadThis;
+  }
+  if ((pfile_in_zip_read_info->compression_method==0)||(pfile_in_zip_read_info->raw)) {
+  uInt uDoCopy, i ;
+  if (pfile_in_zip_read_info->stream.avail_out < pfile_in_zip_read_info->stream.avail_in) {
+  uDoCopy = pfile_in_zip_read_info->stream.avail_out ;
+  }
+  else {
+  uDoCopy = pfile_in_zip_read_info->stream.avail_in ;
+  }
+  pfile_in_zip_read_info->stream.total_out += uDoCopy;
+  }
+  else {
+  if (pfile_in_zip_read_info->compression_method==Z_BZIP2ED) {
+   #ifdef HAVE_BZIP2
+  pfile_in_zip_read_info->bstream.total_out_lo32 = pfile_in_zip_read_info->stream.total_out;
+  uTotalOutAfter = pfile_in_zip_read_info->bstream.total_out_lo32;
+  pfile_in_zip_read_info->stream.total_out = pfile_in_zip_read_info->bstream.total_out_lo32;
+  #endif
+  }
+  else {
+  ZPOS64_T uTotalOutBefore, uTotalOutAfter;
+  uTotalOutBefore = pfile_in_zip_read_info->stream.total_out;
+  uTotalOutAfter = pfile_in_zip_read_info->stream.total_out;
++ if (uTotalOutAfter<uTotalOutBefore) {
++ uTotalOutAfter += 1LL << 32;
+  }
+  uOutThis = uTotalOutAfter-uTotalOutBefore;
+  pfile_in_zip_read_info->total_out_64 = pfile_in_zip_read_info->total_out_64 + uOutThis;
+  pfile_in_zip_read_info->crc32 = crc32(pfile_in_zip_read_info->crc32, bufBefore, (uInt)(uOutThis));
+  pfile_in_zip_read_info->rest_read_uncompressed -= uOutThis;
+  iRead +=(uInt)(uTotalOutAfter - uTotalOutBefore);
+  if (err==Z_STREAM_END) {
+  return(iRead==0)? UNZ_EOF : iRead;
+  }
+  }
+  }
+  }
+  if (err==Z_OK) {
+  return iRead;
+  }
+}
+

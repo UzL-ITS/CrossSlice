@@ -1,0 +1,831 @@
+Context for merged statement of old file: source/common/dmtbdump2.c with new file: source/common/dmtbdump2.c:
+void AcpiDmDumpRhct (
+    ACPI_TABLE_HEADER       *Table) {
+  ACPI_RHCT_NODE_HEADER *Subtable;
+  ACPI_RHCT_ISA_STRING *RhctIsaString;
+  UINT32 Length = Table->Length;
+  UINT8 SubtableOffset, IsaPadOffset;
+  UINT32 Offset = sizeof(ACPI_TABLE_RHCT);
+  while ((Offset < Table->Length)) {
+  Subtable = ACPI_ADD_PTR(ACPI_RHCT_NODE_HEADER, Table, Offset);
+  Length = sizeof(ACPI_RHCT_NODE_HEADER);
+  SubtableOffset =(UINT8)Length;
+  switch ((Subtable->Type)) {
+  SubtableOffset += sizeof(ACPI_RHCT_HART_INFO);
+  for (i = 0; i < RhctHartInfo->NumOffsets; i++) {
+  SubtableOffset += 4;
+  }
+  case ACPI_RHCT_NODE_TYPE_ISA_STRING:
+  RhctIsaString = ACPI_ADD_PTR(ACPI_RHCT_ISA_STRING, Subtable, SubtableOffset);
+  IsaPadOffset =(UINT8)(SubtableOffset + 2 + RhctIsaString->IsaLength);
+  if (Subtable->Length > IsaPadOffset) {
+- Status = AcpiDmDumpTable(Table->Length, Offset + SubtableOffset, ACPI_ADD_PTR(UINT8, Subtable, IsaPadOffset), (Subtable->Length - IsaPadOffset), AcpiDmTableInfoRhctIsaPad);
++ Status = AcpiDmDumpTable(Table->Length, Offset + IsaPadOffset, ACPI_ADD_PTR(UINT8, Subtable, IsaPadOffset), (Subtable->Length - IsaPadOffset), AcpiDmTableInfoRhctIsaPad);
+  }
+  }
+  }
+}
+
+Context for merged statement of old file: source/common/dmtbinfo2.c with new file: source/common/dmtbinfo2.c:
+- ACPI_DMTABLE_INFO AcpiDmTableInfoRhctNodeHdr[] = { {ACPI_DMT_RHCT, ACPI_RHCTH_OFFSET(Type), "Subtable Type", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Length), "Length", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Revision), "Revision", 0}, ACPI_DMT_TERMINATOR };
++ ACPI_DMTABLE_INFO AcpiDmTableInfoRhctNodeHdr[] = { {ACPI_DMT_RHCT, ACPI_RHCTH_OFFSET(Type), "Subtable Type", 0}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Length), "Length", DT_LENGTH}, {ACPI_DMT_UINT16, ACPI_RHCTH_OFFSET(Revision), "Revision", 0}, ACPI_DMT_TERMINATOR };
+
+Context for merged statement of old file: source/compiler/dttable2.c with new file: source/compiler/dttable2.c:
+ACPI_STATUS DtCompileRhct (
+    void                    **List) {
+  ACPI_STATUS Status;
+  ACPI_RHCT_NODE_HEADER *RhctHeader;
+- ACPI_RHCT_HART_INFO *RhctHartInfo = NULL;
++ ACPI_RHCT_HART_INFO *RhctHartInfo;
+  DT_SUBTABLE *Subtable;
+  DT_SUBTABLE *ParentTable;
+  ACPI_DMTABLE_INFO *InfoTable;
+  DT_FIELD **PFieldList =(DT_FIELD **)List;
++ ACPI_TABLE_RHCT *Table;
++ BOOLEAN FirstNode = TRUE;
++ ParentTable = DtPeekSubtable();
+  Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhct, &Subtable);
++ DtInsertSubtable(ParentTable, Subtable);
++ Table = ACPI_CAST_PTR(ACPI_TABLE_RHCT, ParentTable->Buffer);
++ Table->NodeCount = 0;
++ Table->NodeOffset = sizeof(ACPI_TABLE_RHCT);
+- ParentTable = DtPeekSubtable();
+  while ((*PFieldList)) {
+  Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctNodeHdr, &Subtable);
+  DtInsertSubtable(ParentTable, Subtable);
+  RhctHeader = ACPI_CAST_PTR(ACPI_RHCT_NODE_HEADER, Subtable->Buffer);
++ DtPushSubtable(Subtable);
++ ParentTable = DtPeekSubtable();
+- RhctHeader->Length =(UINT16)(Subtable->Length);
++ Table->NodeCount++;
+  switch ((RhctHeader->Type)) {
+  InfoTable = AcpiDmTableInfoRhctIsa1;
+  InfoTable = AcpiDmTableInfoRhctHartInfo1;
+  InfoTable = AcpiDmTableInfoRhctCmo1;
+  InfoTable = AcpiDmTableInfoRhctMmu1;
+  }
+  Status = DtCompileTable(PFieldList, InfoTable, &Subtable);
+  DtInsertSubtable(ParentTable, Subtable);
++ if (FirstNode) {
+- RhctHeader->Length +=(UINT16)(Subtable->Length);
++ Table->NodeOffset = ACPI_PTR_DIFF(ParentTable->Buffer, Table);
++ FirstNode = FALSE;
+  }
+  switch ((RhctHeader->Type)) {
++ case ACPI_RHCT_NODE_TYPE_ISA_STRING:
++ Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctIsaPad, &Subtable);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
+- if (RhctHartInfo) {
++ if (Subtable) {
++ DtInsertSubtable(ParentTable, Subtable);
++ RhctHartInfo->NumOffsets = 0;
+  while ((*PFieldList)) {
++ Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctHartInfo2, &Subtable);
++ if (ACPI_FAILURE(Status)) {
++ return(Status);
+  }
++ if (!Subtable) {
++ break;
+  }
++ DtInsertSubtable(ParentTable, Subtable);
+- RhctHeader->Length +=(UINT16)(Subtable->Length);
++ RhctHartInfo->NumOffsets++;
+- RhctHartInfo->NumOffsets++;
+- DtInsertSubtable(ParentTable, Subtable);
+- if (!Subtable) {
+- break;
+  }
+- if (ACPI_FAILURE(Status)) {
+- return(Status);
+  }
+- Status = DtCompileTable(PFieldList, AcpiDmTableInfoRhctHartInfo2, &Subtable);
+  }
+  }
++ break;
+  case ACPI_RHCT_NODE_TYPE_HART_INFO:
+- RhctHartInfo = ACPI_SUB_PTR(ACPI_RHCT_HART_INFO, Subtable->Buffer, sizeof(ACPI_RHCT_NODE_HEADER));
++ RhctHartInfo = ACPI_CAST_PTR(ACPI_RHCT_HART_INFO, Subtable->Buffer);
+- default:
++ default:
+  }
++ DtPopSubtable();
++ ParentTable = DtPeekSubtable();
+  }
+- RhctHartInfo->NumOffsets = 0;
+- break;
+- return(Status);
+}
+
+Context for merged statement of old file: source/compiler/dttemplate.h with new file: source/compiler/dttemplate.h:
+#ifndef __DTTEMPLATE_H
+- const unsigned char TemplateRhct[] = { 0x52, 0x48, 0x43, 0x54, 0x96, 0x00, 0x00, 0x00, 0x01, 0x24, 0x4F, 0x45, 0x4D, 0x43, 0x41, 0x00, 0x54, 0x45, 0x4D, 0x50, 0x4C, 0x41, 0x54, 0x45, 0x01, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x54, 0x4C, 0x28, 0x09, 0x22, 0x20, 0x00, 0x00, 0x00, 0x00, 0x80, 0x96, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x01, 0x00, 0x2B, 0x00, 0x72, 0x76, 0x36, 0x34, 0x69, 0x6D, 0x61, 0x66, 0x64, 0x63, 0x68, 0x5F, 0x7A, 0x69, 0x63, 0x73, 0x72, 0x5F, 0x7A, 0x69, 0x66, 0x65, 0x6E, 0x63, 0x65, 0x69, 0x5F, 0x7A, 0x62, 0x61, 0x5F, 0x7A, 0x62, 0x62, 0x5F, 0x7A, 0x62, 0x63, 0x5F, 0x7A, 0x62, 0x73, 0x00, 0x00, 0xFF, 0xFF, 0x18, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x7c, 0x00, 0x00, 0x00, 0x8E, 0x00, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x06, 0x06, 0x06, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x02 };
++ const unsigned char TemplateRhct[] = { 0x52, 0x48, 0x43, 0x54, 0x96, 0x00, 0x00, 0x00, 0x01, 0x6D, 0x4F, 0x45, 0x4D, 0x43, 0x41, 0x00, 0x54, 0x45, 0x4D, 0x50, 0x4C, 0x41, 0x54, 0x45, 0x01, 0x00, 0x00, 0x00, 0x49, 0x4E, 0x54, 0x4C, 0x04, 0x04, 0x25, 0x20, 0x00, 0x00, 0x00, 0x00, 0x80, 0x96, 0x98, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x34, 0x00, 0x01, 0x00, 0x2B, 0x00, 0x72, 0x76, 0x36, 0x34, 0x69, 0x6D, 0x61, 0x66, 0x64, 0x63, 0x68, 0x5F, 0x7A, 0x69, 0x63, 0x73, 0x72, 0x5F, 0x7A, 0x69, 0x66, 0x65, 0x6E, 0x63, 0x65, 0x69, 0x5F, 0x7A, 0x62, 0x61, 0x5F, 0x7A, 0x62, 0x62, 0x5F, 0x7A, 0x62, 0x63, 0x5F, 0x7A, 0x62, 0x73, 0x00, 0x00, 0x01, 0x00, 0x0A, 0x00, 0x01, 0x00, 0x00, 0x06, 0x06, 0x06, 0x02, 0x00, 0x08, 0x00, 0x01, 0x00, 0x00, 0x02, 0xFF, 0xFF, 0x18, 0x00, 0x01, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3B, 0x00, 0x00, 0x00, 0x6C, 0x00, 0x00, 0x00, 0x76, 0x00, 0x00, 0x00 };
+  #endif
+
+Context for merged statement of old file: source/compiler/dtutils.c with new file: source/compiler/dtutils.c:
+UINT32 DtGetFieldLength (
+    DT_FIELD                *Field,
+    ACPI_DMTABLE_INFO       *Info) {
+  switch ((Info->Opcode)) {
++ case ACPI_DMT_PHAT:
+- case ACPI_DMT_PHAT:
++ case ACPI_DMT_RHCT:
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_ADD_PTR — source/include/actypes.h:654 [gtags_unique] --
+#define ACPI_ADD_PTR(t, a, b)           ACPI_CAST_PTR (t, (ACPI_CAST_PTR (UINT8, (a)) + (ACPI_SIZE)(b)))
+
+-- called function: AcpiDmDumpTable — source/common/dmtable.c:1053 [gtags_unique] --
+ACPI_STATUS AcpiDmDumpTable ( UINT32                  TableLength, UINT32                  TableOffset, void                    *Table, UINT32                  SubtableLength, ACPI_DMTABLE_INFO {
+   UINT8 *Target;
+   UINT32 CurrentOffset;
+   UINT32 ByteLength;
+   UINT8 Temp8;
+   ...
+   UINT64 Value;
+   ...
+   ACPI_STATUS Status;
+   ...
+   if(!Info) {
+   ...
+     return(AE_NOT_IMPLEMENTED);
+   }
+   for(; Info->Name; Info++) {
+     Target = ACPI_ADD_PTR(UINT8, Table, Info->Offset);
+     CurrentOffset = TableOffset + Info->Offset;
+     if(SubtableLength &&(Info->Offset > SubtableLength)) {
+       AcpiOsPrintf("/**** ACPI subtable terminates early(Len %u)- " "may be older version(dump table)*/\n", SubtableLength);
+       return(AE_OK);
+     }
+     if(CurrentOffset >= TableLength) {
+       AcpiOsPrintf("/**** ACPI table terminates " "in the middle of a data structure!(dump table)\n" "CurrentOffset: %X, TableLength: %X ***/", CurrentOffset, TableLength);
+       return(AE_BAD_DATA);
+     }
+     switch(Info->Opcode) {
+   ...
+       ByteLength = 1;
+   ...
+       ByteLength = 2;
+   ...
+       ByteLength = 3;
+   ...
+       ByteLength = 4;
+   ...
+       ByteLength = 5;
+   ...
+       ByteLength = 6;
+   ...
+       ByteLength = 7;
+   ...
+       ByteLength = 8;
+   ...
+       ByteLength = 10;
+   ...
+       ByteLength = 11;
+   ...
+       ByteLength = 12;
+   ...
+       ByteLength = 16;
+   ...
+       ByteLength = 18;
+   ...
+       ByteLength = 24;
+   ...
+       ByteLength = 26;
+   ...
+       ByteLength = 32;
+   ...
+       ByteLength = 112;
+   ...
+       ByteLength = 128;
+   ...
+       ByteLength = SubtableLength;
+       CurrentOffset = sizeof(ACPI_TABLE_WPBT);
+   ...
+       ByteLength = SubtableLength;
+   ...
+       ByteLength =((ACPI_CAST_PTR(char, Table)+(ACPI_CAST_PTR(ACPI_PMTT_HEADER, Table)->Length))- ACPI_CAST_PTR(char, Target));
+   ...
+       ByteLength = strlen(ACPI_CAST_PTR(char, Target))+ 1;
+   ...
+       ByteLength =((ACPI_CAST_PTR(ACPI_IVRS_DEVICE_HID, Target)-1)->UidLength);
+   ...
+       ByteLength = sizeof(ACPI_GENERIC_ADDRESS);
+   ...
+       ByteLength = sizeof(ACPI_HEST_NOTIFY);
+   ...
+       ByteLength = sizeof(ACPI_IORT_MEMORY_ACCESS);
+   ...
+       ByteLength = 0;
+   ...
+     }
+     if(CurrentOffset + ByteLength > TableLength) {
+       if(SubtableLength) {
+   ...
+         return(AE_OK);
+       }
+   ...
+       return(AE_BAD_DATA);
+     }
+     if(Info->Opcode == ACPI_DMT_EXTRA_TEXT) {
+       AcpiOsPrintf("%s", Info->Name);
+   ...
+     }
+     AcpiDmLineHeader(CurrentOffset, ByteLength, Info->Name);
+     switch(Info->Opcode) {
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> Info->Opcode)& 0x01);
+   ...
+       AcpiOsPrintf("%1.1X\n", *Target & 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 1)& 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 2)& 0x03);
+   ...
+       AcpiOsPrintf("%2.2X\n", (*Target >> 2)& 0xFF);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*Target >> 4)& 0x03);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 4)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 8)& 0x0F);
+   ...
+       AcpiOsPrintf("%1.1X\n", (*(UINT32 *)Target >> 12)& 0x0F);
+   ...
+       AcpiOsPrintf("%4.4X\n", (*(UINT32 *)Target >> 16)& 0xFFFF);
+   ...
+       Value = 0;
+       for(Temp8 =(UINT8)ByteLength; Temp8 > 0; Temp8--) {
+         AcpiOsPrintf("%2.2X", Target[Temp8 - 1]);
+         Value |= Target[Temp8 - 1];
+         Value <<= 8;
+       }
+       if(!Value &&(Info->Flags & DT_DESCRIBES_OPTIONAL)) {
+   ...
+       }
+   ...
+       for(Temp16 = 0; Temp16 < ByteLength; Temp16++) {
+         AcpiOsPrintf("%2.2X", Target[Temp16]);
+         if((UINT32)(Temp16 + 1)< ByteLength) {
+           if((Temp16 > 0)&&(!((Temp16+1)% 16))) {
+   ...
+           } else {
+           }
+         }
+       }
+   ...
+       (void)AcpiUtConvertUuidToString((char *)Target, AslGbl_MsgBuffer);
+   ...
+       AcpiOsPrintf("\"%s\"\n", ACPI_CAST_PTR(char, Target));
+   ...
+       AcpiOsPrintf("\"%.*s\"\n", ByteLength, ACPI_CAST_PTR(char, Target));
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 4);
+   ...
+       TableData = AcpiAhGetTableInfo(ACPI_CAST_PTR(char, Target));
+       if(TableData) {
+         AcpiOsPrintf(STRING_FORMAT, TableData->Description);
+       } else {
+       }
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 4);
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 6);
+   ...
+       AcpiUtCheckAndRepairAscii(Target, RepairedName, 8);
+   ...
+       AcpiOsPrintf("%2.2X", *Target);
+       Temp8 = AcpiUtGenerateChecksum(Table, ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Length, ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Checksum);
+       if(Temp8 != ACPI_CAST_PTR(ACPI_TABLE_HEADER, Table)->Checksum) {
+         AcpiOsPrintf(" /* Incorrect checksum, should be %2.2X */", Temp8);
+       }
+   ...
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiUtGetRegionName(*Target));
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_GAS_WIDTH_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmGasAccessWidth[Temp8]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_GENERIC_ADDRESS), AcpiDmTableInfoGas);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_NODE_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestSubnames[Temp8]);
+   ...
+       Temp32 = *Target;
+       if(Temp32 > ACPI_AEST_CACHE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, *Target, AcpiDmAestCacheNames[Temp32]);
+   ...
+       Temp32 = *Target;
+       if(Temp32 > ACPI_AEST_GIC_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, *Target, AcpiDmAestGicNames[Temp32]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_RESOURCE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestResourceNames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_XFACE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestXfaceNames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_AEST_XRUPT_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAestXruptNames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_ASPT_TYPE_UNKNOWN) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, Temp16, AcpiDmAsptSubnames[Temp16]);
+   ...
+       Temp16 =(UINT16)((*Target)& 0x7F);
+       if(Temp16 > ACPI_ASF_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmAsfSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_CDAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmCdatSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_CEDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmCedtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_DMAR_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmDmarSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_DMAR_SCOPE_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmDmarScope[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_EINJ_ACTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmEinjActions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_EINJ_INSTRUCTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmEinjInstructions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_ERST_ACTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErstActions[Temp8]);
+   ...
+       Temp16 = *Target;
+       if(Temp16 > ACPI_ERDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErdtSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_ERST_INSTRUCTION_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmErstInstructions[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_GTDT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmGtdtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_HEST_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmHestSubnames[Temp16]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_HEST_NOTIFY), AcpiDmTableInfoHestNotify);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_HEST_NOTIFY_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmHestNotifySubnames[Temp8]);
+   ...
+       Temp16 = *Target;
+       if(Temp16 > ACPI_HMAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, *Target, AcpiDmHmatSubnames[Temp16]);
+   ...
+       Status = AcpiDmDumpTable(TableLength, CurrentOffset, Target, sizeof(ACPI_IORT_MEMORY_ACCESS), AcpiDmTableInfoIortAcc);
+       if(ACPI_FAILURE(Status)) {
+         return(Status);
+       }
+   ...
+       Temp8 = *Target;
+       if((Temp8 >= ACPI_MADT_TYPE_RESERVED)&&(Temp8 < ACPI_MADT_TYPE_OEM_RESERVED)) {
+   ...
+       } else if(Temp8 >= ACPI_MADT_TYPE_OEM_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmMadtSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_MPAM_LOCATION_TYPE_INTERCONNECT) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmMpamSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_NFIT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmNfitSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_PCCT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPcctSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 > ACPI_PHAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmPhatSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 == ACPI_PMTT_TYPE_VENDOR) {
+   ...
+       } else if(Temp8 > ACPI_PMTT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPmttSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_PPTT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmPpttSubnames[Temp8]);
+   ...
+       if(ByteLength == 0) {
+   ...
+       }
+       AcpiDmDumpUnicode(Table, 0, ByteLength);
+   ...
+       if(ByteLength == 0) {
+   ...
+       }
+       AcpiDmDumpBuffer(Target, 0, ByteLength, CurrentOffset, NULL);
+   ...
+       Temp8 = *Target;
+       if(Temp8 >= ACPI_RGRT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmRgrtSubnames[Temp8]);
+   ...
+       Temp16 = ACPI_GET16(Target);
+       if(Temp16 == ACPI_RHCT_NODE_TYPE_HART_INFO) {
+   ...
+       }
+       AcpiOsPrintf(UINT16_FORMAT, ACPI_GET16(Target), AcpiDmRhctSubnames[Temp16]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_SDEV_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmSdevSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_SRAT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmSratSubnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_TPM2_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmTpm2Subnames[Temp8]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_FADT_PM_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmFadtProfiles[Temp8]);
+   ...
+       Temp8 = *Target;
+       switch(Temp8) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, Name);
+   ...
+       Temp8 = *Target;
+       switch(Temp8) {
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8];
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8 - 61];
+   ...
+         Name = AcpiDmIvrsDevEntryNames[Temp8 - 228];
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, Name);
+   ...
+       Temp32 = ACPI_GET32(Target);
+       if(Temp32 > ACPI_LPIT_TYPE_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT32_FORMAT, ACPI_GET32(Target), AcpiDmLpitSubnames[Temp32]);
+   ...
+       Temp8 = *Target;
+       if(Temp8 > ACPI_VIOT_RESERVED) {
+   ...
+       }
+       AcpiOsPrintf(UINT8_FORMAT, *Target, AcpiDmViotSubnames[Temp8]);
+   ...
+       return(AE_OK);
+   ...
+       ACPI_ERROR((AE_INFO, "**** Invalid table opcode [0x%X] ****\n", Info->Opcode));
+       return(AE_SUPPORT);
+     }
+   }
+   if(TableOffset && !SubtableLength) {
+   ...
+     return(AE_BAD_DATA);
+   }
+   return(AE_OK);
+}
+   [reads: Info, SubtableLength, Table, TableLength, TableOffset; writes: -]
+
+-- called macro: ACPI_FAILURE — source/include/acexcep.h:203 [gtags_unique] --
+#define ACPI_FAILURE(a)                 (a)
+
+-- called function: DtCompileTable — source/compiler/dtcompile.c:588 [gtags_unique] --
+ACPI_STATUS DtCompileTable ( DT_FIELD                **Field, ACPI_DMTABLE_INFO       *Info, DT_SUBTABLE             **RetSubtable) {
+   DT_FIELD *LocalField;
+   UINT32 Length;
+   DT_SUBTABLE *Subtable;
+   DT_SUBTABLE *InlineSubtable = NULL;
+   UINT32 FieldLength = 0;
+   UINT8 FieldType;
+   UINT8 *Buffer;
+   UINT8 *FlagBuffer = NULL;
+   char *String;
+   UINT32 CurrentFlagByteOffset = 0;
+   ACPI_STATUS Status = AE_OK;
+   if(!Field || !Info) {
+     return(AE_BAD_PARAMETER);
+   }
+   if(!*Field) {
+     return(AE_END_OF_TABLE);
+   }
+   if((Info->Flags & DT_OPTIONAL)&& strcmp((*Field)->Name, Info->Name)) {
+     *RetSubtable = NULL;
+     return(AE_OK);
+   }
+   Length = DtGetSubtableLength(*Field, Info);
+   if(Length == ASL_EOF) {
+     return(AE_ERROR);
+   }
+   Subtable = UtSubtableCacheCalloc();
+   if(Length > 0) {
+     String = UtLocalCacheCalloc(Length);
+     Subtable->Buffer = ACPI_CAST_PTR(UINT8, String);
+   }
+   Subtable->Length = Length;
+   Subtable->TotalLength = Length;
+   Buffer = Subtable->Buffer;
+   LocalField = *Field;
+   Subtable->Name = LocalField->Name;
+   for(; Info->Name; Info++) {
+     if(Info->Opcode == ACPI_DMT_EXTRA_TEXT) {
+   ...
+     }
+     if(!LocalField) {
+       sprintf(AslGbl_MsgBuffer, "Found NULL field - Field name \"%s\" needed", Info->Name);
+       DtFatal(ASL_MSG_COMPILER_INTERNAL, NULL, AslGbl_MsgBuffer);
+       Status = AE_BAD_DATA;
+   ...
+     }
+     LocalField->TableOffset = AslGbl_CurrentTableOffset;
+     FieldLength = DtGetFieldLength(LocalField, Info);
+     AslGbl_CurrentTableOffset += FieldLength;
+     FieldType = DtGetFieldType(Info);
+   ...
+     if(FieldType != DT_FIELD_TYPE_INLINE_SUBTABLE && strcmp(Info->Name, LocalField->Name)) {
+       sprintf(AslGbl_MsgBuffer, "found \"%s\" expected \"%s\"", LocalField->Name, Info->Name);
+       DtError(ASL_ERROR, ASL_MSG_INVALID_LABEL, LocalField, AslGbl_MsgBuffer);
+     }
+     switch(FieldType) {
+   ...
+       LocalField = LocalField->Next;
+       *Field = LocalField;
+       FlagBuffer = Buffer;
+       CurrentFlagByteOffset = Info->Offset;
+   ...
+       if(FlagBuffer) {
+         FlagBuffer +=(Info->Offset - CurrentFlagByteOffset);
+         CurrentFlagByteOffset = Info->Offset;
+         DtCompileFlag(FlagBuffer, LocalField, Info);
+       } else {
+       }
+       LocalField = LocalField->Next;
+       *Field = LocalField;
+   ...
+       *Field = LocalField;
+       switch(Info->Opcode) {
+   ...
+         Status = DtCompileTable(Field, AcpiDmTableInfoGas, &InlineSubtable);
+   ...
+         Status = DtCompileTable(Field, AcpiDmTableInfoHestNotify, &InlineSubtable);
+   ...
+         Status = DtCompileTable(Field, AcpiDmTableInfoIortAcc, &InlineSubtable);
+   ...
+         sprintf(AslGbl_MsgBuffer, "Invalid DMT opcode: 0x%.2X", Info->Opcode);
+         DtFatal(ASL_MSG_COMPILER_INTERNAL, NULL, AslGbl_MsgBuffer);
+         Status = AE_BAD_DATA;
+   ...
+       }
+       if(ACPI_FAILURE(Status)) {
+   ...
+       }
+   ...
+       memcpy(Buffer, InlineSubtable->Buffer, FieldLength);
+       LocalField = *Field;
+   ...
+       DtWriteFieldToListing(Buffer, LocalField, 0);
+       LocalField = LocalField->Next;
+   ...
+       DtCompileOneField(Buffer, LocalField, FieldLength, FieldType, Info->Flags);
+       DtWriteFieldToListing(Buffer, LocalField, FieldLength);
+       LocalField = LocalField->Next;
+       if(Info->Flags & DT_LENGTH) {
+         Subtable->LengthField = Buffer;
+         Subtable->SizeOfLengthField = FieldLength;
+   ...
+       }
+     }
+     Buffer += FieldLength;
+   }
+   *Field = LocalField;
+   *RetSubtable = Subtable;
+   return(AE_OK);
+   ...
+   ACPI_FREE(Subtable->Buffer);
+   ACPI_FREE(Subtable);
+   return(Status);
+}
+   [reads: Field, Info, RetSubtable; writes: Field*, RetSubtable*]
+
+-- called function: DtInsertSubtable — source/compiler/dtsubtable.c:212 [gtags_unique] --
+void DtInsertSubtable ( DT_SUBTABLE             *ParentTable, DT_SUBTABLE             *Subtable) {
+   DT_SUBTABLE *ChildTable;
+   Subtable->Peer = NULL;
+   Subtable->Parent = ParentTable;
+   Subtable->Depth = ParentTable->Depth + 1;
+   if(!ParentTable->Child) {
+     ParentTable->Child = Subtable;
+   } else {
+     ChildTable = ParentTable->Child;
+     while(ChildTable->Peer) {
+       ChildTable = ChildTable->Peer;
+     }
+     ChildTable->Peer = Subtable;
+   }
+}
+   [reads: ParentTable, Subtable; writes: ParentTable*, Subtable*]
+
+-- called function: DtFatal — source/compiler/dtutils.c:293 [gtags_unique] --
+void DtFatal ( UINT16                  MessageId, DT_FIELD                *FieldObject, char                    *ExtraMessage) {
+   DtError(ASL_ERROR, MessageId, FieldObject, ExtraMessage);
+   ...
+}
+   [reads: ExtraMessage, FieldObject, MessageId; writes: -]
+
+-- called function: DtGetFieldValue — source/compiler/dtutils.c:359 [gtags_unique] --
+char * DtGetFieldValue ( DT_FIELD                *Field) {
+   if(!Field) {
+     return(NULL);
+   }
+   return(Field->Value);
+}
+   [reads: Field; writes: -]
+
+-- called macro: ACPI_RHCTH_OFFSET — source/include/actbinfo.h:429 [gtags_unique] --
+#define ACPI_RHCTH_OFFSET(f)            (UINT16) ACPI_OFFSET (ACPI_RHCT_NODE_HEADER,f)
+
+-- called macro: ACPI_SUB_PTR — source/include/actypes.h:655 [gtags_unique, old version] --
+#define ACPI_SUB_PTR(t, a, b)           ACPI_CAST_PTR (t, (ACPI_CAST_PTR (UINT8, (a)) - (ACPI_SIZE)(b)))
+
+-- called macro: ACPI_CAST_PTR — source/include/actypes.h:652 [gtags_unique, new version] --
+#define ACPI_CAST_PTR(t, p)             ((t *) (ACPI_UINTPTR_T) (p))
+
+-- called function: DtPeekSubtable — source/compiler/dtsubtable.c:309 [gtags_unique, new version] --
+DT_SUBTABLE * DtPeekSubtable ( void) {
+   return(AslGbl_SubtableStack);
+}
+
+-- called macro: ACPI_PTR_DIFF — source/include/actypes.h:656 [gtags_unique, new version] --
+#define ACPI_PTR_DIFF(a, b)             ((ACPI_SIZE) (ACPI_CAST_PTR (UINT8, (a)) - ACPI_CAST_PTR (UINT8, (b))))
+
+-- caller of DtGetFieldLength: DtCompileTable — source/compiler/dtcompile.c:672 --
+ACPI_STATUS DtCompileTable ( DT_FIELD                **Field, ACPI_DMTABLE_INFO       *Info, DT_SUBTABLE             **RetSubtable) {
+   DT_FIELD *LocalField;
+   ...
+   LocalField = *Field;
+   ...
+   for(; Info->Name; Info++) {
+   ...
+     LocalField->TableOffset = AslGbl_CurrentTableOffset;
+>    FieldLength = DtGetFieldLength(LocalField, Info);
+     AslGbl_CurrentTableOffset += FieldLength;
+   ...
+     switch(FieldType) {
+   ...
+       memcpy(Buffer, InlineSubtable->Buffer, FieldLength);
+   ...
+       DtWriteFieldToListing(Buffer, LocalField, 0);
+   ...
+       DtCompileOneField(Buffer, LocalField, FieldLength, FieldType, Info->Flags);
+       DtWriteFieldToListing(Buffer, LocalField, FieldLength);
+   ...
+       if(Info->Flags & DT_LENGTH) {
+         Subtable->LengthField = Buffer;
+         Subtable->SizeOfLengthField = FieldLength;
+   ...
+       }
+     }
+     Buffer += FieldLength;
+   }
+   ...
+   *RetSubtable = Subtable;
+   ...
+   ACPI_FREE(Subtable);
+   ...
+}
+
+-- caller of DtGetFieldLength: DtDetectAllLabels — source/compiler/dtexpress.c:452 --
+void DtDetectAllLabels ( DT_FIELD                *FieldList) {
+   ACPI_DMTABLE_INFO *Info;
+   DT_FIELD *GenericField;
+   UINT32 TableOffset;
+   TableOffset = AslGbl_CurrentTableOffset;
+   GenericField = FieldList;
+   while(GenericField) {
+     Info = DtGetGenericTableInfo(GenericField->Name);
+     if(Info) {
+       GenericField->TableOffset = TableOffset;
+>      TableOffset += DtGetFieldLength(GenericField, Info);
+   ...
+     }
+   }
+}
+
+-- caller of DtGetFieldLength: DtGetSubtableLength — source/compiler/dtsubtable.c:417 --
+UINT32 DtGetSubtableLength ( DT_FIELD                *Field, ACPI_DMTABLE_INFO       *Info) {
+   UINT32 ByteLength = 0;
+   ...
+   for(; Info->Name; Info++) {
+   ...
+>    ByteLength += DtGetFieldLength(Field, Info);
+   ...
+   }
+   return(ByteLength);
+   ...
+}

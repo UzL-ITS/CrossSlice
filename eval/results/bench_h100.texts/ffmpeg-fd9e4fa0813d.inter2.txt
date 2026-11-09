@@ -1,0 +1,596 @@
+Context for merged statement of old file: libavformat/dump.c with new file: libavformat/dump.c:
+void dump_stream_group(const AVFormatContext *ic, uint8_t *printed,
+                              int i, int index, int is_output) {
+  switch ((stg->type)) {
+  case AV_STREAM_GROUP_PARAMS_TREF:
+- const AVStreamGroupTREF *tref = stg->params.tref;
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called function: av_log — libavutil/log.c:443 [priority_fallback] --
+void av_log(void* avcl, int level, const char *fmt, ...) {
+   va_list vl;
+   va_start(vl, fmt);
+   av_vlog(avcl, level, fmt, vl);
+   ...
+}
+   [reads: avcl, fmt, level; writes: -]
+
+-- called function: dump_stream_format — libavformat/dump.c:591 [gtags_unique] --
+static void dump_stream_format(const AVFormatContext *ic, int i, int group_index, int index, int is_output, int log_level) {
+   char buf[256];
+   int flags =(is_output ? ic->oformat->flags : ic->iformat->flags);
+   const AVStream *st = ic->streams[i];
+   const FFStream *const sti = cffstream(st);
+   const AVDictionaryEntry *lang = av_dict_get(st->metadata, "language", NULL, 0);
+   const char *separator = ic->dump_separator;
+   const char *group_indent = group_index >= 0 ? " " : "";
+   const char *extra_indent = group_index >= 0 ? " " : " ";
+   AVCodecContext *avctx;
+   ...
+   avctx = avcodec_alloc_context3(NULL);
+   if(!avctx)
+     return;
+   ret = avcodec_parameters_to_context(avctx, st->codecpar);
+   if(ret < 0) {
+   ...
+     return;
+   }
+   if(sti->avctx) {
+     #if FF_API_CODEC_PROPS
+     FF_DISABLE_DEPRECATION_WARNINGS avctx->properties = sti->avctx->properties;
+     #endif
+     avctx->codec = sti->avctx->codec;
+     avctx->qmin = sti->avctx->qmin;
+     avctx->qmax = sti->avctx->qmax;
+     avctx->coded_width = sti->avctx->coded_width;
+     avctx->coded_height = sti->avctx->coded_height;
+   }
+   if(separator)
+     av_opt_set(avctx, "dump_separator", separator, 0);
+   avcodec_string(buf, sizeof(buf), avctx, is_output);
+   avcodec_free_context(&avctx);
+   av_log(NULL, log_level, "%s Stream #%d", group_indent, index);
+   av_log(NULL, log_level, ":%d", i);
+   if(flags & AVFMT_SHOW_IDS)
+     av_log(NULL, log_level, "[0x%x]", st->id);
+   if(lang)
+     av_log(NULL, log_level, "(%s)", lang->value);
+   av_log(NULL, AV_LOG_DEBUG, ", %d, %d/%d", sti->codec_info_nb_frames, st->time_base.num, st->time_base.den);
+   av_log(NULL, log_level, ": %s", buf);
+   if(st->sample_aspect_ratio.num && av_cmp_q(st->sample_aspect_ratio, st->codecpar->sample_aspect_ratio)) {
+     AVRational display_aspect_ratio;
+     av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den, st->codecpar->width *(int64_t)st->sample_aspect_ratio.num, st->codecpar->height *(int64_t)st->sample_aspect_ratio.den, 1024 * 1024);
+     av_log(NULL, log_level, ", SAR %d:%d DAR %d:%d", st->sample_aspect_ratio.num, st->sample_aspect_ratio.den, display_aspect_ratio.num, display_aspect_ratio.den);
+   }
+   if(st->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+     int fps = st->avg_frame_rate.den && st->avg_frame_rate.num;
+     int tbr = st->r_frame_rate.den && st->r_frame_rate.num;
+     int tbn = st->time_base.den && st->time_base.num;
+     if(fps || tbr || tbn)
+       av_log(NULL, log_level, "%s", separator);
+     if(fps)
+       print_fps(av_q2d(st->avg_frame_rate), tbr || tbn ? "fps, " : "fps", log_level);
+     if(tbr)
+       print_fps(av_q2d(st->r_frame_rate), tbn ? "tbr, " : "tbr", log_level);
+     if(tbn)
+       print_fps(1 / av_q2d(st->time_base), "tbn", log_level);
+   }
+   if(st->start_time != AV_NOPTS_VALUE && st->start_time != 0 && st->time_base.den && st->time_base.num) {
+     const double stream_start = av_q2d(st->time_base)* st->start_time;
+     av_log(NULL, log_level, ", start %.6f", stream_start);
+   }
+   dump_disposition(st->disposition, log_level);
+   av_log(NULL, log_level, "\n");
+   dump_metadata(NULL, st->metadata, extra_indent, log_level);
+   dump_sidedata(NULL, st->codecpar->coded_side_data, st->codecpar->nb_coded_side_data, st->codecpar->width, st->codecpar->height, st->avg_frame_rate, extra_indent, log_level);
+}
+   [reads: group_index, i, ic, index, is_output, log_level; writes: -]
+
+-- called function: dump_metadata — libavformat/dump.c:169 [gtags_unique] --
+static void dump_metadata(void *ctx, const AVDictionary *m, const char *indent, int log_level) {
+   if(m && !(av_dict_count(m)== 1 && av_dict_get(m, "language", NULL, 0)))
+     dump_dictionary(ctx, m, "Metadata", indent, log_level);
+}
+   [reads: ctx, indent, log_level, m; writes: -]
+
+-- called function: dump_disposition — libavformat/dump.c:548 [gtags_unique] --
+static void dump_disposition(int disposition, int log_level) {
+   if(disposition & AV_DISPOSITION_DEFAULT)
+     av_log(NULL, log_level, "(default)");
+   if(disposition & AV_DISPOSITION_DUB)
+     av_log(NULL, log_level, "(dub)");
+   if(disposition & AV_DISPOSITION_ORIGINAL)
+     av_log(NULL, log_level, "(original)");
+   if(disposition & AV_DISPOSITION_COMMENT)
+     av_log(NULL, log_level, "(comment)");
+   if(disposition & AV_DISPOSITION_LYRICS)
+     av_log(NULL, log_level, "(lyrics)");
+   if(disposition & AV_DISPOSITION_KARAOKE)
+     av_log(NULL, log_level, "(karaoke)");
+   if(disposition & AV_DISPOSITION_FORCED)
+     av_log(NULL, log_level, "(forced)");
+   if(disposition & AV_DISPOSITION_HEARING_IMPAIRED)
+     av_log(NULL, log_level, "(hearing impaired)");
+   if(disposition & AV_DISPOSITION_VISUAL_IMPAIRED)
+     av_log(NULL, log_level, "(visual impaired)");
+   if(disposition & AV_DISPOSITION_CLEAN_EFFECTS)
+     av_log(NULL, log_level, "(clean effects)");
+   if(disposition & AV_DISPOSITION_ATTACHED_PIC)
+     av_log(NULL, log_level, "(attached pic)");
+   if(disposition & AV_DISPOSITION_TIMED_THUMBNAILS)
+     av_log(NULL, log_level, "(timed thumbnails)");
+   if(disposition & AV_DISPOSITION_CAPTIONS)
+     av_log(NULL, log_level, "(captions)");
+   if(disposition & AV_DISPOSITION_DESCRIPTIONS)
+     av_log(NULL, log_level, "(descriptions)");
+   if(disposition & AV_DISPOSITION_METADATA)
+     av_log(NULL, log_level, "(metadata)");
+   if(disposition & AV_DISPOSITION_DEPENDENT)
+     av_log(NULL, log_level, "(dependent)");
+   if(disposition & AV_DISPOSITION_STILL_IMAGE)
+     av_log(NULL, log_level, "(still image)");
+   if(disposition & AV_DISPOSITION_NON_DIEGETIC)
+     av_log(NULL, log_level, "(non-diegetic)");
+   if(disposition & AV_DISPOSITION_MULTILAYER)
+     av_log(NULL, log_level, "(multilayer)");
+}
+   [reads: disposition, log_level; writes: -]
+
+-- called function: avcodec_free_context — libavcodec/options.c:164 [gtags_unique] --
+void avcodec_free_context(AVCodecContext **pavctx) {
+   AVCodecContext *avctx = *pavctx;
+   if(!avctx)
+     return;
+   ff_codec_close(avctx);
+   av_freep(&avctx->extradata);
+   av_freep(&avctx->subtitle_header);
+   av_freep(&avctx->intra_matrix);
+   av_freep(&avctx->chroma_intra_matrix);
+   av_freep(&avctx->inter_matrix);
+   av_freep(&avctx->rc_override);
+   av_channel_layout_uninit(&avctx->ch_layout);
+   av_freep(pavctx);
+}
+   [reads: pavctx; writes: -]
+
+-- called function: av_stristr — libavutil/avstring.c:58 [gtags_unique] --
+char *av_stristr(const char *s1, const char *s2) {
+   if(!*s2)
+     return(char*)(intptr_t)s1;
+   do
+     if(av_stristart(s1, s2, NULL))
+       return(char*)(intptr_t)s1;
+   return NULL;
+}
+   [reads: s1, s2; writes: -]
+
+-- called function: avcodec_string — libavcodec/avcodec.c:514 [gtags_unique] --
+void avcodec_string(char *buf, int buf_size, AVCodecContext *enc, int encode) {
+   ...
+   const char *codec_name;
+   ...
+   AVBPrint bprint;
+   ...
+   int new_line = 0;
+   AVRational display_aspect_ratio;
+   const char *separator = enc->dump_separator ?(const char *)enc->dump_separator : ", ";
+   ...
+   if(!buf || buf_size <= 0)
+     return;
+   av_bprint_init_for_buffer(&bprint, buf, buf_size);
+   codec_type = av_get_media_type_string(enc->codec_type);
+   codec_name = avcodec_get_name(enc->codec_id);
+   profile = avcodec_profile_name(enc->codec_id, enc->profile);
+   av_bprintf(&bprint, "%s: %s", codec_type ? codec_type : "unknown", codec_name);
+   buf[0] ^= 'a' ^ 'A';
+   if(enc->codec && strcmp(enc->codec->name, codec_name))
+     av_bprintf(&bprint, "(%s)", enc->codec->name);
+   if(profile)
+     av_bprintf(&bprint, "(%s)", profile);
+   if(enc->codec_type == AVMEDIA_TYPE_VIDEO && av_log_get_level()>= AV_LOG_VERBOSE && enc->refs)
+     av_bprintf(&bprint, ", %d reference frame%s", enc->refs, enc->refs > 1 ? "s" : "");
+   if(enc->codec_tag)
+     av_bprintf(&bprint, "(%s / 0x%04X)", av_fourcc2str(enc->codec_tag), enc->codec_tag);
+   switch(enc->codec_type) {
+   ...
+       unsigned len;
+       av_bprintf(&bprint, "%s%s", separator, enc->pix_fmt == AV_PIX_FMT_NONE ? "none" : unknown_if_null(av_get_pix_fmt_name(enc->pix_fmt)));
+   ...
+       len = bprint.len;
+       if(!av_bprint_is_complete(&bprint))
+         return;
+       if(enc->bits_per_raw_sample && enc->pix_fmt != AV_PIX_FMT_NONE && enc->bits_per_raw_sample < av_pix_fmt_desc_get(enc->pix_fmt)->comp[0].depth)
+         av_bprintf(&bprint, "%d bpc, ", enc->bits_per_raw_sample);
+       if(enc->color_range != AVCOL_RANGE_UNSPECIFIED &&(str = av_color_range_name(enc->color_range)))
+         av_bprintf(&bprint, "%s, ", str);
+       if(enc->colorspace != AVCOL_SPC_UNSPECIFIED || enc->color_primaries != AVCOL_PRI_UNSPECIFIED || enc->color_trc != AVCOL_TRC_UNSPECIFIED) {
+         const char *col = unknown_if_null(av_color_space_name(enc->colorspace));
+         const char *pri = unknown_if_null(av_color_primaries_name(enc->color_primaries));
+         const char *trc = unknown_if_null(av_color_transfer_name(enc->color_trc));
+         if(strcmp(col, pri)|| strcmp(col, trc)) {
+           new_line = 1;
+           av_bprintf(&bprint, "%s/%s/%s, ", col, pri, trc);
+         } else
+           av_bprintf(&bprint, "%s, ", col);
+       }
+       if(enc->field_order != AV_FIELD_UNKNOWN) {
+   ...
+         if(enc->field_order == AV_FIELD_TT)
+   ...
+         else if(enc->field_order == AV_FIELD_BB)
+   ...
+         else if(enc->field_order == AV_FIELD_TB)
+   ...
+         else if(enc->field_order == AV_FIELD_BT)
+   ...
+       }
+       if(av_log_get_level()>= AV_LOG_VERBOSE && enc->chroma_sample_location != AVCHROMA_LOC_UNSPECIFIED &&(str = av_chroma_location_name(enc->chroma_sample_location)))
+         av_bprintf(&bprint, "%s, ", str);
+       if(len == bprint.len) {
+         bprint.str[len - 1] = '\0';
+         bprint.len--;
+       } else {
+         if(bprint.len - 2 < bprint.size) {
+           bprint.len -= 2;
+           bprint.str[bprint.len] = '\0';
+   ...
+         }
+       }
+     if(enc->width) {
+       av_bprintf(&bprint, "%s%dx%d", new_line ? separator : ", ", enc->width, enc->height);
+       if(av_log_get_level()>= AV_LOG_VERBOSE && enc->coded_width && enc->coded_height &&(enc->width != enc->coded_width || enc->height != enc->coded_height))
+         av_bprintf(&bprint, "(%dx%d)", enc->coded_width, enc->coded_height);
+       if(enc->sample_aspect_ratio.num) {
+         av_reduce(&display_aspect_ratio.num, &display_aspect_ratio.den, enc->width *(int64_t)enc->sample_aspect_ratio.num, enc->height *(int64_t)enc->sample_aspect_ratio.den, 1024 * 1024);
+         av_bprintf(&bprint, " [SAR %d:%d DAR %d:%d]", enc->sample_aspect_ratio.num, enc->sample_aspect_ratio.den, display_aspect_ratio.num, display_aspect_ratio.den);
+       }
+       if(av_log_get_level()>= AV_LOG_DEBUG) {
+         int g = av_gcd(enc->time_base.num, enc->time_base.den);
+         av_bprintf(&bprint, ", %d/%d", enc->time_base.num / g, enc->time_base.den / g);
+       }
+     }
+     if(encode) {
+       av_bprintf(&bprint, ", q=%d-%d", enc->qmin, enc->qmax);
+     } else {
+       #if FF_API_CODEC_PROPS
+       FF_DISABLE_DEPRECATION_WARNINGS if(enc->properties & FF_CODEC_PROPERTY_CLOSED_CAPTIONS)av_bprintf(&bprint, ", Closed Captions"); if(enc->properties & FF_CODEC_PROPERTY_FILM_GRAIN)av_bprintf(&bprint, ", Film Grain"); if(enc->properties & FF_CODEC_PROPERTY_LOSSLESS)av_bprintf(&bprint, ", lossless"); FF_ENABLE_DEPRECATION_WARNINGS #endif } break; case AVMEDIA_TYPE_AUDIO: av_bprintf(&bprint, "%s", separator); if(enc->sample_rate){ av_bprintf(&bprint, "%d Hz, ", enc->sample_rate); }
+       av_bprintf(&bprint, "%d Hz, ", enc->sample_rate);
+       av_channel_layout_describe_bprint(&enc->ch_layout, &bprint);
+       if(enc->sample_fmt != AV_SAMPLE_FMT_NONE &&(str = av_get_sample_fmt_name(enc->sample_fmt))) {
+         av_bprintf(&bprint, ", %s", str);
+       }
+       if(enc->bits_per_raw_sample > 0 && enc->bits_per_raw_sample != av_get_bytes_per_sample(enc->sample_fmt)* 8)
+         av_bprintf(&bprint, "(%d bit)", enc->bits_per_raw_sample);
+       if(av_log_get_level()>= AV_LOG_VERBOSE) {
+         if(enc->initial_padding)
+           av_bprintf(&bprint, ", delay %d", enc->initial_padding);
+         if(enc->trailing_padding)
+           av_bprintf(&bprint, ", padding %d", enc->trailing_padding);
+       }
+   ...
+       if(av_log_get_level()>= AV_LOG_DEBUG) {
+         int g = av_gcd(enc->time_base.num, enc->time_base.den);
+         if(g)
+           av_bprintf(&bprint, ", %d/%d", enc->time_base.num / g, enc->time_base.den / g);
+       }
+   ...
+       if(enc->width)
+         av_bprintf(&bprint, ", %dx%d", enc->width, enc->height);
+   ...
+       return;
+       #endif
+     }
+     if(encode) {
+       if(enc->flags & AV_CODEC_FLAG_PASS1)
+   ...
+       if(enc->flags & AV_CODEC_FLAG_PASS2)
+   ...
+     }
+     bitrate = get_bit_rate(enc);
+     if(bitrate != 0) {
+       av_bprintf(&bprint, ", %"PRId64" kb/s", bitrate / 1000);
+     } else if(enc->rc_max_rate > 0) {
+       av_bprintf(&bprint, ", max. %"PRId64" kb/s", enc->rc_max_rate / 1000);
+     }
+   }
+   int avcodec_is_open(AVCodecContext *s){ return !!s->internal; }
+   return !!s->internal;
+   int attribute_align_arg avcodec_receive_frame_flags(AVCodecContext *avctx, AVFrame *frame, unsigned flags){ av_frame_unref(frame); if(!avcodec_is_open(avctx)|| !avctx->codec)return AVERROR(EINVAL); if(ff_codec_is_decoder(avctx->codec))return ff_decode_receive_frame(avctx, frame, flags); return ff_encode_receive_frame(avctx, frame); }
+   ...
+   if(!avcodec_is_open(avctx)|| !avctx->codec)
+     return AVERROR(EINVAL);
+   if(ff_codec_is_decoder(avctx->codec))
+     return ff_decode_receive_frame(avctx, frame, flags);
+   return ff_encode_receive_frame(avctx, frame);
+   int avcodec_receive_frame(AVCodecContext *avctx, AVFrame *frame){ return avcodec_receive_frame_flags(avctx, frame, 0); }
+   return avcodec_receive_frame_flags(avctx, frame, 0);
+   ...
+   int ff_default_get_supported_config(const AVCodecContext *avctx, const AVCodec *codec, enum AVCodecConfig config, unsigned flags, const void **out_configs, int *out_num_configs){ const FFCodec *codec2 = ffcodec(codec); switch(config){ FF_DISABLE_DEPRECATION_WARNINGS case AV_CODEC_CONFIG_PIX_FORMAT: WRAP_CONFIG(AVMEDIA_TYPE_VIDEO, pix_fmts, pix_fmt, enum AVPixelFormat, pix_fmt == AV_PIX_FMT_NONE); case AV_CODEC_CONFIG_FRAME_RATE: WRAP_CONFIG(AVMEDIA_TYPE_VIDEO, supported_framerates, framerate, AVRational, framerate.num == 0); case AV_CODEC_CONFIG_SAMPLE_RATE: WRAP_CONFIG(AVMEDIA_TYPE_AUDIO, supported_samplerates, samplerate, int, samplerate == 0); case AV_CODEC_CONFIG_SAMPLE_FORMAT: WRAP_CONFIG(AVMEDIA_TYPE_AUDIO, sample_fmts, sample_fmt, enum AVSampleFormat, sample_fmt == AV_SAMPLE_FMT_NONE); case AV_CODEC_CONFIG_CHANNEL_LAYOUT: WRAP_CONFIG(AVMEDIA_TYPE_AUDIO, ch_layouts, ch_layout, AVChannelLayout, ch_layout.nb_channels == 0); FF_ENABLE_DEPRECATION_WARNINGS case AV_CODEC_CONFIG_COLOR_RANGE: if(codec->type != AVMEDIA_TYPE_VIDEO)return AVERROR(EINVAL); unsigned color_ranges = codec2->color_ranges; if(color_ranges)*out_configs = color_range_tab + offset_tab[color_ranges]; else *out_configs = NULL; *out_num_configs = av_popcount(color_ranges); return 0; case AV_CODEC_CONFIG_COLOR_SPACE: *out_configs = NULL; *out_num_configs = 0; return 0; case AV_CODEC_CONFIG_ALPHA_MODE: if(codec->type != AVMEDIA_TYPE_VIDEO)return AVERROR(EINVAL); unsigned alpha_modes = codec2->alpha_modes; if(alpha_modes)*out_configs = alpha_mode_tab + offset_tab[alpha_modes]; else *out_configs = NULL; *out_num_configs = av_popcount(alpha_modes); return 0; default: return AVERROR(EINVAL); } }
+   const FFCodec *codec2 = ffcodec(codec);
+   switch(config) {
+   ...
+   if(codec->type != AVMEDIA_TYPE_VIDEO)
+     return AVERROR(EINVAL);
+   ...
+   return 0;
+   ...
+   return 0;
+   ...
+   if(codec->type != AVMEDIA_TYPE_VIDEO)
+     return AVERROR(EINVAL);
+   ...
+   return 0;
+   ...
+   return AVERROR(EINVAL);
+   }
+   int avcodec_get_supported_config(const AVCodecContext *avctx, const AVCodec *codec, enum AVCodecConfig config, unsigned flags, const void **out, int *out_num){ const FFCodec *codec2; int dummy_num = 0; if(!codec)codec = avctx->codec; if(!out_num)out_num = &dummy_num; codec2 = ffcodec(codec); if(codec2->get_supported_config){ return codec2->get_supported_config(avctx, codec, config, flags, out, out_num); } else { return ff_default_get_supported_config(avctx, codec, config, flags, out, out_num); } }
+   const FFCodec *codec2;
+   int dummy_num = 0;
+   if(!codec)
+     codec = avctx->codec;
+   if(!out_num)
+     out_num = &dummy_num;
+   codec2 = ffcodec(codec);
+   if(codec2->get_supported_config) {
+   return codec2->get_supported_config(avctx, codec, config, flags, out, out_num);
+   } else {
+   return ff_default_get_supported_config(avctx, codec, config, flags, out, out_num);
+   }
+   ...
+   for(unsigned j = 0;; ff_sd_global_map[j].packet < AV_PKT_DATA_NB; j++) {
+   ...
+   if(!sd)
+     return AVERROR(ENOMEM);
+   ...
+   }
+   if(!sd)
+     return AVERROR(EINVAL);
+   return 0;
+   ...
+   for(unsigned j = 0;; ff_sd_global_map[j].packet < AV_PKT_DATA_NB; j++) {
+   ...
+   if(!sd)
+     return AVERROR(ENOMEM);
+   ...
+   }
+   if(!sd)
+     return AVERROR(EINVAL);
+   return 0;
+}
+   [reads: buf, buf_size, enc, encode; writes: buf*, enc*]
+
+-- called function: av_opt_set — libavutil/opt.c:825 [gtags_unique] --
+int av_opt_set(void *obj, const char *name, const char *val, int search_flags) {
+   void *dst, *target_obj;
+   const AVOption *o;
+   int ret;
+   ret = opt_set_init(obj, name, search_flags, 0, &target_obj, &o, &dst);
+   if(ret < 0)
+     return ret;
+   return((o->type & AV_OPT_TYPE_FLAG_ARRAY)? opt_set_array : opt_set_elem)(obj, target_obj, o, val, dst);
+}
+   [reads: name, obj, search_flags, val; writes: -]
+
+-- called function: avcodec_parameters_to_context — libavcodec/codec_par.c:205 [gtags_unique] --
+int avcodec_parameters_to_context(AVCodecContext *codec, const AVCodecParameters *par) {
+   int ret;
+   codec->codec_type = par->codec_type;
+   codec->codec_id = par->codec_id;
+   codec->codec_tag = par->codec_tag;
+   codec->bit_rate = par->bit_rate;
+   codec->bits_per_coded_sample = par->bits_per_coded_sample;
+   codec->bits_per_raw_sample = par->bits_per_raw_sample;
+   codec->profile = par->profile;
+   codec->level = par->level;
+   switch(par->codec_type) {
+   ...
+     codec->pix_fmt = par->format;
+     codec->width = par->width;
+     codec->height = par->height;
+     codec->field_order = par->field_order;
+     codec->color_range = par->color_range;
+     codec->color_primaries = par->color_primaries;
+     codec->color_trc = par->color_trc;
+     codec->colorspace = par->color_space;
+     codec->chroma_sample_location = par->chroma_location;
+     codec->sample_aspect_ratio = par->sample_aspect_ratio;
+     codec->has_b_frames = par->video_delay;
+     codec->framerate = par->framerate;
+     codec->alpha_mode = par->alpha_mode;
+   ...
+     codec->sample_fmt = par->format;
+     ret = av_channel_layout_copy(&codec->ch_layout, &par->ch_layout);
+     if(ret < 0)
+       return ret;
+     codec->sample_rate = par->sample_rate;
+     codec->block_align = par->block_align;
+     codec->frame_size = par->frame_size;
+     codec->delay = codec->initial_padding = par->initial_padding;
+     codec->trailing_padding = par->trailing_padding;
+     codec->seek_preroll = par->seek_preroll;
+   ...
+     codec->width = par->width;
+     codec->height = par->height;
+   ...
+   }
+   av_freep(&codec->extradata);
+   codec->extradata_size = 0;
+   if(par->extradata) {
+     codec->extradata = av_mallocz(par->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
+     if(!codec->extradata)
+       return AVERROR(ENOMEM);
+     memcpy(codec->extradata, par->extradata, par->extradata_size);
+     codec->extradata_size = par->extradata_size;
+   }
+   av_packet_side_data_free(&codec->coded_side_data, &codec->nb_coded_side_data);
+   ret = codec_parameters_copy_side_data(&codec->coded_side_data, &codec->nb_coded_side_data, par->coded_side_data, par->nb_coded_side_data);
+   if(ret < 0)
+     return ret;
+   return 0;
+}
+   [reads: codec, par; writes: codec*, par*]
+
+-- called function: avcodec_alloc_context3 — libavcodec/options.c:149 [gtags_unique] --
+AVCodecContext *avcodec_alloc_context3(const AVCodec *codec) {
+   AVCodecContext *avctx= av_malloc(sizeof(AVCodecContext));
+   if(!avctx)
+     return NULL;
+   if(init_context_defaults(avctx, codec)< 0) {
+   ...
+     return NULL;
+   }
+   return avctx;
+}
+   [reads: codec; writes: -]
+
+-- called function: av_channel_layout_describe — libavutil/channel_layout.c:654 [gtags_unique] --
+int av_channel_layout_describe(const AVChannelLayout *channel_layout, char *buf, size_t buf_size) {
+   AVBPrint bp;
+   int ret;
+   if(!buf && buf_size)
+     return AVERROR(EINVAL);
+   av_bprint_init_for_buffer(&bp, buf, buf_size);
+   ret = av_channel_layout_describe_bprint(channel_layout, &bp);
+   if(ret < 0)
+     return ret;
+   if(bp.len >= INT_MAX)
+     return AVERROR(ERANGE);
+   return bp.len + 1;
+}
+   [reads: buf, buf_size, channel_layout; writes: -]
+
+-- called function: dump_dictionary — libavformat/dump.c:142 [lsp] --
+static void dump_dictionary(void *ctx, const AVDictionary *m, const char *name, const char *indent, int log_level) {
+   const AVDictionaryEntry *tag = NULL;
+   if(!m)
+     return;
+   av_log(ctx, log_level, "%s%s:\n", indent, name);
+   while((tag = av_dict_iterate(m, tag)))
+     if(strcmp("language", tag->key)) {
+       const char *p = tag->value;
+       av_log(ctx, log_level, "%s %-16s: ", indent, tag->key);
+       while(*p) {
+         size_t len = strcspn(p, "\x8\xa\xb\xc\xd");
+         av_log(ctx, log_level, "%.*s", (int)(FFMIN(255, len)), p);
+         p += len;
+         if(*p == 0xd)
+           av_log(ctx, log_level, " ");
+         if(*p == 0xa)
+           av_log(ctx, log_level, "\n%s %-16s: ", indent, "");
+         if(*p)
+           p++;
+       }
+       av_log(ctx, log_level, "\n");
+     }
+}
+   [reads: ctx, indent, log_level, m, name; writes: -]
+
+-- caller of dump_stream_group: av_dump_format — libavformat/dump.c:937 --
+void av_dump_format(AVFormatContext *ic, int index, const char *url, int is_output) {
+   int i;
+   uint8_t *printed = ic->nb_streams ? av_mallocz(ic->nb_streams): NULL;
+   ...
+   for(i = 0; i < ic->nb_chapters; i++) {
+   ...
+   }
+   if(ic->nb_programs) {
+     int j, k, total = 0;
+     for(j = 0; j < ic->nb_programs; j++) {
+       const AVProgram *program = ic->programs[j];
+   ...
+       for(k = 0; k < program->nb_stream_indexes; k++) {
+   ...
+         printed[program->stream_index[k]] = 1;
+   ...
+       }
+     }
+   }
+   for(i = 0; i < ic->nb_stream_groups; i++)
+>    dump_stream_group(ic, printed, i, index, is_output);
+   ...
+}
+
+-- 2nd-level context (summaries) --
+  av_vlog — libavutil/log.c:460 [gtags_unique]: void av_vlog(void* avcl, int level, const char *fmt, va_list vl)
+    reads: avcl, fmt, level, vl; writes: -
+  cffstream — libavformat/internal.h:367 [gtags_unique]: static av_always_inline const FFStream *cffstream(const AVStream *st)
+    reads: st; writes: -
+  av_dict_get — libavutil/dict.c:60 [gtags_unique]: AVDictionaryEntry *av_dict_get(const AVDictionary *m, const char *key, const AVDictionaryEntry *prev, int flags)
+    reads: flags, key, m, prev; writes: -
+  av_reduce — libavutil/rational.c:35 [gtags_unique]: int av_reduce(int *dst_num, int *dst_den, int64_t num, int64_t den, int64_t max)
+    reads: den, dst_den, dst_num, max, num; writes: dst_den*, dst_num*
+  print_fps — libavformat/dump.c:129 [gtags_unique]: static void print_fps(double d, const char *postfix, int log_level)
+    reads: d, log_level, postfix; writes: -
+  av_q2d — libavutil/rational.h:104 [gtags_unique]: static inline double av_q2d(AVRational a)
+    reads: a; writes: -
+  dump_sidedata — libavformat/dump.c:471 [gtags_unique]: static void dump_sidedata(void *ctx, const AVPacketSideData *side_data, int nb_side_data, int w, int h, AVRational avg_frame_rate, const char *indent, int log_level)
+    reads: avg_frame_rate, ctx, h, indent, log_level, nb_side_data, side_data, w; writes: -
+  ff_codec_close — libavcodec/avcodec.c:443 [gtags_unique]: av_cold void ff_codec_close(AVCodecContext *avctx)
+    reads: avctx; writes: avctx*
+  av_freep — libavutil/mem.c:247 [priority_fallback]: void av_freep(void *arg)
+    reads: arg; writes: arg*
+  av_channel_layout_uninit — libavutil/channel_layout.c:443 [gtags_unique]: void av_channel_layout_uninit(AVChannelLayout *channel_layout)
+    reads: channel_layout; writes: channel_layout*
+  av_bprint_init_for_buffer — libavutil/bprint.c:85 [gtags_unique]: void av_bprint_init_for_buffer(AVBPrint *buf, char *buffer, unsigned size)
+    reads: buf, buffer, size; writes: buf*
+  av_get_media_type_string — libavutil/utils.c:28 [gtags_unique]: const char *av_get_media_type_string(enum AVMediaType media_type)
+    reads: media_type; writes: -
+  avcodec_get_name — libavcodec/utils.c:406 [gtags_unique]: const char *avcodec_get_name(enum AVCodecID id)
+    reads: id; writes: -
+  avcodec_profile_name — libavcodec/utils.c:439 [gtags_unique]: const char *avcodec_profile_name(enum AVCodecID codec_id, int profile)
+    reads: codec_id, profile; writes: -
+  av_bprintf — libavutil/bprint.c:122 [gtags+ts]: void av_bprintf(AVBPrint *buf, const char *fmt, ...)
+    reads: buf, fmt; writes: -
+  av_fourcc2str — libavutil/avutil.h:347 [gtags_unique]: #define av_fourcc2str(fourcc) av_fourcc_make_string((char[AV_FOURCC_MAX_STRING_SIZE]){0}, fourcc)
+  unknown_if_null — libavcodec/avcodec.c:509 [lsp]: static const char *unknown_if_null(const char *str)
+    reads: str; writes: -
+  av_get_pix_fmt_name — libavutil/pixdesc.c:3376 [gtags_unique]: const char *av_get_pix_fmt_name(enum AVPixelFormat pix_fmt)
+    reads: pix_fmt; writes: -
+  av_color_space_name — libavutil/pixdesc.c:3856 [gtags_unique]: const char *av_color_space_name(enum AVColorSpace space)
+    reads: space; writes: -
+  av_color_primaries_name — libavutil/pixdesc.c:3790 [gtags_unique]: const char *av_color_primaries_name(enum AVColorPrimaries primaries)
+    reads: primaries; writes: -
+  av_color_transfer_name — libavutil/pixdesc.c:3823 [gtags_unique]: const char *av_color_transfer_name(enum AVColorTransferCharacteristic transfer)
+    reads: transfer; writes: -
+  av_gcd — libavutil/mathematics.c:37 [gtags_unique]: int64_t av_gcd(int64_t a, int64_t b)
+    reads: a, b; writes: -
+  av_channel_layout_describe_bprint — libavutil/channel_layout.c:600 [gtags_unique]: int av_channel_layout_describe_bprint(const AVChannelLayout *channel_layout, AVBPrint *bp)
+    reads: bp, channel_layout; writes: -
+  get_bit_rate — libavcodec/avcodec.c:114 [gtags_unique]: static int64_t get_bit_rate(AVCodecContext *ctx)
+    reads: ctx; writes: -
+  ff_encode_receive_frame — libavcodec/encode.c:888 [gtags_unique]: int ff_encode_receive_frame(AVCodecContext *avctx, AVFrame *frame)
+    reads: avctx, frame; writes: -
+  ff_decode_receive_frame — libavcodec/decode.c:808 [gtags_unique]: int ff_decode_receive_frame(AVCodecContext *avctx, AVFrame *frame, unsigned flags)
+    reads: avctx, flags, frame; writes: avctx*
+  ff_codec_is_decoder — libavcodec/codec_internal.h:309 [gtags_unique]: static inline int ff_codec_is_decoder(const AVCodec *avcodec)
+    reads: avcodec; writes: -
+  AVERROR — libavutil/error.h:41 [lsp]: #define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+  avcodec_is_open — libavcodec/avcodec.c:713 [gtags_unique]: int avcodec_is_open(AVCodecContext *s)
+    reads: buf, buf_size, enc, encode; writes: buf*, enc*
+  av_frame_unref — libavutil/frame.c:496 [gtags_unique]: void av_frame_unref(AVFrame *frame)
+    reads: frame; writes: frame*
+  avcodec_receive_frame_flags — libavcodec/avcodec.c:718 [gtags_unique]: int attribute_align_arg avcodec_receive_frame_flags(AVCodecContext *avctx, AVFrame *frame, unsigned flags)
+    reads: buf, buf_size, enc, encode; writes: buf*, enc*
+  av_popcount — libavutil/common.h:154 [lsp]: #   define av_popcount      av_popcount_c
+  WRAP_CONFIG — libavcodec/avcodec.c:736 [gtags_unique]: #define WRAP_CONFIG(allowed_type, field, var, field_type, sentinel_check)   \
+  ffcodec — libavcodec/codec_internal.h:290 [gtags_unique]: static av_always_inline const FFCodec *ffcodec(const AVCodec *codec)
+    reads: codec; writes: -
+  ff_default_get_supported_config — libavcodec/avcodec.c:776 [gtags_unique]: int ff_default_get_supported_config(const AVCodecContext *avctx, const AVCodec *codec, enum AVCodecConfig config, unsigned flags, const void **out_configs, int *out_num_configs)
+    reads: buf, buf_size, enc, encode; writes: buf*, enc*
+  opt_set_init — libavutil/opt.c:166 [gtags_unique]: static int opt_set_init(void *obj, const char *name, int search_flags, int require_type, void **ptgt, const AVOption **po, void **pdst)
+    reads: name, obj, pdst, po, ptgt, require_type, search_flags; writes: pdst*, po*, ptgt*
+  av_channel_layout_copy — libavutil/channel_layout.c:450 [gtags_unique]: int av_channel_layout_copy(AVChannelLayout *dst, const AVChannelLayout *src)
+    reads: dst, src; writes: dst*
+  av_mallocz — libavutil/mem.c:256 [priority_fallback]: void *av_mallocz(size_t size)
+    reads: size; writes: -
+  av_packet_side_data_free — libavcodec/packet.c:734 [gtags_unique]: void av_packet_side_data_free(AVPacketSideData **psd, int *pnb_sd)
+    reads: pnb_sd, psd; writes: pnb_sd*
+  codec_parameters_copy_side_data — libavcodec/codec_par.c:78 [gtags_unique]: static int codec_parameters_copy_side_data(AVPacketSideData **pdst, int *pnb_dst, const AVPacketSideData *src, int nb_src)
+    reads: nb_src, pdst, pnb_dst, src; writes: pdst*, pnb_dst*
+  av_malloc — libavutil/mem.c:98 [priority_fallback]: void *av_malloc(size_t size)
+    reads: size; writes: -
+  FFMIN — libavutil/macros.h:49 [lsp]: #define FFMIN(a,b) ((a) > (b) ? (b) : (a))

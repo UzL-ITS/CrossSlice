@@ -1,0 +1,8 @@
+Context for merged statement of old file: inflate.c with new file: inflate.c:
++ long
++ unsigned long
+- long
++ long
++ unsigned long
++ long
+

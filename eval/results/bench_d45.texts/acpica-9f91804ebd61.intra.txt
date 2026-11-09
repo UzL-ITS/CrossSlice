@@ -1,0 +1,20 @@
+Context for merged statement of old file: source/components/hardware/hwregs.c with new file: source/components/hardware/hwregs.c:
+ACPI_STATUS AcpiHwClearAcpiStatus (
+    void) {
+  ACPI_STATUS Status;
+  ACPI_CPU_FLAGS LockFlags = 0;
+  LockFlags = AcpiOsAcquireLock(AcpiGbl_HardwareLock);
+  Status = AcpiHwRegisterWrite(ACPI_REGISTER_PM1_STATUS, ACPI_BITMASK_ALL_FIXED_STATUS);
++ AcpiOsReleaseLock(AcpiGbl_HardwareLock, LockFlags);
+  if (ACPI_FAILURE(Status)) {
+- goto UnlockAndExit;
++ goto Exit;
+  }
+  Status = AcpiEvWalkGpeList(AcpiHwClearGpeBlock, NULL);
+- UnlockAndExit: AcpiOsReleaseLock(AcpiGbl_HardwareLock, LockFlags);
++ Exit: return_ACPI_STATUS(Status);
+- return_ACPI_STATUS(Status);
+- AcpiOsReleaseLock(AcpiGbl_HardwareLock, LockFlags);
++ return_ACPI_STATUS(Status);
+}
+

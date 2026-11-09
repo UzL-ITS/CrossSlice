@@ -1,0 +1,11 @@
+Context for merged statement of old file: ext/uri/uri_parser_rfc3986.c with new file: ext/uri/uri_parser_rfc3986.c:
+- void *uriparser_parse_uri_ex(const char *uri_str, size_t uri_str_len, const uriparser_uris_t *uriparser_base_urls, bool silent) {
++ uriparser_uris_t *uriparser_parse_uri_ex(const char *uri_str, size_t uri_str_len, const uriparser_uris_t *uriparser_base_urls, bool silent) {
+}
+
+Context for merged statement of old file: ext/uri/uri_parser_rfc3986.h with new file: ext/uri/uri_parser_rfc3986.h:
+#ifndef PHP_URI_PARSER_RFC3986_H
+- void *uriparser_parse_uri_ex(const char *uri_str, size_t uri_str_len, const uriparser_uris_t *uriparser_base_url, bool silent);
++ uriparser_uris_t *uriparser_parse_uri_ex(const char *uri_str, size_t uri_str_len, const uriparser_uris_t *uriparser_base_url, bool silent);
+  #endif
+

@@ -1,0 +1,50 @@
+Context for merged statement of old file: ext/xml/xml.c with new file: ext/xml/xml.c:
+void xml_characterDataHandler(void *userData, const XML_Char *s, int len) {
+  xml_parser *parser =(xml_parser *)userData;
+  zend_string *decoded_value;
+  decoded_value = xml_utf8_decode(s, len, parser->target_encoding);
+  if (parser->lastwasopen) {
+  zval *ctag = xml_get_ctag(parser);
+  zval *myval;
+  if ((myval = zend_hash_find(Z_ARRVAL_P(ctag), ZSTR_KNOWN(ZEND_STR_VALUE)))&& Z_TYPE_P(myval)== IS_STRING) {
+- size_t newlen = Z_STRLEN_P(myval)+ ZSTR_LEN(decoded_value);
+- Z_STR_P(myval)= zend_string_extend(Z_STR_P(myval), newlen, 0);
++ Z_STR_P(myval)= zend_string_safe_realloc(Z_STR_P(myval), 1, Z_STRLEN_P(myval), ZSTR_LEN(decoded_value), false);
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  else {
+  if (doprint ||(! parser->skipwhite)) {
+  }
+  else {
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+  else {
+  zval *curtag, *mytype, *myval;
+  if (EXPECTED(Z_TYPE_P(curtag)== IS_ARRAY)&&(mytype = zend_hash_str_find(Z_ARRVAL_P(curtag), "type", sizeof("type")- 1))) {
+  if (EXPECTED(Z_TYPE_P(mytype)== IS_STRING)&& zend_string_equals_literal(Z_STR_P(mytype), "cdata")) {
+  if ((myval = zend_hash_find(Z_ARRVAL_P(curtag), ZSTR_KNOWN(ZEND_STR_VALUE)))) {
+- size_t newlen = Z_STRLEN_P(myval)+ ZSTR_LEN(decoded_value);
+- Z_STR_P(myval)= zend_string_extend(Z_STR_P(myval), newlen, 0);
++ Z_STR_P(myval)= zend_string_safe_realloc(Z_STR_P(myval), 1, Z_STRLEN_P(myval), ZSTR_LEN(decoded_value), false);
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+  if (parser->level <= XML_MAXLEVEL && parser->level > 0 &&(doprint ||(! parser->skipwhite))) {
+  }
+  else {
+  if (parser->level ==(XML_MAXLEVEL + 1)) {
+  }
+  else {
+- zend_string_release_ex(decoded_value, 0);
++ zend_string_release_ex(decoded_value, false);
+  }
+  }
+  }
+}
+

@@ -1,0 +1,10 @@
+Context for merged statement of old file: libavcodec/vc1.c with new file: libavcodec/vc1.c:
+int vop_dquant_decoding(VC1Context *v) {
+  if (v->dquant != 2) {
+  switch ((v->dqprofile)) {
+  case DQPROFILE_ALL_MBS:
++ break;
+  }
+  }
+}
+

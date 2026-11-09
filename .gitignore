@@ -1,0 +1,24 @@
+__pycache__/
+*.py[oc]
+build/
+dist/
+*.egg-info/
+.venv/
+.pytest_cache/
+.env
+frontend/node_modules/
+# analysis caches written next to analyzed repositories / examples
+.cce_gtags/
+.cce_graph_*.db
+examples/**/GTAGS
+examples/**/GRTAGS
+examples/**/GPATH
+examples/**/.cce_graph_*.db
+examples/taskrunner/taskrunner
+examples/taskrunner/*.o
+examples/kvstore-evolution/kvstore/
+outputs/
+repos/
+# subject repositories cloned for the evaluation (eval/README.md)
+data/repos/
+vscode/node_modules/

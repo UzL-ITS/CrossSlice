@@ -1,0 +1,24 @@
+Context for merged statement of old file: source/components/resources/rsxface.c with new file: source/components/resources/rsxface.c:
+ACPI_STATUS AcpiWalkResources (
+    ACPI_HANDLE                     DeviceHandle,
+    char                            *Path,
+    ACPI_WALK_RESOURCE_CALLBACK     UserFunction,
+    void                            *Context) {
+  ACPI_BUFFER Buffer = {ACPI_ALLOCATE_BUFFER, NULL};
+  ACPI_RESOURCE *Resource;
++ ACPI_RESOURCE *BufferEnd;
+  Resource =(ACPI_RESOURCE *)Buffer.Pointer;
++ BufferEnd =(ACPI_RESOURCE *)((UINT8 *)Buffer.Pointer + Buffer.Length);
+  for (; ; ) {
+  Resource = ACPI_NEXT_RESOURCE(Resource);
++ if (Resource >= BufferEnd) {
++ goto Cleanup;
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_NEXT_RESOURCE — source/include/actypes.h:1289 [gtags_unique] --
+#define ACPI_NEXT_RESOURCE(Res)             (ACPI_RESOURCE *)((UINT8 *) Res + Res->Length)

@@ -1,0 +1,34 @@
+Context for merged statement of old file: ext/sqlite3/php_sqlite3_structs.h with new file: ext/sqlite3/php_sqlite3_structs.h:
+#ifndef PHP_SQLITE_STRUCTS_H
+- typedef struct _php_sqlite3_db_object { int initialised; sqlite3 *db; php_sqlite3_func *funcs; php_sqlite3_collation *collations; zend_fcall_info_cache authorizer_fcc; bool exception; zend_llist free_list; zend_object zo; } php_sqlite3_db_object;
++ typedef struct _php_sqlite3_db_object { bool initialised; sqlite3 *db; php_sqlite3_func *funcs; php_sqlite3_collation *collations; zend_fcall_info_cache authorizer_fcc; bool exception; zend_llist free_list; zend_object zo; } php_sqlite3_db_object;
+- struct _php_sqlite3_db_object {
++ struct _php_sqlite3_db_object {
+- int initialised;
++ bool initialised;
+  }
+- struct _php_sqlite3_stmt_object {
++ struct _php_sqlite3_stmt_object {
+- int initialised;
++ bool initialised;
+  }
+  #endif
+
+Context for merged statement of old file: ext/sqlite3/sqlite3.c with new file: ext/sqlite3/sqlite3.c:
+void php_sqlite3_free_list_dtor(void **item) {
+  php_sqlite3_stmt *stmt_obj = *item;
+  if (stmt_obj && stmt_obj->initialised) {
+- stmt_obj->initialised = 0;
++ stmt_obj->initialised = false;
+  }
+}
+
+Context for merged statement of old file: ext/sqlite3/sqlite3.c with new file: ext/sqlite3/sqlite3.c:
+void php_sqlite3_object_free_storage(zend_object *object) {
+  php_sqlite3_db_object *intern = php_sqlite3_db_from_obj(object);
+  if (intern->initialised && intern->db) {
+- intern->initialised = 0;
++ intern->initialised = false;
+  }
+}
+

@@ -1,0 +1,1201 @@
+Context for merged statement of old file: source/common/dmrestag.c with new file: source/common/dmrestag.c:
+char *
+AcpiGetTagPathname (
+    ACPI_PARSE_OBJECT       *IndexOp,
+    ACPI_NAMESPACE_NODE     *BufferNode,
+    ACPI_NAMESPACE_NODE     *ResourceNode,
+    UINT32                  BitIndex) {
+  UINT32 ResourceBitIndex;
+  UINT8 ResourceTableIndex;
+  ACPI_SIZE RequiredSize;
+  char *Pathname;
+  char *PathnameEnd;
+  AML_RESOURCE *Aml;
+  ACPI_PARSE_OBJECT *Op;
+  char *Tag;
+  Op = BufferNode->Op->Common.Value.Arg;
+  Op = Op->Common.Next;
+  Aml = ACPI_CAST_PTR(AML_RESOURCE, &Op->Named.Data[ResourceNode->Value]);
+  ResourceBitIndex = BitIndex - ACPI_MUL_8(ResourceNode->Value);
+  Tag = AcpiDmGetResourceTag(ResourceBitIndex, Aml, ResourceTableIndex);
+  RequiredSize = AcpiNsBuildNormalizedPath(BufferNode, NULL, 0, FALSE);
+  Pathname = ACPI_ALLOCATE_ZEROED(RequiredSize + ACPI_PATH_SEGMENT_LENGTH);
+  PathnameEnd = Pathname +(RequiredSize - ACPI_NAME_SIZE - 1);
+- ACPI_MOVE_NAME(PathnameEnd, ResourceNode->Name.Ascii);
++ ACPI_COPY_NAMESEG(PathnameEnd, ResourceNode->Name.Ascii);
+  PathnameEnd += ACPI_NAME_SIZE;
+  *PathnameEnd = '.';
+  PathnameEnd++;
+- ACPI_MOVE_NAME(PathnameEnd, Tag);
++ ACPI_COPY_NAMESEG(PathnameEnd, Tag);
+}
+
+Context for merged statement of old file: source/compiler/aslcodegen.c with new file: source/compiler/aslcodegen.c:
+void CgWriteTableHeader (
+    ACPI_PARSE_OBJECT       *Op) {
+  ACPI_PARSE_OBJECT *Child;
+  memset(&AslGbl_TableHeader, 0, sizeof(ACPI_TABLE_HEADER));
+  Child = Op->Asl.Child;
+  Child = Child->Asl.Next;
+  if (AcpiGbl_CaptureComments) {
+- ACPI_MOVE_NAME(AcpiGbl_TableSig, Child->Asl.Value.String);
++ ACPI_COPY_NAMESEG(AcpiGbl_TableSig, Child->Asl.Value.String);
+  Child->Asl.Value.String = ACPI_SIG_XXXX;
+  }
+- ACPI_MOVE_NAME(AslGbl_TableHeader.Signature, Child->Asl.Value.String);
++ ACPI_COPY_NAMESEG(AslGbl_TableHeader.Signature, Child->Asl.Value.String);
+- ACPI_MOVE_NAME(AslGbl_TableHeader.AslCompilerId, ASL_CREATOR_ID);
++ ACPI_COPY_NAMESEG(AslGbl_TableHeader.AslCompilerId, ASL_CREATOR_ID);
+}
+
+Context for merged statement of old file: source/compiler/aslutils.c with new file: source/compiler/aslutils.c:
+void UtAttachNameseg (
+    ACPI_PARSE_OBJECT       *Op,
+    char                    *Name) {
+  char PaddedNameSeg[4];
+- ACPI_MOVE_NAME(Op->Asl.NameSeg, PaddedNameSeg);
++ ACPI_COPY_NAMESEG(Op->Asl.NameSeg, PaddedNameSeg);
+}
+
+Context for merged statement of old file: source/components/namespace/nsnames.c with new file: source/components/namespace/nsnames.c:
+ACPI_STATUS AcpiNsHandleToName (
+    ACPI_HANDLE             TargetHandle,
+    ACPI_BUFFER             *Buffer) {
+  ACPI_NAMESPACE_NODE *Node;
+  const char *NodeName;
+  Node = AcpiNsValidateHandle(TargetHandle);
+  NodeName = AcpiUtGetNodeName(Node);
+- ACPI_MOVE_NAME(Buffer->Pointer, NodeName);
++ ACPI_COPY_NAMESEG(Buffer->Pointer, NodeName);
+}
+
+Context for merged statement of old file: source/components/namespace/nsutils.c with new file: source/components/namespace/nsutils.c:
+ACPI_STATUS AcpiNsExternalizeName (
+    UINT32                  InternalNameLength,
+    const char              *InternalName,
+    UINT32                  *ConvertedNameLength,
+    char                    **ConvertedName) {
+  UINT32 NamesIndex = 0;
+  UINT32 NumSegments = 0;
+  UINT32 RequiredLength;
+  UINT32 PrefixLength = 0;
+  UINT32 i = 0;
+  UINT32 j = 0;
+  switch ((InternalName[0])) {
+  PrefixLength = 1;
+  for (i = 0; i < InternalNameLength; i++) {
+  if (ACPI_IS_PARENT_PREFIX(InternalName[i])) {
+  PrefixLength = i + 1;
+  }
+  }
+  if (i == InternalNameLength) {
+  PrefixLength = i;
+  }
+  }
+  if (PrefixLength < InternalNameLength) {
+  switch ((InternalName[PrefixLength])) {
+  NamesIndex = PrefixLength + 2;
+  NumSegments =(UINT8)InternalName[(ACPI_SIZE)PrefixLength + 1];
+  NamesIndex = PrefixLength + 1;
+  NumSegments = 2;
+  NamesIndex = 0;
+  NumSegments = 0;
+  NamesIndex = PrefixLength;
+  NumSegments = 1;
+  }
+  }
+  RequiredLength = PrefixLength +(4 * NumSegments)+((NumSegments > 0)?(NumSegments - 1): 0)+ 1;
+  *ConvertedName = ACPI_ALLOCATE_ZEROED(RequiredLength);
+  j = 0;
+  for (i = 0; i < PrefixLength; i++) {
+  (*ConvertedName)[j++] = InternalName[i];
+  }
+  if (NumSegments > 0) {
+  for (i = 0; i < NumSegments; i++) {
+  if (i > 0) {
+  (*ConvertedName)[j++] = '.';
+  }
+- ACPI_MOVE_NAME(&(*ConvertedName)[j], &InternalName[NamesIndex]);
++ ACPI_COPY_NAMESEG(&(*ConvertedName)[j], &InternalName[NamesIndex]);
+  }
+  }
+}
+
+Context for merged statement of old file: source/components/tables/tbfind.c with new file: source/components/tables/tbfind.c:
+ACPI_STATUS AcpiTbFindTable (
+    char                    *Signature,
+    char                    *OemId,
+    char                    *OemTableId,
+    UINT32                  *TableIndex) {
+  ACPI_TABLE_HEADER Header;
+  memset(&Header, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(Header.Signature, Signature);
++ ACPI_COPY_NAMESEG(Header.Signature, Signature);
+}
+
+Context for merged statement of old file: source/components/utilities/utstring.c with new file: source/components/utilities/utstring.c:
+void AcpiUtRepairName (
+    char                    *Name) {
+  UINT32 OriginalName;
+- ACPI_MOVE_NAME(&OriginalName, Name);
++ ACPI_COPY_NAMESEG(&OriginalName, Name);
+}
+
+Context for merged statement of old file: source/include/actypes.h with new file: source/include/actypes.h:
+#ifndef __ACTYPES_H__
+   #ifndef ACPI_MISALIGNMENT_NOT_SUPPORTED
+- #define ACPI_MOVE_NAME(dest, src)(*ACPI_CAST_PTR(UINT32, (dest))= *ACPI_CAST_PTR(UINT32, (src)))
++ #define ACPI_COPY_NAMESEG(dest, src)(*ACPI_CAST_PTR(UINT32, (dest))= *ACPI_CAST_PTR(UINT32, (src)))
+  #else
+- #define ACPI_MOVE_NAME(dest, src)(strncpy(ACPI_CAST_PTR(char, (dest)), ACPI_CAST_PTR(char, (src)), ACPI_NAME_SIZE))
++ #define ACPI_COPY_NAMESEG(dest, src)(strncpy(ACPI_CAST_PTR(char, (dest)), ACPI_CAST_PTR(char, (src)), ACPI_NAME_SIZE))
+  #endif
+  #endif
+
+Context for merged statement of old file: source/os_specific/efi/osefitbl.c with new file: source/os_specific/efi/osefitbl.c:
+ACPI_STATUS OslAddTableToList (
+    char                    *Signature,
+    UINT32                  Instance) {
+  OSL_TABLE_INFO *NewInfo;
+  NewInfo = ACPI_ALLOCATE_ZEROED(sizeof(OSL_TABLE_INFO));
+- ACPI_MOVE_NAME(NewInfo->Signature, Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Signature);
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/osbsdtbl.c with new file: source/os_specific/service_layers/osbsdtbl.c:
+ACPI_STATUS OslAddTablesToList(
+    void) {
+  ACPI_PHYSICAL_ADDRESS TableAddress;
+  OSL_TABLE_INFO *NewInfo;
+  ACPI_TABLE_HEADER *Table;
+  UINT8 NumberOfTables;
+  int i;
+  for (i = 0; i < 4; i++) {
+  NewInfo = calloc(1, sizeof(*NewInfo));
+  switch ((i)) {
+  Gbl_TableListHead = Info = NewInfo;
+  case 1:
+- ACPI_MOVE_NAME(NewInfo->Signature, Gbl_Revision ? ACPI_SIG_XSDT : ACPI_SIG_RSDT);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Gbl_Revision ? ACPI_SIG_XSDT : ACPI_SIG_RSDT);
+  case 2:
+- ACPI_MOVE_NAME(NewInfo->Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, ACPI_SIG_FACS);
+   default:
+- ACPI_MOVE_NAME(NewInfo->Signature, ACPI_SIG_DSDT);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, ACPI_SIG_DSDT);
+  }
+  Gbl_TableListHead->Instance++;
+  }
+  if (Gbl_Revision) {
+  NumberOfTables =(Gbl_Xsdt->Header.Length - sizeof(Gbl_Xsdt->Header))/ sizeof(Gbl_Xsdt->TableOffsetEntry[0]);
+  }
+  else {
+  NumberOfTables =(Gbl_Rsdt->Header.Length - sizeof(Gbl_Rsdt->Header))/ sizeof(Gbl_Rsdt->TableOffsetEntry[0]);
+  }
+  for (i = 0; i < NumberOfTables; i++) {
+  if (Gbl_Revision) {
+  TableAddress = Gbl_Xsdt->TableOffsetEntry[i];
+  }
+  else {
+  TableAddress = Gbl_Rsdt->TableOffsetEntry[i];
+  }
+  Table = AcpiOsMapMemory(TableAddress, sizeof(*Table));
+  NewInfo = Gbl_TableListHead;
+  while ((NewInfo->Next != NULL)) {
+  NewInfo = NewInfo->Next;
+  }
+  NewInfo = calloc(1, sizeof(*NewInfo));
+- ACPI_MOVE_NAME(NewInfo->Signature, Table->Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Table->Signature);
+  }
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oslinuxtbl.c with new file: source/os_specific/service_layers/oslinuxtbl.c:
+ACPI_STATUS OslAddTableToList (
+    char                    *Signature,
+    UINT32                  Instance) {
+  OSL_TABLE_INFO *NewInfo;
+  NewInfo = calloc(1, sizeof(OSL_TABLE_INFO));
+- ACPI_MOVE_NAME(NewInfo->Signature, Signature);
++ ACPI_COPY_NAMESEG(NewInfo->Signature, Signature);
+}
+
+Context for merged statement of old file: source/os_specific/service_layers/oslinuxtbl.c with new file: source/os_specific/service_layers/oslinuxtbl.c:
+ACPI_STATUS OslTableNameFromFile (
+    char                    *Filename,
+    char                    *Signature,
+    UINT32                  *Instance) {
+- ACPI_MOVE_NAME(Signature, Filename);
++ ACPI_COPY_NAMESEG(Signature, Filename);
+}
+
+Context for merged statement of old file: source/tools/acpidump/apfiles.c with new file: source/tools/acpidump/apfiles.c:
+int ApWriteToBinaryFile (
+    ACPI_TABLE_HEADER       *Table,
+    UINT32                  Instance) {
+  char Filename[ACPI_NAME_SIZE + 16];
+  if (ACPI_VALIDATE_RSDP_SIG(Table->Signature)) {
+- ACPI_MOVE_NAME(Filename, ACPI_RSDP_NAME);
++ ACPI_COPY_NAMESEG(Filename, ACPI_RSDP_NAME);
+  }
+  else {
+- ACPI_MOVE_NAME(Filename, Table->Signature);
++ ACPI_COPY_NAMESEG(Filename, Table->Signature);
+  }
+}
+
+Context for merged statement of old file: source/tools/acpiexec/aetables.c with new file: source/tools/acpiexec/aetables.c:
+void AeInitializeTableHeader (
+    ACPI_TABLE_HEADER       *Header,
+    char                    *Signature,
+    UINT32                  Length) {
+- ACPI_MOVE_NAME(Header->Signature, Signature);
++ ACPI_COPY_NAMESEG(Header->Signature, Signature);
+- ACPI_MOVE_NAME(Header->AslCompilerId, "INTL");
++ ACPI_COPY_NAMESEG(Header->AslCompilerId, "INTL");
+}
+
+Context for merged statement of old file: source/tools/acpiexec/aetables.c with new file: source/tools/acpiexec/aetables.c:
+ACPI_STATUS AeBuildLocalTables (
+    ACPI_NEW_TABLE_DESC     *ListHead) {
+  memset(&LocalFACS, 0, sizeof(ACPI_TABLE_FACS));
+- ACPI_MOVE_NAME(LocalFACS.Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(LocalFACS.Signature, ACPI_SIG_FACS);
+  if (AcpiGbl_LoadTestTables) {
+  memset(&LocalTEST, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(LocalTEST.Signature, "TEST");
++ ACPI_COPY_NAMESEG(LocalTEST.Signature, "TEST");
+  memset(&LocalBADTABLE, 0, sizeof(ACPI_TABLE_HEADER));
+- ACPI_MOVE_NAME(LocalBADTABLE.Signature, "BAD!");
++ ACPI_COPY_NAMESEG(LocalBADTABLE.Signature, "BAD!");
+  }
+}
+
+Context for merged statement of old file: source/tools/acpinames/antables.c with new file: source/tools/acpinames/antables.c:
+void AnInitializeTableHeader (
+    ACPI_TABLE_HEADER       *Header,
+    char                    *Signature,
+    UINT32                  Length) {
+- ACPI_MOVE_NAME(Header->Signature, Signature);
++ ACPI_COPY_NAMESEG(Header->Signature, Signature);
+- ACPI_MOVE_NAME(Header->AslCompilerId, "INTL");
++ ACPI_COPY_NAMESEG(Header->AslCompilerId, "INTL");
+}
+
+Context for merged statement of old file: source/tools/acpinames/antables.c with new file: source/tools/acpinames/antables.c:
+ACPI_STATUS AnBuildLocalTables (
+    ACPI_NEW_TABLE_DESC     *TableList) {
+  memset(&LocalFACS, 0, sizeof(ACPI_TABLE_FACS));
+- ACPI_MOVE_NAME(LocalFACS.Signature, ACPI_SIG_FACS);
++ ACPI_COPY_NAMESEG(LocalFACS.Signature, ACPI_SIG_FACS);
+}
+
+Context for merged statement of old file: source/tools/acpixtract/acpixtract.c with new file: source/tools/acpixtract/acpixtract.c:
+int AxExtractTables (
+    char                    *InputPathname,
+    char                    *Signature,
+    unsigned int            MinimumInstances) {
+  FILE *InputFile;
+  char ThisSignature[5];
+  InputFile = fopen(InputPathname, "r");
+  while ((fgets(Gbl_LineBuffer, AX_LINE_BUFFER_SIZE, InputFile))) {
+  switch ((State)) {
+  case AX_STATE_FIND_HEADER:
+- ACPI_MOVE_NAME(ThisSignature, Gbl_LineBuffer);
++ ACPI_COPY_NAMESEG(ThisSignature, Gbl_LineBuffer);
+  }
+  }
+}
+
+Context for merged statement of old file: source/tools/acpixtract/acpixtract.c with new file: source/tools/acpixtract/acpixtract.c:
+int AxExtractToMultiAmlFile (
+    char                    *InputPathname) {
+  FILE *InputFile;
+  char ThisSignature[4];
+  InputFile = fopen(InputPathname, "r");
+  while ((fgets(Gbl_LineBuffer, AX_LINE_BUFFER_SIZE, InputFile))) {
+  switch ((State)) {
+  case AX_STATE_FIND_HEADER:
+- ACPI_MOVE_NAME(ThisSignature, Gbl_LineBuffer);
++ ACPI_COPY_NAMESEG(ThisSignature, Gbl_LineBuffer);
+  }
+  }
+}
+
+
+==== Cross-function context ====
+
+-- called macro: ACPI_COMPARE_NAME — source/include/actypes.h:672 [priority_fallback] --
+#define ACPI_COMPARE_NAME(a,b)          (!strncmp (ACPI_CAST_PTR (char, (a)), ACPI_CAST_PTR (char, (b)), ACPI_NAME_SIZE))
+
+-- called function: AxIsDataBlockHeader — source/tools/acpixtract/axutils.c:348 [gtags_unique] --
+BOOLEAN AxIsDataBlockHeader ( void) {
+   if(strlen(Gbl_LineBuffer)< AX_MIN_BLOCK_HEADER_LENGTH) {
+     return(FALSE);
+   }
+   if(AxIsEmptyLine(Gbl_LineBuffer)||(Gbl_LineBuffer[0] == ' ')) {
+     return(FALSE);
+   }
+   if(!AX_IS_TABLE_BLOCK_HEADER) {
+     return(FALSE);
+   }
+   ...
+   return(TRUE);
+}
+
+-- called function: AxConvertAndWrite — source/tools/acpixtract/axutils.c:626 [gtags_unique] --
+int AxConvertAndWrite ( FILE                    *OutputFile, char                    *ThisSignature) {
+   int BytesWritten;
+   int BytesConverted;
+   BytesConverted = AxConvertToBinary(Gbl_LineBuffer, Gbl_BinaryData);
+   if(BytesConverted == EOF) {
+     return(EOF);
+   }
+   if(!BytesConverted) {
+     return(0);
+   }
+   BytesWritten = fwrite(Gbl_BinaryData, 1, BytesConverted, OutputFile);
+   if(BytesWritten != BytesConverted) {
+   ...
+     return(-1);
+   }
+   return(BytesWritten);
+}
+   [reads: OutputFile; writes: -]
+
+-- called function: AxIsHexDataLine — source/tools/acpixtract/axutils.c:313 [gtags_unique] --
+BOOLEAN AxIsHexDataLine ( void) {
+   if(AxIsEmptyLine(Gbl_LineBuffer)||(Gbl_LineBuffer[0] != ' ')) {
+     return(FALSE);
+   }
+   if(!strstr(Gbl_LineBuffer, ": ")) {
+     return(FALSE);
+   }
+   return(TRUE);
+}
+
+-- called macro: ACPI_ALLOCATE_ZEROED — source/include/actypes.h:493 [lsp] --
+#define ACPI_ALLOCATE_ZEROED(a)         AcpiOsAllocateZeroed ((ACPI_SIZE) (a))
+
+-- called macro: ACPI_IS_PARENT_PREFIX — source/include/acmacros.h:510 [gtags_unique] --
+#define ACPI_IS_PARENT_PREFIX(c)    ((c) == (UINT8) 0x5E) /* Carat */
+
+-- called macro: ACPI_MOVE_NAME — source/include/actypes.h:670 [lsp, old version] --
+#define ACPI_MOVE_NAME(dest,src)        (*ACPI_CAST_PTR (UINT32, (dest)) = *ACPI_CAST_PTR (UINT32, (src)))
+
+-- called macro: ACPI_COPY_NAMESEG — source/include/actypes.h:670 [lsp, new version] --
+#define ACPI_COPY_NAMESEG(dest,src)     (*ACPI_CAST_PTR (UINT32, (dest)) = *ACPI_CAST_PTR (UINT32, (src)))
+
+-- caller of AcpiGetTagPathname: AcpiDmCheckResourceReference — source/common/dmrestag.c:669 --
+void AcpiDmCheckResourceReference ( ACPI_PARSE_OBJECT       *Op, ACPI_WALK_STATE         *WalkState) {
+   ...
+   ACPI_PARSE_OBJECT *BufferNameOp;
+   ACPI_PARSE_OBJECT *IndexOp;
+   ACPI_NAMESPACE_NODE *BufferNode;
+   ACPI_NAMESPACE_NODE *ResourceNode;
+   ...
+   UINT32 BitIndex;
+   ...
+   BufferNameOp = AcpiPsGetDepthNext(NULL, Op);
+   ...
+   IndexOp = BufferNameOp->Common.Next;
+   IndexOp->Common.Node = NULL;
+   ...
+   if((Op->Common.AmlOpcode == AML_CREATE_BIT_FIELD_OP)||(Op->Common.AmlOpcode == AML_CREATE_FIELD_OP)) {
+     BitIndex =(UINT32)IndexOp->Common.Value.Integer;
+   } else {
+     BitIndex =(UINT32)ACPI_MUL_8(IndexOp->Common.Value.Integer);
+   }
+   ...
+   ResourceNode = AcpiDmGetResourceNode(BufferNode, BitIndex);
+   ...
+>  AcpiGetTagPathname(IndexOp, BufferNode, ResourceNode, BitIndex);
+}
+
+-- caller of CgWriteTableHeader: CgWriteNode — source/compiler/aslcodegen.c:826 --
+static void CgWriteNode ( ACPI_PARSE_OBJECT       *Op) {
+   ...
+   Op->Asl.FinalAmlLength = 0;
+   ...
+   switch(Op->Asl.ParseOpcode) {
+   ...
+>    CgWriteTableHeader(Op);
+   ...
+   }
+}
+
+-- caller of UtAttachNameseg: UtAttachNamepathToOwner — source/compiler/aslutils.c:863 --
+void UtAttachNamepathToOwner ( ACPI_PARSE_OBJECT       *Op, ACPI_PARSE_OBJECT       *NameOp) {
+   ...
+   Op->Asl.ExternalName = NameOp->Asl.Value.String;
+   Op->Asl.ParentMethod =(void *)NameOp;
+>  UtAttachNameseg(Op, Op->Asl.ExternalName);
+   ...
+}
+
+-- caller of AcpiNsHandleToName: AcpiGetName — source/components/namespace/nsxfname.c:324 --
+AcpiGetName ( ACPI_HANDLE             Handle, UINT32                  NameType, ACPI_BUFFER             *Buffer) {
+   ...
+   if(NameType == ACPI_FULL_PATHNAME || NameType == ACPI_FULL_PATHNAME_NO_TRAILING) {
+   ...
+   } else {
+>    Status = AcpiNsHandleToName(Handle, Buffer);
+   }
+   ...
+   return(Status);
+}
+
+-- caller of AcpiNsExternalizeName: AcpiDmDumpDescending — source/common/adwalk.c:525 --
+static ACPI_STATUS AcpiDmDumpDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   char *Path;
+   ...
+   switch(Op->Common.AmlOpcode) {
+   ...
+     if(Op->Common.Value.String) {
+>      AcpiNsExternalizeName(ACPI_UINT32_MAX, Op->Common.Value.String, NULL, &Path);
+   ...
+     }
+   }
+}
+
+-- caller of AcpiNsExternalizeName: AcpiDmFindOrphanDescending — source/common/adwalk.c:606 --
+static ACPI_STATUS AcpiDmFindOrphanDescending ( ACPI_PARSE_OBJECT       *Op, UINT32                  Level, void                    *Context) {
+   ...
+   ACPI_PARSE_OBJECT *ChildOp;
+   ...
+     #ifdef ...
+   ...
+     ChildOp = Op->Common.Value.Arg;
+     if((ChildOp->Common.AmlOpcode == AML_INT_NAMEPATH_OP)&& !ChildOp->Common.Node) {
+>      AcpiNsExternalizeName(ACPI_UINT32_MAX, ChildOp->Common.Value.String, NULL, &Path);
+   ...
+     }
+     #endif
+}
+
+-- caller of AcpiNsExternalizeName: AcpiDmAddOpToExternalList — source/common/dmextern.c:675 --
+void AcpiDmAddOpToExternalList ( ACPI_PARSE_OBJECT       *Op, char                    *Path, UINT8                   Type, UINT32                  Value, UINT16                  Flags) {
+   char *ExternalPath;
+   ...
+   if((*Path == AML_ROOT_PREFIX)&&(Path[1])) {
+     Path++;
+   }
+>  Status = AcpiNsExternalizeName(ACPI_UINT32_MAX, Path, NULL, &ExternalPath);
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   if(*Path ==(UINT8)AML_PARENT_PREFIX) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+   ...
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+}
+
+-- caller of AcpiNsExternalizeName: AcpiDmAddPathToExternalList — source/common/dmextern.c:930 --
+static void AcpiDmAddPathToExternalList ( char                    *Path, UINT8                   Type, UINT32                  Value, UINT16                  Flags) {
+   char *InternalPath;
+   char *ExternalPath;
+   ...
+>  Status = AcpiNsExternalizeName(ACPI_UINT32_MAX, InternalPath, NULL, &ExternalPath);
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+}
+
+-- caller of AcpiTbFindTable: AcpiDsEvalTableRegionOperands — source/components/dispatcher/dsopcode.c:677 --
+ACPI_STATUS AcpiDsEvalTableRegionOperands ( ACPI_WALK_STATE         *WalkState, ACPI_PARSE_OBJECT       *Op) {
+   ...
+   ACPI_OPERAND_OBJECT **Operand;
+   ...
+   UINT32 TableIndex;
+   ...
+   Operand = &WalkState->Operands[0];
+   ...
+>  Status = AcpiTbFindTable(Operand[0]->String.Pointer, Operand[1]->String.Pointer, Operand[2]->String.Pointer, &TableIndex);
+   if(ACPI_FAILURE(Status)) {
+     if(Status == AE_NOT_FOUND) {
+   ...
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   return_ACPI_STATUS(Status);
+}
+
+-- caller of AcpiTbFindTable: AcpiExLoadTableOp — source/components/executer/exconfig.c:257 --
+ACPI_STATUS AcpiExLoadTableOp ( ACPI_WALK_STATE         *WalkState, ACPI_OPERAND_OBJECT     **ReturnDesc) {
+   ...
+   ACPI_OPERAND_OBJECT **Operand = &WalkState->Operands[0];
+   ...
+   UINT32 TableIndex;
+   ...
+>  Status = AcpiTbFindTable(Operand[0]->String.Pointer, Operand[1]->String.Pointer, Operand[2]->String.Pointer, &TableIndex);
+   ...
+   if(ACPI_FAILURE(Status)) {
+     if(Status != AE_NOT_FOUND) {
+       return_ACPI_STATUS(Status);
+   ...
+     }
+   }
+   ...
+   if(Operand[3]->String.Length > 0) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+       return_ACPI_STATUS(Status);
+     }
+   }
+   if(Operand[4]->String.Length > 0) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+       return_ACPI_STATUS(Status);
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return_ACPI_STATUS(Status);
+   }
+   ...
+   if(ParameterNode) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+   ...
+       return_ACPI_STATUS(Status);
+     }
+   }
+   ...
+   return_ACPI_STATUS(Status);
+}
+
+-- caller of AcpiUtRepairName: AcpiDmDumpName — source/components/disassembler/dmnames.c:198 --
+UINT32 AcpiDmDumpName ( UINT32                  Name) {
+   ...
+   char NewName[4];
+   ...
+>  AcpiUtRepairName(NewName);
+   ...
+}
+
+-- caller of AcpiUtRepairName: AcpiExDumpOperand — source/components/executer/exdump.c:832 --
+void AcpiExDumpOperand ( ACPI_OPERAND_OBJECT     *ObjDesc, UINT32                  Depth) {
+   ...
+   switch(ObjDesc->Common.Type) {
+   ...
+     switch(ObjDesc->Reference.Class) {
+   ...
+>      AcpiUtRepairName(ObjDesc->Reference.Node->Name.Ascii);
+   ...
+     }
+   }
+}
+
+-- caller of AcpiUtRepairName: AcpiNsSearchAndEnter — source/components/namespace/nssearch.c:437 --
+ACPI_STATUS AcpiNsSearchAndEnter ( UINT32                  TargetName, ACPI_WALK_STATE         *WalkState, ACPI_NAMESPACE_NODE     *Node, ACPI_INTERPRETER_MODE   InterpreterMode, ACPI_OBJECT_TYPE {
+   ...
+>  AcpiUtRepairName(ACPI_CAST_PTR(char, &TargetName));
+   ...
+}
+
+-- caller of AcpiUtRepairName: AcpiNsExternalizeName — source/components/namespace/nsutils.c:726 --
+ACPI_STATUS AcpiNsExternalizeName ( UINT32                  InternalNameLength, const char              *InternalName, UINT32                  *ConvertedNameLength, char                    **Converted {
+   ...
+   UINT32 NumSegments = 0;
+   UINT32 RequiredLength;
+   UINT32 PrefixLength = 0;
+   UINT32 i = 0;
+   UINT32 j = 0;
+   ...
+   switch(InternalName[0]) {
+   ...
+     PrefixLength = 1;
+   ...
+     for(i = 0; i < InternalNameLength; i++) {
+       if(ACPI_IS_PARENT_PREFIX(InternalName[i])) {
+         PrefixLength = i + 1;
+   ...
+       } else {
+       }
+     }
+     if(i == InternalNameLength) {
+       PrefixLength = i;
+   ...
+     }
+   }
+   if(PrefixLength < InternalNameLength) {
+     switch(InternalName[PrefixLength]) {
+   ...
+       NumSegments =(UINT8)InternalName[(ACPI_SIZE)PrefixLength + 1];
+   ...
+       NumSegments = 2;
+   ...
+       NumSegments = 0;
+   ...
+       NumSegments = 1;
+   ...
+     }
+   }
+   RequiredLength = PrefixLength +(4 * NumSegments)+((NumSegments > 0)?(NumSegments - 1): 0)+ 1;
+   ...
+   *ConvertedName = ACPI_ALLOCATE_ZEROED(RequiredLength);
+   ...
+   j = 0;
+   for(i = 0; i < PrefixLength; i++) {
+     (*ConvertedName)[j++] = InternalName[i];
+   }
+   if(NumSegments > 0) {
+     for(i = 0; i < NumSegments; i++) {
+       if(i > 0) {
+         (*ConvertedName)[j++] = '.';
+       }
+   ...
+>      AcpiUtRepairName(&(*ConvertedName)[j]);
+   ...
+     }
+   }
+}
+
+-- caller of OslAddTableToList: OslTableInitialize — source/os_specific/efi/osefitbl.c:680 --
+OslTableInitialize ( void) {
+   ...
+>  Status = OslAddTableToList(ACPI_RSDP_NAME, 0);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   if(Gbl_Revision == 2) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   ...
+   }
+}
+
+-- caller of OslAddTableToList: OslTableInitialize — source/os_specific/efi/osefitbl.c:686 --
+OslTableInitialize ( void) {
+   ...
+>  Status = OslAddTableToList(ACPI_SIG_RSDT, 0);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   if(Gbl_Revision == 2) {
+   ...
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   ...
+   }
+}
+
+-- caller of OslAddTableToList: OslTableInitialize — source/os_specific/efi/osefitbl.c:694 --
+OslTableInitialize ( void) {
+   ...
+   if(Gbl_Revision == 2) {
+>    Status = OslAddTableToList(ACPI_SIG_XSDT, 0);
+     if(ACPI_FAILURE(Status)) {
+       return(Status);
+     }
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   ...
+   }
+}
+
+-- caller of OslAddTableToList: OslTableInitialize — source/os_specific/efi/osefitbl.c:701 --
+OslTableInitialize ( void) {
+   ...
+>  Status = OslAddTableToList(ACPI_SIG_DSDT, 0);
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   ...
+   }
+}
+
+-- caller of OslAddTablesToList: AcpiOsGetTableByIndex — source/os_specific/service_layers/osbsdtbl.c:424 --
+ACPI_STATUS AcpiOsGetTableByIndex ( UINT32                  Index, ACPI_TABLE_HEADER       **Table, UINT32                  *Instance, ACPI_PHYSICAL_ADDRESS   *Address) {
+   ...
+>  Status = OslAddTablesToList();
+   if(ACPI_FAILURE(Status)) {
+     return(Status);
+   }
+   ...
+   if(Info->Address) {
+   ...
+     if(ACPI_SUCCESS(Status)) {
+   ...
+     }
+   } else {
+   }
+   ...
+   if(ACPI_SUCCESS(Status)) {
+   ...
+   }
+   return(Status);
+}
+
+-- caller of OslTableNameFromFile: OslListCustomizedTables — source/os_specific/service_layers/oslinuxtbl.c:1299 --
+static ACPI_STATUS OslListCustomizedTables ( char                    *Directory) {
+   void *TableDir;
+   UINT32 Instance;
+   char TempName[ACPI_NAME_SIZE];
+   char *Filename;
+   ...
+   TableDir = AcpiOsOpenDirectory(Directory, "*", REQUEST_FILE_ONLY);
+   ...
+   while((Filename = AcpiOsGetNextFilename(TableDir))) {
+>    Status = OslTableNameFromFile(Filename, TempName, &Instance);
+     if(ACPI_FAILURE(Status)) {
+   ...
+     }
+   ...
+     if(ACPI_FAILURE(Status)) {
+   ...
+     }
+   }
+   ...
+   return(Status);
+}
+
+-- caller of OslTableNameFromFile: OslGetCustomizedTable — source/os_specific/service_layers/oslinuxtbl.c:1659 --
+static ACPI_STATUS OslGetCustomizedTable ( char                    *Pathname, char                    *Signature, UINT32                  Instance, ACPI_TABLE_HEADER       **Table, ACPI_PHYSICAL_ADDRE {
+   void *TableDir;
+   UINT32 CurrentInstance = 0;
+   char TempName[ACPI_NAME_SIZE];
+   ...
+   char *Filename;
+   ...
+   TableDir = AcpiOsOpenDirectory(Pathname, "*", REQUEST_FILE_ONLY);
+   ...
+   while((Filename = AcpiOsGetNextFilename(TableDir))) {
+   ...
+>    Status = OslTableNameFromFile(Filename, TempName, &CurrentInstance);
+     if(ACPI_FAILURE(Status)|| CurrentInstance != Instance) {
+   ...
+     }
+   }
+   ...
+   return(Status);
+}
+
+-- caller of ApWriteToBinaryFile: ApDumpTableBuffer — source/tools/acpidump/apdump.c:326 --
+static int ApDumpTableBuffer ( ACPI_TABLE_HEADER       *Table, UINT32                  Instance, ACPI_PHYSICAL_ADDRESS   Address) {
+   ...
+   if(Gbl_BinaryMode) {
+>    return(ApWriteToBinaryFile(Table, Instance));
+   ...
+   }
+}
+
+-- caller of AeInitializeTableHeader: AeBuildLocalTables — source/tools/acpiexec/aetables.c:420 --
+ACPI_STATUS AeBuildLocalTables ( ACPI_NEW_TABLE_DESC     *ListHead) {
+   UINT32 TableCount = 1;
+   ...
+   UINT32 XsdtSize;
+   ACPI_NEW_TABLE_DESC *NextTable;
+   UINT32 NextIndex;
+   ...
+   NextTable = ListHead;
+   while(NextTable) {
+     if(!ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)&& !ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_FADT)) {
+       TableCount++;
+     }
+     NextTable = NextTable->Next;
+   }
+   XsdtSize =(((TableCount + 1)* sizeof(UINT64))+ sizeof(ACPI_TABLE_HEADER));
+   if(AcpiGbl_LoadTestTables) {
+     XsdtSize += BASE_XSDT_SIZE;
+   }
+   LocalXSDT = AcpiOsAllocate(XsdtSize);
+   ...
+   memset(LocalXSDT, 0, XsdtSize);
+   LocalXSDT->TableOffsetEntry[0] = ACPI_PTR_TO_PHYSADDR(&LocalFADT);
+   NextIndex = 1;
+   NextTable = ListHead;
+   while(NextTable) {
+     if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)) {
+   ...
+     } else if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_FADT)) {
+   ...
+       LocalXSDT->TableOffsetEntry[0] = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+     } else {
+       LocalXSDT->TableOffsetEntry[NextIndex] = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+       NextIndex++;
+   ...
+     }
+   }
+   if(AcpiGbl_LoadTestTables) {
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&LocalTEST);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&LocalBADTABLE);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&Ssdt1Code);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&Ssdt2Code);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&Oem1Code);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&OemxCode);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&EcdtCode);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&Uefi1Code);
+     LocalXSDT->TableOffsetEntry[NextIndex++] = ACPI_PTR_TO_PHYSADDR(&Uefi2Code);
+   }
+   ...
+>  AeInitializeTableHeader((void *)LocalXSDT, ACPI_SIG_XSDT, XsdtSize);
+   ...
+}
+
+-- caller of AeInitializeTableHeader: AeBuildLocalTables — source/tools/acpiexec/aetables.c:528 --
+ACPI_STATUS AeBuildLocalTables ( ACPI_NEW_TABLE_DESC     *ListHead) {
+   ...
+   ACPI_PHYSICAL_ADDRESS DsdtAddress = 0;
+   ...
+   ACPI_NEW_TABLE_DESC *NextTable;
+   ...
+   NextTable = ListHead;
+   while(NextTable) {
+   ...
+     NextTable = NextTable->Next;
+   }
+   ...
+   NextTable = ListHead;
+   while(NextTable) {
+     if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)) {
+   ...
+       DsdtAddress = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+   ...
+     } else
+   }
+   ...
+   if(!DsdtAddress) {
+     DsdtAddress = ACPI_PTR_TO_PHYSADDR(LocalDsdtCode);
+   ...
+   }
+   memset(&LocalFADT, 0, sizeof(ACPI_TABLE_FADT));
+   if(ExternalFadt) {
+   ...
+   } else if(AcpiGbl_UseHwReducedFadt) {
+     memcpy(&LocalFADT, HwReducedFadtCode, ACPI_FADT_V5_SIZE);
+     LocalFADT.Dsdt = 0;
+     LocalFADT.XDsdt = DsdtAddress;
+   } else {
+     LocalFADT.Header.Revision = 5;
+     LocalFADT.Dsdt = 0;
+     LocalFADT.Facs = 0;
+     LocalFADT.XDsdt = DsdtAddress;
+     LocalFADT.XFacs = ACPI_PTR_TO_PHYSADDR(&LocalFACS);
+     LocalFADT.Gpe0BlockLength = 0x20;
+     LocalFADT.Gpe0Block = 0x00003210;
+     LocalFADT.Gpe1BlockLength = 0x20;
+     LocalFADT.Gpe1Block = 0x0000BA98;
+     LocalFADT.Gpe1Base = 0x80;
+     LocalFADT.Pm1EventLength = 4;
+     LocalFADT.Pm1aEventBlock = 0x00001aaa;
+     LocalFADT.Pm1bEventBlock = 0x00001bbb;
+     LocalFADT.Pm1ControlLength = 2;
+     LocalFADT.Pm1aControlBlock = 0xB0;
+     LocalFADT.PmTimerLength = 4;
+     LocalFADT.PmTimerBlock = 0xA0;
+     LocalFADT.Pm2ControlBlock = 0xC0;
+     LocalFADT.Pm2ControlLength = 1;
+     LocalFADT.XPm1bEventBlock.SpaceId = ACPI_ADR_SPACE_SYSTEM_IO;
+     LocalFADT.XPm1bEventBlock.Address = LocalFADT.Pm1bEventBlock;
+     LocalFADT.XPm1bEventBlock.BitWidth =(UINT8)ACPI_MUL_8(LocalFADT.Pm1EventLength);
+   }
+>  AeInitializeTableHeader((void *)&LocalFADT, ACPI_SIG_FADT, sizeof(ACPI_TABLE_FADT));
+   ...
+}
+
+-- caller of AeBuildLocalTables: main — source/tools/acpiexec/aemain.c:710 --
+main ( int                     argc, char                    **argv) {
+   ACPI_NEW_TABLE_DESC *ListHead = NULL;
+   ...
+>  Status = AeBuildLocalTables(ListHead);
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     printf("**** Could not install ACPI tables, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     printf("**** Could not load ACPI tables, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     printf("**** Could not EnableSubsystem, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     printf("**** Could not InitializeObjects, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)&&(AcpiGbl_ExecutionMode > 0)) {
+   ...
+   }
+}
+
+-- caller of AnInitializeTableHeader: AnBuildLocalTables — source/tools/acpinames/antables.c:340 --
+ACPI_STATUS AnBuildLocalTables ( ACPI_NEW_TABLE_DESC     *TableList) {
+   UINT32 TableCount = 0;
+   ...
+   UINT32 XsdtSize;
+   ACPI_NEW_TABLE_DESC *NextTable;
+   UINT32 NextIndex;
+   ...
+   NextTable = TableList;
+   while(NextTable) {
+     if(!ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)&& !ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_FADT)) {
+       TableCount++;
+     }
+     NextTable = NextTable->Next;
+   }
+   XsdtSize = BASE_XSDT_SIZE +(TableCount * sizeof(UINT64));
+   LocalXSDT = AcpiOsAllocate(XsdtSize);
+   ...
+   memset(LocalXSDT, 0, XsdtSize);
+   LocalXSDT->TableOffsetEntry[0] = ACPI_PTR_TO_PHYSADDR(&LocalFADT);
+   NextIndex = BASE_XSDT_TABLES;
+   NextTable = TableList;
+   while(NextTable) {
+     if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)) {
+   ...
+     } else if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_FADT)) {
+   ...
+       LocalXSDT->TableOffsetEntry[0] = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+     } else {
+       LocalXSDT->TableOffsetEntry[TableCount - NextIndex + 1] = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+   ...
+     }
+   }
+   ...
+>  AnInitializeTableHeader((void *)LocalXSDT, ACPI_SIG_XSDT, XsdtSize);
+   ...
+}
+
+-- caller of AnInitializeTableHeader: AnBuildLocalTables — source/tools/acpinames/antables.c:431 --
+ACPI_STATUS AnBuildLocalTables ( ACPI_NEW_TABLE_DESC     *TableList) {
+   ...
+   ACPI_PHYSICAL_ADDRESS DsdtAddress = 0;
+   ...
+   ACPI_NEW_TABLE_DESC *NextTable;
+   ...
+   NextTable = TableList;
+   while(NextTable) {
+   ...
+     NextTable = NextTable->Next;
+   }
+   ...
+   NextTable = TableList;
+   while(NextTable) {
+     if(ACPI_COMPARE_NAME(NextTable->Table->Signature, ACPI_SIG_DSDT)) {
+   ...
+       DsdtAddress = ACPI_PTR_TO_PHYSADDR(NextTable->Table);
+   ...
+     } else
+   }
+   ...
+   memset(&LocalFADT, 0, sizeof(ACPI_TABLE_FADT));
+   if(ExternalFadt) {
+   ...
+   } else {
+     LocalFADT.Header.Revision = 5;
+     LocalFADT.Dsdt = 0;
+     LocalFADT.Facs = 0;
+     LocalFADT.XDsdt = DsdtAddress;
+     LocalFADT.XFacs = ACPI_PTR_TO_PHYSADDR(&LocalFACS);
+     LocalFADT.Gpe0BlockLength = 16;
+     LocalFADT.Gpe0Block = 0x00001234;
+     LocalFADT.Gpe1BlockLength = 6;
+     LocalFADT.Gpe1Block = 0x00005678;
+     LocalFADT.Gpe1Base = 96;
+     LocalFADT.Pm1EventLength = 4;
+     LocalFADT.Pm1aEventBlock = 0x00001aaa;
+     LocalFADT.Pm1bEventBlock = 0x00001bbb;
+     LocalFADT.Pm1ControlLength = 2;
+     LocalFADT.Pm1aControlBlock = 0xB0;
+     LocalFADT.PmTimerLength = 4;
+     LocalFADT.PmTimerBlock = 0xA0;
+     LocalFADT.Pm2ControlBlock = 0xC0;
+     LocalFADT.Pm2ControlLength = 1;
+     LocalFADT.XPm1bEventBlock.SpaceId = ACPI_ADR_SPACE_SYSTEM_IO;
+     LocalFADT.XPm1bEventBlock.Address = LocalFADT.Pm1bEventBlock;
+     LocalFADT.XPm1bEventBlock.BitWidth =(UINT8)ACPI_MUL_8(LocalFADT.Pm1EventLength);
+   }
+>  AnInitializeTableHeader((void *)&LocalFADT, ACPI_SIG_FADT, sizeof(ACPI_TABLE_FADT));
+   ...
+}
+
+-- caller of AnBuildLocalTables: AnDumpEntireNamespace — source/tools/acpinames/anmain.c:350 --
+static int AnDumpEntireNamespace ( ACPI_NEW_TABLE_DESC     *ListHead) {
+   ...
+>  Status = AnBuildLocalTables(ListHead);
+   if(ACPI_FAILURE(Status)) {
+   ...
+   }
+   ...
+   if(ACPI_FAILURE(Status)) {
+     printf("**** Could not initialize ACPI table manager, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   if(Status == AE_CTRL_TERMINATE) {
+   ...
+   }
+   if(ACPI_FAILURE(Status)) {
+     printf("**** While creating namespace, %s\n", AcpiFormatException(Status));
+   ...
+   }
+   ...
+   ACPI_CHECK_OK(AcpiGetHandle, Status);
+   ...
+}
+
+-- caller of AxExtractTables: main — source/tools/acpixtract/axmain.c:296 --
+int main ( int                     argc, char                    *argv[]) {
+   char *Filename;
+   ...
+   Filename = argv[AcpiGbl_Optind];
+   ...
+   switch(AxAction) {
+   ...
+>    Status = AxExtractTables(Filename, NULL, AX_OPTIONAL_TABLES);
+   ...
+     if(Status) {
+       return(Status);
+   ...
+     }
+   }
+   return(Status);
+}
+
+-- caller of AxExtractTables: main — source/tools/acpixtract/axmain.c:311 --
+int main ( int                     argc, char                    *argv[]) {
+   char *Filename;
+   ...
+   Filename = argv[AcpiGbl_Optind];
+   ...
+   switch(AxAction) {
+   ...
+>    Status = AxExtractTables(Filename, AcpiGbl_Optarg, AX_REQUIRED_TABLE);
+   ...
+     if(Status) {
+       return(Status);
+   ...
+     }
+   }
+   return(Status);
+}
+
+-- caller of AxExtractTables: main — source/tools/acpixtract/axmain.c:319 --
+int main ( int                     argc, char                    *argv[]) {
+   char *Filename;
+   ...
+   Filename = argv[AcpiGbl_Optind];
+   ...
+   switch(AxAction) {
+   ...
+>    Status = AxExtractTables(Filename, "DSDT", AX_REQUIRED_TABLE);
+     if(Status) {
+       return(Status);
+   ...
+     }
+   }
+   return(Status);
+}
+
+-- caller of AxExtractTables: main — source/tools/acpixtract/axmain.c:325 --
+int main ( int                     argc, char                    *argv[]) {
+   char *Filename;
+   ...
+   Filename = argv[AcpiGbl_Optind];
+   ...
+   switch(AxAction) {
+   ...
+>    Status = AxExtractTables(Filename, "SSDT", AX_OPTIONAL_TABLES);
+   ...
+   }
+   return(Status);
+}
+
+-- caller of AxExtractToMultiAmlFile: main — source/tools/acpixtract/axmain.c:301 --
+int main ( int                     argc, char                    *argv[]) {
+   char *Filename;
+   ...
+   Filename = argv[AcpiGbl_Optind];
+   ...
+   switch(AxAction) {
+   ...
+>    Status = AxExtractToMultiAmlFile(Filename);
+   ...
+     if(Status) {
+       return(Status);
+   ...
+     }
+   }
+   return(Status);
+}

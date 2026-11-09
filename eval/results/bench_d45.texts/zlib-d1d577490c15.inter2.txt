@@ -1,0 +1,37 @@
+Context for merged statement of old file: crc32.c with new file: crc32.c:
+#ifdef BYFOUR
+- #define DOBIG4 c ^= *++buf4; \ c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8)& 0xff] ^ \ crc_table[6][(c >> 16)& 0xff] ^ crc_table[7][c >> 24]
++ #define DOBIG4 c ^= *buf4++; \ c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8)& 0xff] ^ \ crc_table[6][(c >> 16)& 0xff] ^ crc_table[7][c >> 24]
+  #endif
+
+Context for merged statement of old file: crc32.c with new file: crc32.c:
+local unsigned long crc32_big(crc, buf, len) {
+- buf4--;
+- buf4++;
+}
+
+
+==== Cross-function context ====
+
+-- called macro: BYFOUR — crc32.c:37 [gtags_unique, new version] --
+#  define BYFOUR
+
+-- called macro: DOBIG4 — crc32.c:281 [gtags_unique, new version] --
+#define DOBIG4 c ^= *buf4++; \
+        c = crc_table[4][c & 0xff] ^ crc_table[5][(c >> 8) & 0xff] ^ \
+            crc_table[6][(c >> 16) & 0xff] ^ crc_table[7][c >> 24]
+
+-- caller of crc32_big: crc32 — crc32.c:224 --
+unsigned long ZEXPORT crc32(crc, buf, len) unsigned long crc; const unsigned char FAR *buf; uInt len; {
+   ...
+   #ifdef ...
+   if(sizeof(void *)== sizeof(ptrdiff_t)) {
+   ...
+     if(*((unsigned char *)(&endian)))
+   ...
+     else
+>      return crc32_big(crc, buf, len);
+   ...
+   }
+   #endif
+}

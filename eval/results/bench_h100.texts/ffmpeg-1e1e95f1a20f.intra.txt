@@ -1,0 +1,34 @@
+Context for merged statement of old file: libavformat/http.c with new file: libavformat/http.c:
+int http_open_cnx(URLContext *h, AVDictionary **options) {
+  HTTPContext *s = h->priv_data;
+  int reconnect_delay = 0;
+  uint64_t off;
+  off = s->off;
+  if (ret < 0) {
+  if (s->respect_retry_after && s->retry_after > 0) {
+  reconnect_delay = s->retry_after;
+  }
+- av_log(h, AV_LOG_WARNING, "Will reconnect at %"PRIu64" in %d second(s).\n", off, reconnect_delay);
++ av_log(h, AV_LOG_WARNING, "Will %s at %"PRIu64" in %d second(s).\n", s->willclose ? "reconnect" : "retry", off, reconnect_delay);
+  }
+}
+
+Context for merged statement of old file: libavformat/http.c with new file: libavformat/http.c:
+int http_read_stream(URLContext *h, uint8_t *buf, int size) {
+  HTTPContext *s = h->priv_data;
+  int reconnect_delay = 0;
+  read_ret = http_buf_read(h, buf, size);
+  while ((read_ret < 0)) {
+  if (read_ret == AVERROR_EXIT) {
+  }
+  else {
+  if (read_ret == AVERROR(EAGAIN)) {
+  AVDictionary *options = NULL;
+  read_ret = http_open_cnx(h, &options);
+  }
+  }
+- av_log(h, AV_LOG_WARNING, "Will reconnect at %"PRIu64" in %d second(s), error=%s.\n", s->off, reconnect_delay, av_err2str(read_ret));
++ av_log(h, AV_LOG_WARNING, "Will %s at %"PRIu64" in %d second(s), error=%s.\n", s->willclose ? "reconnect" : "retry", s->off, reconnect_delay, av_err2str(read_ret));
+  }
+}
+

@@ -1,0 +1,251 @@
+Context for merged statement of old file: libavcodec/ffv1dec.c with new file: libavcodec/ffv1dec.c:
+int read_header(FFV1Context *f, RangeCoder *c) {
+- if (f->configured_pix_fmt != f->pix_fmt || f->configured_width != f->avctx->width || f->configured_height != f->avctx->height || f->configured_ac != f->ac) {
++ if (f->configured_pix_fmt != f->pix_fmt || f->configured_width != f->width || f->configured_height != f->height || f->configured_ac != f->ac) {
+- f->configured_width = f->avctx->width;
++ f->configured_width = f->width;
+- f->configured_height = f->avctx->height;
++ f->configured_height = f->height;
+  }
+}
+
+Context for merged statement of old file: libavcodec/ffv1dec.c with new file: libavcodec/ffv1dec.c:
+int update_thread_context(AVCodecContext *dst, const AVCodecContext *src) {
+  FFV1Context *fsrc = src->priv_data;
+  FFV1Context *fdst = dst->priv_data;
++ fdst->configured_width = fsrc->configured_width;
++ fdst->configured_height = fsrc->configured_height;
+}
+
+
+==== Cross-function context ====
+
+-- called macro: AVERROR — libavutil/error.h:41 [lsp] --
+#define AVERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
+
+-- called function: get_pixel_format — libavcodec/av1dec.c:535 [priority_fallback] --
+static int get_pixel_format(AVCodecContext *avctx) {
+   AV1DecContext *s = avctx->priv_data;
+   const AV1RawSequenceHeader *seq = s->raw_seq;
+   int ret;
+   enum AVPixelFormat pix_fmt = get_sw_pixel_format(avctx, seq);
+   #define ...
+   enum AVPixelFormat pix_fmts[HWACCEL_MAX + 2], *fmtp = pix_fmts;
+   if(pix_fmt == AV_PIX_FMT_NONE)
+     return -1;
+   switch(pix_fmt) {
+   ...
+   }
+   *fmtp++ = pix_fmt;
+   *fmtp = AV_PIX_FMT_NONE;
+   for(int i = 0;; pix_fmts[i] != pix_fmt; i++)
+     int i = 0;
+   if(pix_fmts[i] == avctx->pix_fmt) {
+     s->pix_fmt = pix_fmt;
+     return 1;
+   }
+   ret = ff_get_format(avctx, pix_fmts);
+   if(!avctx->hwaccel) {
+     av_log(avctx, AV_LOG_ERROR, "Your platform doesn't support" " hardware accelerated AV1 decoding.\n");
+     avctx->pix_fmt = AV_PIX_FMT_NONE;
+     return AVERROR(ENOSYS);
+   }
+   s->pix_fmt = pix_fmt;
+   avctx->pix_fmt = ret;
+   av_log(avctx, AV_LOG_DEBUG, "AV1 decode get format: %s.\n", av_get_pix_fmt_name(avctx->pix_fmt));
+   return 0;
+}
+   [reads: avctx; writes: avctx*]
+
+-- caller of read_header: decode_header — libavcodec/ffv1dec.c:674 --
+static int decode_header(AVCodecContext *avctx, RangeCoder *c, uint8_t *buf, size_t buf_size) {
+   ...
+   FFV1Context *f = avctx->priv_data;
+   ...
+   if(get_rac(c, &keystate)) {
+     f->key_frame = AV_FRAME_FLAG_KEY;
+     f->key_frame_ok = 0;
+>    if((ret = read_header(f, c))< 0)
+       return ret;
+   ...
+   }
+}
+
+-- caller of read_header: mjpegb_decode_frame — libavcodec/mjpegbdec.c:61 --
+static int mjpegb_decode_frame(AVCodecContext *avctx, AVFrame *rframe, int *got_frame, AVPacket *avpkt) {
+   ...
+>  read_header: s->restart_interval = 0;
+   ...
+}
+
+-- caller of read_header: mjpegb_decode_frame — libavcodec/mjpegbdec.c:130 --
+static int mjpegb_decode_frame(AVCodecContext *avctx, AVFrame *rframe, int *got_frame, AVPacket *avpkt) {
+   ...
+   if(s->interlaced) {
+   ...
+     if(s->bottom_field != s->interlace_polarity && second_field_offs) {
+   ...
+>      goto read_header;
+   ...
+     }
+   }
+}
+
+-- caller of read_header: shorten_decode_frame — libavcodec/shorten.c:581 --
+static int shorten_decode_frame(AVCodecContext *avctx, AVFrame *frame, int *got_frame_ptr, AVPacket *avpkt) {
+   const uint8_t *buf = avpkt->data;
+   int buf_size = avpkt->size;
+   ShortenContext *s = avctx->priv_data;
+   ...
+   if(s->max_framesize == 0) {
+     void *tmp_ptr;
+     s->max_framesize = 8192;
+     tmp_ptr = av_fast_realloc(s->bitstream, &s->allocated_bitstream_size, s->max_framesize + AV_INPUT_BUFFER_PADDING_SIZE);
+     if(!tmp_ptr) {
+       s->max_framesize = 0;
+   ...
+     }
+     memset(tmp_ptr, 0, s->allocated_bitstream_size);
+     s->bitstream = tmp_ptr;
+   }
+   buf_size = FFMIN(buf_size, s->max_framesize - s->bitstream_size);
+   ...
+   if(s->bitstream_index + s->bitstream_size + buf_size + AV_INPUT_BUFFER_PADDING_SIZE > s->allocated_bitstream_size) {
+     memmove(s->bitstream, &s->bitstream[s->bitstream_index], s->bitstream_size);
+     s->bitstream_index = 0;
+   }
+   if(buf)
+     memcpy(&s->bitstream[s->bitstream_index + s->bitstream_size], buf, buf_size);
+   ...
+   buf_size += s->bitstream_size;
+   s->bitstream_size = buf_size;
+   ...
+   if(!s->got_header) {
+>    if((ret = read_header(s))< 0)
+       return ret;
+   ...
+   }
+   ...
+   while(s->cur_chan < s->channels) {
+   ...
+     if(!is_audio_command[cmd]) {
+   ...
+     } else {
+   ...
+       if(cmd == FN_ZERO) {
+   ...
+       } else {
+         if((ret = decode_subframe_lpc(s, cmd, channel, residual_size, coffset))< 0)
+           return ret;
+       }
+   ...
+       if(s->cur_chan == s->channels) {
+   ...
+         if((ret = ff_get_buffer(avctx, frame, 0))< 0)
+           return ret;
+   ...
+       }
+     }
+   }
+}
+
+-- caller of update_thread_context: frame_worker_thread — libavcodec/pthread_frame.c:261 --
+static attribute_align_arg void *frame_worker_thread(void *arg) {
+   PerThreadContext *p = arg;
+   AVCodecContext *avctx = p->avctx;
+   const FFCodec *codec = ffcodec(avctx->codec);
+   ...
+   while(1) {
+   ...
+>    if(!codec->update_thread_context)
+   ...
+   }
+}
+
+-- caller of update_thread_context: update_context_from_thread — libavcodec/pthread_frame.c:351 --
+static int update_context_from_thread(AVCodecContext *dst, const AVCodecContext *src, int for_user) {
+   const FFCodec *const codec = ffcodec(dst->codec);
+   ...
+>  if(dst != src &&(for_user || codec->update_thread_context)) {
+   ...
+   }
+}
+
+-- caller of update_thread_context: update_context_from_thread — libavcodec/pthread_frame.c:415 --
+static int update_context_from_thread(AVCodecContext *dst, const AVCodecContext *src, int for_user) {
+   const FFCodec *const codec = ffcodec(dst->codec);
+   ...
+   if(for_user) {
+   ...
+   } else {
+   ...
+>    if(codec->update_thread_context) {
+   ...
+     }
+   }
+}
+
+-- caller of update_thread_context: update_context_from_thread — libavcodec/pthread_frame.c:416 --
+static int update_context_from_thread(AVCodecContext *dst, const AVCodecContext *src, int for_user) {
+   const FFCodec *const codec = ffcodec(dst->codec);
+   ...
+   if(dst != src &&(for_user || codec->update_thread_context)) {
+     dst->time_base = src->time_base;
+     dst->framerate = src->framerate;
+     dst->width = src->width;
+     dst->height = src->height;
+     dst->pix_fmt = src->pix_fmt;
+     dst->sw_pix_fmt = src->sw_pix_fmt;
+     dst->coded_width = src->coded_width;
+     dst->coded_height = src->coded_height;
+     dst->has_b_frames = src->has_b_frames;
+     dst->idct_algo = src->idct_algo;
+   ...
+     dst->bits_per_coded_sample = src->bits_per_coded_sample;
+     dst->sample_aspect_ratio = src->sample_aspect_ratio;
+     dst->profile = src->profile;
+     dst->level = src->level;
+     dst->bits_per_raw_sample = src->bits_per_raw_sample;
+     dst->color_primaries = src->color_primaries;
+     dst->alpha_mode = src->alpha_mode;
+     dst->color_trc = src->color_trc;
+     dst->colorspace = src->colorspace;
+     dst->color_range = src->color_range;
+     dst->chroma_sample_location = src->chroma_sample_location;
+     dst->sample_rate = src->sample_rate;
+     dst->sample_fmt = src->sample_fmt;
+   ...
+     if(!!dst->hw_frames_ctx != !!src->hw_frames_ctx ||(dst->hw_frames_ctx && dst->hw_frames_ctx->data != src->hw_frames_ctx->data)) {
+   ...
+       if(src->hw_frames_ctx) {
+         dst->hw_frames_ctx = av_buffer_ref(src->hw_frames_ctx);
+   ...
+       }
+     }
+     dst->hwaccel_flags = src->hwaccel_flags;
+   ...
+   }
+   if(for_user) {
+   ...
+   } else {
+   ...
+     if(codec->update_thread_context) {
+>      err = codec->update_thread_context(dst, src);
+       if(err < 0)
+         return err;
+     }
+   ...
+     if(p_src->hwaccel_threadsafe) {
+   ...
+       if(hwaccel->update_thread_context) {
+   ...
+         if(err < 0) {
+   ...
+           return err;
+   ...
+         }
+       }
+     }
+   }
+   return err;
+}
