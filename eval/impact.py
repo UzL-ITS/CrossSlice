@@ -129,10 +129,23 @@ def _strip_comments(text):
     return "\n".join(l for l in text.split("\n") if not l.lstrip().startswith("*"))
 
 
-def mine(repo, n, out, min_callers=3, min_files=2, max_per_repo=12):
+def _global_count(repo, *args):
+    """Lines of `global ARGS` run in the repository (needs a GTAGS index at its root)."""
+    r = subprocess.run(["global", *args], cwd=repo, capture_output=True, text=True, errors="replace")
+    return len([l for l in r.stdout.split("\n") if l.strip()])
+
+
+def mine(repo, n, out, min_callers=3, min_files=2, max_per_repo=12, hard=False, exclude=None,
+         hard_factor=3, hard_offset=20):
+    """hard=True keeps only cases that a reference lookup cannot answer directly:
+    the name has several definitions in the repository, or at least three times
+    as many references (plus twenty) as call sites the commit had to edit.
+    exclude: a JSONL of earlier cases whose functions are skipped."""
     from crossslice.intra.ts_utils.source_code_parser_c import SourceCodeParserC
     shas = _git(repo, "log", "--format=%H", "--no-merges", f"-n{n}", "--", "*.c", "*.h").split()
     found, seen_fn = [], set()
+    if exclude and os.path.exists(exclude):
+        seen_fn |= {json.loads(l)["function"] for l in open(exclude) if l.strip()}
     print(f"{repo}: scanning {len(shas)} commits", flush=True)
     for i, sha in enumerate(shas):
         if len(found) >= max_per_repo:
@@ -155,6 +168,8 @@ def mine(repo, n, out, min_callers=3, min_files=2, max_per_repo=12):
         if not cands:
             continue
         for name, dpath, a_old, a_new in cands:
+            if name in seen_fn:          # the same name defined in several changed files
+                continue
             call_re = re.compile(rf"(?<![\w.>])\b{re.escape(name)}\s*\(")
             truth, parsers = set(), {}
             # truth = call sites that had to change, i.e. the REMOVED lines,
@@ -190,10 +205,17 @@ def mine(repo, n, out, min_callers=3, min_files=2, max_per_repo=12):
                         truth.add((path, caller))
             nfiles = len({p for p, _ in truth})
             if len(truth) >= min_callers and nfiles >= min_files:
+                extra = {}
+                if hard:
+                    n_defs = _global_count(repo, "-x", name)
+                    n_refs = _global_count(repo, "-rx", name)
+                    if not (n_defs >= 2 or n_refs >= hard_factor * len(truth) + hard_offset):
+                        continue
+                    extra = {"n_defs": n_defs, "n_refs": n_refs}
                 seen_fn.add(name)
                 rec = {"repo": os.path.abspath(repo), "sha": sha, "function": name,
                        "file": dpath, "arity_old": a_old, "arity_new": a_new,
-                       "truth": sorted(truth)}
+                       "truth": sorted(truth), **extra}
                 found.append(rec)
                 print(f"  [{i}] {sha[:10]} {name} {a_old}->{a_new} params, "
                       f"{len(truth)} callers in {nfiles} files", flush=True)
@@ -220,17 +242,20 @@ def _norm(name):
 
 def aliases(name):
     """Spellings (whitespace removed) that count as naming the function
-    `name`. A macro-defined function also matches its expansion and the
-    method-style spelling: PHP_METHOD(C, m) ~ zim_C_m ~ C::m,
-    PHP_FUNCTION(f) ~ zif_f ~ f."""
+    `name`. A macro-defined function also matches its expansion and the name
+    the macro defines: PHP_METHOD(C, m) ~ zim_C_m ~ C::m (ZEND_METHOD alike),
+    PHP_FUNCTION(f) ~ zif_f ~ f (ZEND_FUNCTION alike), and a VM handler
+    ZEND_VM_HANDLER(n, OP, ...) ~ OP."""
     out = {re.sub(r"\s+", "", name)}
     m = _MACRO_NAME.match(name)
     if m:
         macro, args = m.group(1), [a.strip() for a in m.group(2).split(",")]
-        if macro == "PHP_METHOD" and len(args) == 2:
+        if macro in ("PHP_METHOD", "ZEND_METHOD") and len(args) == 2:
             out |= {f"zim_{args[0]}_{args[1]}", f"{args[0]}::{args[1]}"}
-        elif macro == "PHP_FUNCTION" and len(args) == 1:
+        elif macro in ("PHP_FUNCTION", "ZEND_FUNCTION") and len(args) == 1:
             out |= {f"zif_{args[0]}", args[0]}
+        elif macro.startswith("ZEND_VM_") and macro.endswith("HANDLER") and len(args) >= 2:
+            out |= {args[1]}
     return out
 
 
@@ -241,18 +266,23 @@ def match_names(pnames, tnames):
     mp, mt = [], set()
     for fn in pnames:
         k = re.sub(r"\s+", "", fn)
+        # `NAME(PARAMS)` written for a function whose plain name is NAME
+        head = k.split("(")[0] if "(" in k else None
         for t, al in talias:
-            if t not in mt and k in al:
+            if t not in mt and (k in al or (head and "(" not in t and head == t)):
                 mt.add(t); mp.append(fn)
                 break
     return mp, mt
 
 
-def score(pred, truth):
+def score(pred, truth, optional=()):
     """pred: [{function, file}] or names; truth: [(file, function)]. Match on
     the function name only (one-to-one, alias-aware, see aliases()); the file
     is informative. Names are deduplicated on both sides, so a caller defined
-    in several files (init_filter in ten Vulkan filters) counts once."""
+    in several files (init_filter in ten Vulkan filters) counts once.
+    optional: names that are accepted but not required (eval/truth_grep.py);
+    a predicted name that matches one of them and no required caller is
+    removed before precision is computed."""
     tnames = []
     for _, fn in truth:
         if fn not in tnames:
@@ -263,6 +293,11 @@ def score(pred, truth):
         if fn and fn not in pnames:
             pnames.append(fn)
     mp, mt = match_names(pnames, tnames)
+    if optional:
+        okeys = set()
+        for o in optional:
+            okeys |= aliases(o)
+        pnames = [p for p in pnames if p in mp or re.sub(r"\s+", "", p) not in okeys]
     prec = len(mp) / len(pnames) if pnames else 0.0
     rec = len(mt) / len(tnames) if tnames else 0.0
     f1 = 2 * prec * rec / (prec + rec) if prec + rec else 0.0
@@ -272,7 +307,7 @@ def score(pred, truth):
 
 def rescore(results_path, cases_path, out_path):
     """Re-score a stored agent run — the submitted caller lists — against
-    another truth file (eval/truth_sites.py builds one from the diffs)."""
+    another truth file (eval/truth_sites.py builds the corrected one)."""
     import ast
     cases = {c["sha"]: c for c in map(json.loads, open(cases_path))}
     rows = []
@@ -280,7 +315,7 @@ def rescore(results_path, cases_path, out_path):
         truth = [tuple(t) for t in cases[r["sha"]]["truth"]]
         r["n_truth"] = len({fn for _, fn in truth})
         r["cases"] = cases_path
-        for arm in ("self", "tool", "semantic"):
+        for arm in ("self", "index", "tool", "semantic"):
             a = r.get(arm)
             if not a:
                 continue
@@ -290,7 +325,8 @@ def rescore(results_path, cases_path, out_path):
                     sub = ast.literal_eval(sub)
                 except (ValueError, SyntaxError):
                     sub = None
-            a.update(score((sub or {}).get("callers") if isinstance(sub, dict) else None, truth))
+            a.update(score((sub or {}).get("callers") if isinstance(sub, dict) else None, truth,
+                           cases[r["sha"]].get("optional") or ()))
         rows.append(r)
     with open(out_path, "w") as fh:
         for r in rows:
@@ -321,7 +357,7 @@ def tool_eval(cases_path, out):
                 g.close()
         pred = [{"function": s.caller_name, "file": s.rel_file}
                 for s in found.get(c["function"], []) if s.caller_name]
-        sc = score(pred, [tuple(t) for t in c["truth"]])
+        sc = score(pred, [tuple(t) for t in c["truth"]], c.get("optional") or ())
         sc.update(sha=c["sha"], function=c["function"], repo=os.path.basename(c["repo"]),
                   pred=[p["function"] for p in pred],
                   missed=[fn for _, fn in c["truth"] if fn not in {p["function"] for p in pred}],
@@ -372,6 +408,56 @@ SYS_TOOL = ("You have generic repository tools (list/read/grep) AND semantic too
             "their call sites (raise `limit` for widely used functions); "
             "get_neighborhood, resolve_symbol, get_function_source and others are "
             "available for detail.")
+SYS_INDEX = ("You have generic repository tools (list/read/grep) AND find_references(name): "
+             "a GNU Global index query that lists every reference to a symbol with its file, "
+             "line and source line. It does not say which function encloses a reference.")
+
+
+class IndexTool:
+    """GNU Global as an agent tool: `gtags` once per worktree, then `global -rx NAME`.
+    The baseline that separates having an index from having CrossSlice."""
+
+    SCHEMA = {"name": "find_references",
+              "description": "List every reference to a symbol in the repository from a GNU "
+                             "Global index: one line per reference with the line number, the "
+                             "file and the source line. Definitions are not included and the "
+                             "enclosing function of a reference is not given.",
+              "input_schema": {"type": "object",
+                               "properties": {"name": {"type": "string"},
+                                              "max_results": {"type": "integer"}},
+                               "required": ["name"]}}
+
+    def __init__(self, root):
+        self.root = root
+        self._indexed = False
+
+    def call(self, name, args):
+        try:
+            if not self._indexed:
+                subprocess.run(["gtags"], cwd=self.root, capture_output=True, timeout=600)
+                self._indexed = True
+            r = subprocess.run(["global", "-rx", str(args.get("name", ""))], cwd=self.root,
+                               capture_output=True, text=True, errors="replace", timeout=60)
+            hits = [h[:200] for h in r.stdout.split("\n") if h]
+            cap = max(1, min(int(args.get("max_results") or 100), 300))
+            head = f"{len(hits)} references" + (f" (showing {cap})" if len(hits) > cap else "")
+            return (head + "\n" + "\n".join(hits[:cap]))[:20000]
+        except Exception as e:
+            return f"error: {type(e).__name__}: {e}"
+
+
+def _index_dispatch(fs, index):
+    fs_d = None
+    import eval.agent_probe as ap
+    fs_d = ap._fs_dispatch(fs)
+
+    async def dispatch(name, args):
+        if name == "find_references":
+            return await asyncio.to_thread(index.call, name, args)
+        return await fs_d(name, args)
+    return dispatch
+
+
 SYS_SEM = ("You have semantic tools only: get_callers(name, limit) returns the "
            "functions that call a symbol with their call sites (raise `limit` for "
            "widely used functions); get_neighborhood, resolve_symbol, "
@@ -399,7 +485,7 @@ async def run_case(cfg, c, arms):
     truth = [tuple(t) for t in c["truth"]]
 
     def finish(arm, sub, st):
-        sc = score((sub or {}).get("callers"), truth)
+        sc = score((sub or {}).get("callers"), truth, c.get("optional") or ())
         lg.file(f"**Score ({arm}):** `{json.dumps(sc)}`\n")
         lg.term(f"    {arm:9} P {sc['precision']:.2f} R {sc['recall']:.2f} "
                 f"({sc['n_pred']} listed, {sc['n_truth']} true)  {st['total']:,} tok, "
@@ -418,6 +504,15 @@ async def run_case(cfg, c, arms):
                                              ap._fs_dispatch(fs), "submit_callers", lg,
                                              cfg.max_iters, cfg.budget)
                 finish("self", sub, st)
+            if "index" in arms:
+                lg.both("  [index arm]", "## Index arm (generic tools + GNU Global references)\n")
+                index = IndexTool(wo.path)
+                sess = providers.make_session(cfg.model, SYS_INDEX, first, cfg.effort,
+                                              ap.MAX_TOKENS, **route)
+                sub, st = await ap.run_agent(sess, fs.schemas() + [IndexTool.SCHEMA, SUBMIT_CALLERS],
+                                             _index_dispatch(fs, index), "submit_callers", lg,
+                                             cfg.max_iters, cfg.budget)
+                finish("index", sub, st)
             if "tool" in arms or "semantic" in arms:
                 params = ap._server_params(repo, sha, lock="old")
                 async with stdio_client(params, errlog=open(os.devnull, "w")) as (r, w):
@@ -491,9 +586,9 @@ def cmd_report(args):
         recs = [json.loads(l) for l in open(f)]
         if not recs:
             continue
-        arms = [a for a in ("self", "tool", "semantic") if any(a in r for r in recs)]
+        arms = [a for a in ("self", "index", "tool", "semantic") if any(a in r for r in recs)]
         print(f"\n{f}  ({recs[0]['model']}, budget {recs[0].get('budget')}, n={len(recs)})")
-        print(f"{'arm':9} {'prec':>6} {'recall':>7} {'F1':>6} {'R=1.0':>6} {'mean tok':>9} "
+        print(f"{'arm':9} {'prec':>6} {'recall':>7} {'F1':>6} {'exact':>6} {'R=1.0':>6} {'mean tok':>9} "
               f"{'median tok':>11} {'calls':>6} {'no sub':>7}")
         for arm in arms:
             rs = [r[arm] for r in recs if arm in r]
@@ -501,6 +596,7 @@ def cmd_report(args):
             toks = sorted(r["total"] for r in rs)
             print(f"{arm:9} {sum(r['precision'] for r in rs)/n:>6.2f} "
                   f"{sum(r['recall'] for r in rs)/n:>7.2f} {sum(r['f1'] for r in rs)/n:>6.2f} "
+                  f"{sum(1 for r in rs if r['recall'] >= 0.999 and r['precision'] >= 0.999):>3}/{n:<2} "
                   f"{sum(1 for r in rs if r['recall'] >= 0.999):>3}/{n:<2} "
                   f"{sum(toks)/n:>9,.0f} {toks[n//2]:>11,} "
                   f"{sum(r['tool_calls'] for r in rs)/n:>6.1f} "
@@ -520,7 +616,12 @@ def main():
     sub = ap_.add_subparsers(dest="cmd", required=True)
     m = sub.add_parser("mine"); m.add_argument("--repo", required=True); m.add_argument("--n", type=int, default=6000)
     m.add_argument("--out", default=CASES); m.add_argument("--max", type=int, default=12)
-    m.set_defaults(func=lambda a: mine(a.repo, a.n, a.out, max_per_repo=a.max))
+    m.add_argument("--hard", action="store_true", help="keep only cases a reference lookup cannot answer directly")
+    m.add_argument("--exclude", default=None, help="JSONL of earlier cases whose functions are skipped")
+    m.add_argument("--min-sites", type=int, default=3, help="minimum edited call sites (default 3)")
+    m.add_argument("--hard-factor", type=int, default=3); m.add_argument("--hard-offset", type=int, default=20)
+    m.set_defaults(func=lambda a: mine(a.repo, a.n, a.out, min_callers=a.min_sites, max_per_repo=a.max, hard=a.hard,
+                                       exclude=a.exclude, hard_factor=a.hard_factor, hard_offset=a.hard_offset))
     t = sub.add_parser("tool-eval"); t.add_argument("--cases", default=CASES); t.add_argument("--out", default=TOOL_RESULTS)
     t.set_defaults(func=lambda a: tool_eval(a.cases, a.out))
     r = sub.add_parser("run")

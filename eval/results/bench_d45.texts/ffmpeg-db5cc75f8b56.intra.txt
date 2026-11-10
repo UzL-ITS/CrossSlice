@@ -1,5 +1,0 @@
-Context for merged statement of old file: libavcodec/wma.h with new file: libavcodec/wma.h:
-#ifndef AVCODEC_WMA_H
-+ #include "avcodec.h"
-  #endif
-

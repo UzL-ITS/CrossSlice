@@ -1,0 +1,42 @@
+eval/results/bench_h100_audit_realdb.jsonl
+tier                      agree    other-def       system  declaration other-symbol    no-answer   total
+gtags_unique                553            0            4          371           19           95    1042
+gtags+ts                     27            0            0            7            0            4      38
+lsp                          57            0            0            0            0            4      61
+priority_fallback            25            2            4           76            4            6     117
+all                         662            2            8          454           23          109    1258
+
+clangd names a definition or a system declaration in 672 decisions: 662 agree (98.5 %), 2 name another definition, 8 name the system library
+   other-def ffmpeg 128ad49c32 priority_fallback get_pixel_format libavcodec/av1dec.c:535 libavcodec/ffv1dec.c:485
+   other-def ffmpeg 128ad49c32 priority_fallback get_pixel_format libavcodec/av1dec.c:535 libavcodec/ffv1dec.c:485
+   other-symbol acpica 64e52a3577 gtags_unique AcpiDmAddToExternalListFromFile source/common/dmextern.c:740 source/common/dmextern.c:902
+   other-symbol acpica c1d3100897 gtags_unique AcpiInitializeTables source/components/tables/tbxface.c:178 source/include/acexcep.h:167
+   other-symbol acpica c1d3100897 gtags_unique InstallHandlers source/tools/examples/examples.c:463 source/include/acexcep.h:167
+   other-symbol ffmpeg 01d895340c priority_fallback av_log libavutil/log.c:443 libavcodec/sanm.c:626
+   other-symbol ffmpeg 1e1e95f1a2 gtags_unique http_buf_read libavformat/http.c:1744 libavformat/http.c:1862
+   other-symbol ffmpeg 51606de0e9 priority_fallback av_log libavutil/log.c:443 libavcodec/cbs_h266_syntax_template.c:267
+   other-symbol ffmpeg 51606de0e9 priority_fallback av_log libavutil/log.c:443 libavcodec/cbs_h266_syntax_template.c:267
+   other-symbol ffmpeg f6a95c7eb7 gtags_unique avio_feof libavformat/aviobuf.c:349 libavformat/img2dec.c:365
+   other-symbol ffmpeg f6a95c7eb7 gtags_unique avio_read libavformat/aviobuf.c:615 libavutil/bprint.h:234
+   other-symbol ffmpeg f6a95c7eb7 priority_fallback av_log libavutil/log.c:443 libavutil/bprint.h:234
+   other-symbol libexpat 0940aa04ee gtags_unique CharData_Init expat/tests/chardata.c:30 expat/tests/minicheck.h:32
+   other-symbol libexpat 0940aa04ee gtags_unique XML_SetExternalEntityRefHandler expat/lib/xmlparse.c:1732 expat/tests/minicheck.h:29
+   other-symbol libexpat 0940aa04ee gtags_unique _XML_Parse_SINGLE_BYTES expat/tests/runtests.c:89 expat/lib/expat_external.h:52
+   other-symbol libexpat 63de667ed0 gtags_unique tcase_create expat/tests/minicheck.c:26 expat/tests/runtests.c:10370
+   other-symbol libexpat 8d42ab97d9 gtags_unique tcase_create expat/tests/minicheck.c:26 expat/tests/runtests.c:6221
+   other-symbol libexpat a1db16b1e7 gtags_unique triggerReenter expat/lib/xmlparse.c:2610 expat/lib/xmlparse.c:6451
+   other-symbol libexpat afe4ad3830 gtags_unique versions_equal expat/tests/runtests.c:5687 expat/tests/minicheck.h:34
+   other-symbol libexpat ee46bf0b44 gtags_unique tcase_create expat/tests/minicheck.c:26 expat/tests/runtests.c:8076
+   other-symbol php-src 2ec8d37eb4 gtags_unique zend_optimizer_get_loop_var_def Zend/Optimizer/zend_optimizer.c:949 Zend/Optimizer/zend_cfg.h:32
+   other-symbol php-src 6a17febe6c gtags_unique zend_ast_create_znode Zend/zend_ast.c:46 Zend/zend_compile.c:3039
+   other-symbol php-src 8a907a9bd8 gtags_unique zend_parse_parameters Zend/zend_API.c:1281 ext/sodium/libsodium.c:196
+   other-symbol php-src 8a907a9bd8 gtags_unique zend_throw_exception Zend/zend_exceptions.c:855 ext/sodium/libsodium.c:203
+   other-symbol php-src ae67eb0490 gtags_unique ir_use_list_remove_one ext/opcache/jit/ir/ir.c:1321 ext/opcache/jit/ir/ir.h:464
+   system acpica 935ca65f78 priority_fallback strtoul source/components/utilities/utclib.c:803 ../../../usr/include/stdlib.h:180
+   system acpica 935ca65f78 priority_fallback strtoul source/components/utilities/utclib.c:803 ../../../usr/include/stdlib.h:180
+   system acpica a1cb7b6af7 gtags_unique vfprintf source/components/utilities/utprint.c:970 ../../../usr/include/bits/stdio2.h:106
+   system acpica a1cb7b6af7 gtags_unique vfprintf source/components/utilities/utprint.c:970 ../../../usr/include/bits/stdio2.h:106
+   system ffmpeg 33b215d155 priority_fallback lrint libavutil/libm.h:432 ../../../usr/include/bits/mathcalls.h:317
+   system ffmpeg 33b215d155 priority_fallback rint libavutil/libm.h:425 ../../../usr/include/bits/mathcalls.h:259
+   system php-src ae67eb0490 gtags_unique mprotect sapi/phpdbg/phpdbg_win.c:22 ../../../usr/include/sys/mman.h:81
+   system php-src ae67eb0490 gtags_unique mprotect sapi/phpdbg/phpdbg_win.c:22 ../../../usr/include/sys/mman.h:81

@@ -1,0 +1,271 @@
+
+==== emit_stack_frame_release  php-src @ c4e8f652c5^  defined in ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1110  static=True file_scope=True
+     {'scope': 34, 'decl': 1, 'call': 3} -> 3 call sites, 3 required names, 0 optional
+  decl      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1110   []  static sljit_s32 emit_stack_frame_release(struct sljit_compiler *compiler)
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1198   [sljit_emit_return_void]  FAIL_IF(emit_stack_frame_release(compiler));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1819   [sljit_emit_call]  PTR_FAIL_IF(emit_stack_frame_release(compiler));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1913   [sljit_emit_icall]  FAIL_IF(emit_stack_frame_release(compiler));
+
+==== get_cc  php-src @ 6008a75f39^  defined in ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2156  static=True file_scope=True
+     {'decl': 1, 'call': 4, 'scope': 17} -> 4 call sites, 3 required names, 0 optional
+  decl      ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2156   []  static sljit_uw get_cc(sljit_s32 type)
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2245   [sljit_emit_jump]  type <= SLJIT_JUMP ? TMP_PC : TMP_REG1, TMP_PC, 0)) & ~COND_MASK) | get_cc(type), 0));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2263   [sljit_emit_jump]  PTR_FAIL_IF(push_inst(compiler, (((type <= SLJIT_JUMP ? BX : BLX) | RM(TMP_REG1)) & ~COND_MASK) | get_cc(type)
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2592   [sljit_emit_op_flags]  cc = get_cc(type & 0xff);
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_32.c:2632   [sljit_emit_cmov]  cc = get_cc(type & 0xff);
+
+==== zend_may_throw  php-src @ 44b3971b85^  defined in ext/opcache/Optimizer/zend_inference.c:4593  static=False file_scope=False
+     {'comment': 2, 'call': 26, 'decl': 2} -> 26 call sites, 5 required names, 0 optional
+     calls in files that are not .c/.h: ['ext/opcache/jit/zend_jit_x86.dasc']
+  comment   ext/opcache/Optimizer/dce.c:43     []  *    zend_may_throw().
+  call      ext/opcache/Optimizer/dce.c:535    [dce_optimize_op_array]  || zend_may_throw(&op_array->opcodes[i], op_array, ssa)
+  comment   ext/opcache/Optimizer/sccp.c:2316   []  /* In some cases zend_may_throw() may be avoided */
+  call      ext/opcache/Optimizer/sccp.c:2338   [try_remove_definition]  if (zend_may_throw(opline, op_array, ssa)) {
+  decl      ext/opcache/Optimizer/zend_inference.c:4593   []  int zend_may_throw(const zend_op *opline, const zend_op_array *op_array, zend_ssa *ssa)
+  decl      ext/opcache/Optimizer/zend_inference.h:324    []  int zend_may_throw(const zend_op *opline, const zend_op_array *op_array, zend_ssa *ssa);
+  call      ext/opcache/jit/zend_jit.c:2234   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2275   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2305   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2355   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2374   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2387   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2418   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2524   [zend_jit]  zend_may_throw(opline, op_array, ssa),
+  call      ext/opcache/jit/zend_jit.c:2552   [zend_jit]  zend_may_throw(opline, op_array, ssa),
+  call      ext/opcache/jit/zend_jit.c:2652   [zend_jit]  zend_may_throw(opline, op_array, ssa),
+  call      ext/opcache/jit/zend_jit.c:2679   [zend_jit]  zend_may_throw(opline, op_array, ssa),
+  call      ext/opcache/jit/zend_jit.c:2691   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2720   [zend_jit]  zend_may_throw(opline, op_array, ssa),
+  call      ext/opcache/jit/zend_jit.c:2754   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2776   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2783   [zend_jit]  zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2834   [zend_jit]  if (!zend_jit_handler(&dasm_state, opline, zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit.c:2885   [zend_jit]  if (!zend_jit_handler(&dasm_state, opline, zend_may_throw(opline, op_array, ssa)) ||
+  call      ext/opcache/jit/zend_jit.c:2912   [zend_jit]  if (!zend_jit_handler(&dasm_state, opline, zend_may_throw(opline, op_array, ssa)) ||
+  call      ext/opcache/jit/zend_jit.c:2957   [zend_jit]  if (!zend_jit_handler(&dasm_state, opline, zend_may_throw(opline, op_array, ssa))) {
+  call      ext/opcache/jit/zend_jit_x86.dasc:7526   [zend_jit_needs_call_chain]  if (zend_may_throw(opline, op_array, ssa)) {
+  call      ext/opcache/jit/zend_jit_x86.dasc:7613   [zend_jit_needs_call_chain]  if (zend_may_throw(opline, op_array, ssa)) {
+  call      ext/opcache/jit/zend_jit_x86.dasc:8366   [zend_jit_do_fcall]  return zend_jit_trace_handler(Dst, op_array, opline, zend_may_throw(opline, op_array, ssa), trace);
+  call      ext/opcache/jit/zend_jit_x86.dasc:8373   [zend_jit_do_fcall]  return zend_jit_handler(Dst, opline, zend_may_throw(opline, op_array, ssa));
+
+==== emit_op_mem  php-src @ 703e037090^  defined in ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1070  static=True file_scope=True
+     {'scope': 43, 'decl': 1, 'call': 9} -> 9 call sites, 9 required names, 0 optional
+  decl      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1070   []  static SLJIT_INLINE sljit_s32 emit_op_mem(struct sljit_compiler *compiler, sljit_s32 flags, sljit_s32 reg, slj
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1332   [sljit_emit_op1]  return emit_op_mem(compiler, WORD_SIZE | SIGNED, dst, src, srcw);
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1658   [sljit_emit_fop1_conv_sw_from_f64]  return emit_op_mem(compiler, ((GET_OPCODE(op) == SLJIT_CONV_S32_FROM_F64) ? INT_SIZE : WORD_SIZE) | STORE, TMP
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1673   [sljit_emit_fop1_conv_f64_from_sw]  emit_op_mem(compiler, ((GET_OPCODE(op) == SLJIT_CONV_F64_FROM_S32) ? INT_SIZE : WORD_SIZE), TMP_REG1, src, src
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1819   [sljit_emit_fast_enter]  return emit_op_mem(compiler, WORD_SIZE | STORE, TMP_LR, dst, dstw);
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1831   [sljit_emit_fast_return]  FAIL_IF(emit_op_mem(compiler, WORD_SIZE, TMP_LR, src, srcw));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1954   [emit_cmp_to0]  PTR_FAIL_IF(emit_op_mem(compiler, inv_bits ? INT_SIZE : WORD_SIZE, TMP_REG1, src, srcw));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:1984   [sljit_emit_ijump]  FAIL_IF(emit_op_mem(compiler, WORD_SIZE, TMP_REG1, src, srcw));
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:2018   [sljit_emit_op_flags]  return emit_op_mem(compiler, (GET_OPCODE(op) == SLJIT_MOV ? WORD_SIZE : INT_SIZE) | STORE, TMP_REG1, dst, dstw
+  call      ext/pcre/pcre2lib/sljit/sljitNativeARM_64.c:2086   [sljit_emit_const]  PTR_FAIL_IF(emit_op_mem(compiler, WORD_SIZE | STORE, dst_r, dst, dstw));
+
+==== php_addslashes  php-src @ dd932f7e63^  defined in ext/standard/string.c:3910  static=False file_scope=False
+     {'non-code': 1, 'comment': 2, 'call': 3, 'decl': 6, 'ref': 2} -> 3 call sites, 3 required names, 1 optional
+     optional: ['PHP_MINIT_FUNCTION(string_intrin)']
+  non-code  CODING_STANDARDS:50     []  recalculated with strlen() (e.g. php_addslashes())
+  comment   ext/filter/sanitizing_filters.c:376    []  /* just call php_addslashes quotes */
+  call      ext/filter/sanitizing_filters.c:377    [php_filter_magic_quotes]  buf = php_addslashes(Z_STR_P(value), 0);
+  decl      ext/standard/php_string.h:130    []  PHPAPI extern zend_string *(*php_addslashes)(zend_string *str, int should_free);
+  decl      ext/standard/php_string.h:133    []  PHPAPI zend_string *php_addslashes(zend_string *str, int should_free);
+  call      ext/standard/streamsfuncs.c:151    [PHP_FUNCTION(stream_socket_client)]  zend_string *quoted_host = php_addslashes(host, 0);
+  call      ext/standard/string.c:3691   [PHP_FUNCTION(addslashes)]  RETURN_STR(php_addslashes(str, 0));
+  comment   ext/standard/string.c:3853   []  /* {{{ php_addslashes */
+  decl      ext/standard/string.c:3870   []  PHPAPI zend_string *php_addslashes(zend_string *str, int should_free) __attribute__((ifunc("resolve_addslashes
+  decl      ext/standard/string.c:3888   []  PHPAPI zend_string *(*php_addslashes)(zend_string *str, int should_free) = NULL;
+  ref       ext/standard/string.c:3896   [PHP_MINIT_FUNCTION(string_intrin)]  php_addslashes = php_addslashes_sse42;
+  ref       ext/standard/string.c:3899   [PHP_MINIT_FUNCTION(string_intrin)]  php_addslashes = php_addslashes_default;
+  decl      ext/standard/string.c:3910   []  PHPAPI zend_string *php_addslashes(zend_string *str, int should_free) /* {{{ */
+  decl      ext/standard/string.c:4061   []  PHPAPI zend_string *php_addslashes(zend_string *str, int should_free)
+
+==== zval_update_constant_ex  php-src @ 6499162ff0^  defined in Zend/zend_execute_API.c:554  static=False file_scope=False
+     {'non-code': 1, 'call': 27, 'decl': 2, 'recursive': 1} -> 27 call sites, 24 required names, 1 optional
+     calls in files that are not .c/.h: ['Zend/zend_ini_parser.y']
+     optional: ['zval_update_constant_ex']
+  non-code  Zend/tests/bug47572.phpt:2      []  Bug #47572 (zval_update_constant_ex: Segmentation fault)
+  call      Zend/zend_API.c:1133   [zend_update_class_constants]  if (UNEXPECTED(zval_update_constant_ex(val, 1, class_type) != SUCCESS)) {
+  call      Zend/zend_API.c:1151   [zend_update_class_constants]  if (UNEXPECTED(zval_update_constant_ex(val, 1, NULL) != SUCCESS)) {
+  call      Zend/zend_ast.c:262    [zend_ast_evaluate]  if (UNEXPECTED(zval_update_constant_ex(zv, 1, scope) != SUCCESS)) {
+  call      Zend/zend_ast.c:271    [zend_ast_evaluate]  if (UNEXPECTED(zval_update_constant_ex(result, 1, scope) != SUCCESS)) {
+  call      Zend/zend_builtin_functions.c:1183   [add_class_vars]  if (UNEXPECTED(zval_update_constant_ex(prop, 0, NULL) != SUCCESS)) {
+  call      Zend/zend_constants.c:397    [zend_get_constant_ex]  if (UNEXPECTED(zval_update_constant_ex(ret_constant, 1, ce) != SUCCESS)) {
+  call      Zend/zend_execute.c:654    [is_null_constant]  if (UNEXPECTED(zval_update_constant_ex(&constant, 0, NULL) != SUCCESS)) {
+  decl      Zend/zend_execute.h:126    []  ZEND_API int zval_update_constant_ex(zval *pp, zend_bool inline_change, zend_class_entry *scope);
+  decl      Zend/zend_execute_API.c:554    []  ZEND_API int zval_update_constant_ex(zval *p, zend_bool inline_change, zend_class_entry *scope) /* {{{ */
+  recursive Zend/zend_execute_API.c:638    [zval_update_constant_ex]  if (UNEXPECTED(zval_update_constant_ex(p, 1, NULL) != SUCCESS)) {
+  call      Zend/zend_execute_API.c:662    [zval_update_constant]  return zval_update_constant_ex(pp, inline_change, NULL);
+  call      Zend/zend_ini_parser.y:137    [zend_ini_get_constant]  zval_update_constant_ex(&tmp, 1, NULL);
+  call      Zend/zend_vm_def.h:4694   [ZEND_VM_HANDLER(64, ZEND_RECV_INIT, NUM, CONST)]  if (UNEXPECTED(zval_update_constant_ex(param, 0, NULL) != SUCCESS)) {
+  call      Zend/zend_vm_def.h:5093   [ZEND_VM_HANDLER(181, ZEND_FETCH_CLASS_CONSTANT, VAR|CONST|UNUSED|CLASS_FETCH, CONST)]  zval_update_constant_ex(value, 1, NULL);
+  call      Zend/zend_vm_def.h:7204   [ZEND_VM_HANDLER(143, ZEND_DECLARE_CONST, CONST, CONST)]  if (UNEXPECTED(zval_update_constant_ex(&c.value, 0, NULL) != SUCCESS)) {
+  call      Zend/zend_vm_def.h:8007   [ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, CONST, REF)]  if (UNEXPECTED(zval_update_constant_ex(value, 1, NULL) != SUCCESS)) {
+  call      Zend/zend_vm_execute.h:2295   [ZEND_RECV_INIT_SPEC_CONST_HANDLER]  if (UNEXPECTED(zval_update_constant_ex(param, 0, NULL) != SUCCESS)) {
+  call      Zend/zend_vm_execute.h:5646   [ZEND_FETCH_CLASS_CONSTANT_SPEC_CONST_CONST_HANDLER]  zval_update_constant_ex(value, 1, NULL);
+  call      Zend/zend_vm_execute.h:6142   [ZEND_DECLARE_CONST_SPEC_CONST_CONST_HANDLER]  if (UNEXPECTED(zval_update_constant_ex(&c.value, 0, NULL) != SUCCESS)) {
+  call      Zend/zend_vm_execute.h:18996  [ZEND_FETCH_CLASS_CONSTANT_SPEC_VAR_CONST_HANDLER]  zval_update_constant_ex(value, 1, NULL);
+  call      Zend/zend_vm_execute.h:28404  [ZEND_FETCH_CLASS_CONSTANT_SPEC_UNUSED_CONST_HANDLER]  zval_update_constant_ex(value, 1, NULL);
+  call      Zend/zend_vm_execute.h:40179  [ZEND_BIND_STATIC_SPEC_CV_CONST_HANDLER]  if (UNEXPECTED(zval_update_constant_ex(value, 1, NULL) != SUCCESS)) {
+  call      ext/reflection/php_reflection.c:459    [_class_string]  zval_update_constant_ex(&c->value, 1, NULL);
+  call      ext/reflection/php_reflection.c:715    [_parameter_string]  zval_update_constant_ex(&zv, 1, NULL);
+  call      ext/reflection/php_reflection.c:1934   [ZEND_METHOD(reflection_function, getStaticVariables)]  if (UNEXPECTED(zval_update_constant_ex(val, 1, fptr->common.scope) != SUCCESS)) {
+  call      ext/reflection/php_reflection.c:2896   [ZEND_METHOD(reflection_parameter, getDefaultValue)]  zval_update_constant_ex(return_value, 0, NULL);
+  call      ext/reflection/php_reflection.c:3968   [add_class_vars]  if (UNEXPECTED(zval_update_constant_ex(&prop_copy, 1, NULL) != SUCCESS)) {
+  call      ext/reflection/php_reflection.c:4624   [ZEND_METHOD(reflection_class, getConstants)]  if (UNEXPECTED(zval_update_constant_ex(&c->value, 1, ce) != SUCCESS)) {
+  call      ext/reflection/php_reflection.c:4672   [ZEND_METHOD(reflection_class, getConstant)]  if (UNEXPECTED(zval_update_constant_ex(&c->value, 1, ce) != SUCCESS)) {
+  call      ext/standard/basic_functions.c:3846   [PHP_FUNCTION(constant)]  if (UNEXPECTED(zval_update_constant_ex(return_value, 1, NULL) != SUCCESS)) {
+
+==== zend_unmangle_property_name_ex  php-src @ 079409bbc2^  defined in Zend/zend_compile.c:2693  static=False file_scope=False
+     {'call': 8, 'decl': 2, 'in-macro': 1} -> 8 call sites, 8 required names, 12 optional
+     optional: ['ZEND_METHOD(reflection_property, __construct)', 'ZEND_METHOD(reflection_property, getDeclaringClass)', 'ZEND_METHOD(reflection_property, getValue)', 'ZEND_METHOD(reflection_property, setValue)', '_property_string', 'php_object_element_export', 'php_object_property_dump', 'php_wddx_serialize_object', 'to_xml_object', 'zend_get_property_guard', 'zend_unmangle_property_name', 'zval_object_property_dump']
+  call      Zend/zend.c:160    [print_hash]  int mangled = zend_unmangle_property_name_ex(string_key->val, string_key->len, &class_name, &prop_name, &prop_
+  call      Zend/zend_builtin_functions.c:1073   [ZEND_FUNCTION(get_object_vars)]  zend_unmangle_property_name_ex(key->val, key->len, &class_name, &prop_name, (int*) &prop_len);
+  call      Zend/zend_compile.c:2306   [zend_do_traits_property_binding]  zend_unmangle_property_name_ex(property_info->name->val, property_info->name->len,
+  decl      Zend/zend_compile.c:2693   []  ZEND_API int zend_unmangle_property_name_ex(const char *mangled_property, int len, const char **class_name, co
+  in-macro  Zend/zend_compile.h:504    [zend_unmangle_property_name]  zend_unmangle_property_name_ex(mangled_property, mangled_property_len, class_name, prop_name, NULL)
+  decl      Zend/zend_compile.h:505    []  ZEND_API int zend_unmangle_property_name_ex(const char *mangled_property, int mangled_property_len, const char
+  call      Zend/zend_object_handlers.c:403    [zend_check_property_access]  zend_unmangle_property_name_ex(prop_info_name->val, prop_info_name->len, &class_name, &prop_name, &prop_name_l
+  call      Zend/zend_vm_def.h:4815   [ZEND_VM_HANDLER(78, ZEND_FE_FETCH, VAR, ANY)]  zend_unmangle_property_name_ex(
+  call      Zend/zend_vm_execute.h:16795  [ZEND_FE_FETCH_SPEC_VAR_HANDLER]  zend_unmangle_property_name_ex(
+  call      ext/reflection/php_reflection.c:1303   [reflection_property_factory]  zend_unmangle_property_name_ex(prop->name->val, prop->name->len, &class_name, &prop_name, &prop_name_len);
+  call      ext/standard/http.c:69     [php_url_encode_hash_ex]  zend_unmangle_property_name_ex(key->val, key->len, &tmp, &prop_name, (int *)&prop_len);
+
+==== php_dom_create_object  php-src @ 2f0a758fbb^  defined in ext/dom/php_dom.c:1321  static=False file_scope=False
+     {'call': 16, 'comment': 1, 'decl': 2, 'in-macro': 1} -> 16 call sites, 16 required names, 35 optional
+     optional: ['DOM_RET_OBJ', 'PHP_FUNCTION(dom_document_create_attribute)', 'PHP_FUNCTION(dom_document_create_attribute_ns)', 'PHP_FUNCTION(dom_document_create_cdatasection)', 'PHP_FUNCTION(dom_document_create_comment)', 'PHP_FUNCTION(dom_document_create_document_fragment)', 'PHP_FUNCTION(dom_document_create_element)', 'PHP_FUNCTION(dom_document_create_element_ns)', 'PHP_FUNCTION(dom_document_create_entity_reference)', 'PHP_FUNCTION(dom_document_create_processing_instruction)', 'PHP_FUNCTION(dom_document_create_text_node)', 'PHP_FUNCTION(dom_document_get_element_by_id)', 'PHP_FUNCTION(dom_document_import_node)', 'PHP_FUNCTION(dom_element_get_attribute_node)', 'PHP_FUNCTION(dom_element_get_attribute_node_ns)', 'PHP_FUNCTION(dom_element_remove_attribute_node)', 'PHP_FUNCTION(dom_element_set_attribute)', 'PHP_FUNCTION(dom_element_set_attribute_node)', 'PHP_FUNCTION(dom_element_set_attribute_node_ns)', 'PHP_FUNCTION(dom_import_simplexml)', 'PHP_FUNCTION(dom_namednodemap_get_named_item)', 'PHP_FUNCTION(dom_namednodemap_get_named_item_ns)', 'PHP_FUNCTION(dom_namednodemap_item)', 'PHP_FUNCTION(dom_node_append_child)', 'PHP_FUNCTION(dom_node_clone_node)', 'PHP_FUNCTION(dom_node_insert_before)', 'PHP_FUNCTION(dom_node_remove_child)', 'PHP_FUNCTION(dom_node_replace_child)', 'PHP_FUNCTION(dom_nodelist_item)', 'PHP_FUNCTION(xsl_xsltprocessor_transform_to_doc)', 'PHP_METHOD(domimplementation, createDocument)', 'PHP_METHOD(domimplementation, createDocumentType)', 'PHP_METHOD(xmlreader, expand)', 'dom_load_html', 'dom_parse_document']
+  call      ext/dom/attr.c:231    [dom_attr_owner_element_read]  if (NULL == (*retval = php_dom_create_object(nodeparent, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/document.c:264    [dom_document_doctype_read]  if (NULL == (*retval = php_dom_create_object((xmlNodePtr) dtdptr, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/document.c:314    [dom_document_document_element_read]  if (NULL == (*retval = php_dom_create_object(root, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/dom_iterators.c:241    [php_dom_iterator_move_forward]  curattr = php_dom_create_object(curnode, &ret, curattr, objmap->baseobj TSRMLS_CC);
+  call      ext/dom/dom_iterators.c:320    [php_dom_get_iterator]  curattr = php_dom_create_object(curnode, &ret, curattr, objmap->baseobj TSRMLS_CC);
+  call      ext/dom/node.c:432    [dom_node_parent_node_read]  if (NULL == (*retval = php_dom_create_object(nodeparent, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/node.c:501    [dom_node_first_child_read]  if (NULL == (*retval = php_dom_create_object(first, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/node.c:538    [dom_node_last_child_read]  if (NULL == (*retval = php_dom_create_object(last, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/node.c:572    [dom_node_previous_sibling_read]  if (NULL == (*retval = php_dom_create_object(prevsib, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/node.c:605    [dom_node_next_sibling_read]  if (NULL == (*retval = php_dom_create_object(nextsib, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/node.c:677    [dom_node_owner_document_read]  if (NULL == (*retval = php_dom_create_object((xmlNodePtr) docp, &ret, *retval, obj TSRMLS_CC))) {
+  comment   ext/dom/php_dom.c:1320   []  /* {{{ php_dom_create_object */
+  decl      ext/dom/php_dom.c:1321   []  PHP_DOM_EXPORT zval *php_dom_create_object(xmlNodePtr obj, int *found, zval *return_value, dom_object *domobj 
+  call      ext/dom/text.c:199    [PHP_FUNCTION(dom_text_split_text)]  return_value = php_dom_create_object(nnode, &ret, return_value, intern TSRMLS_CC);
+  decl      ext/dom/xml_common.h:57     []  PHP_DOM_EXPORT zval *php_dom_create_object(xmlNodePtr obj, int *found, zval* return_value, dom_object *domobj 
+  in-macro  ext/dom/xml_common.h:82     [DOM_RET_OBJ]  if (!php_dom_create_object(obj, ret, return_value, domobject TSRMLS_CC)) { \
+  call      ext/dom/xpath.c:167    [dom_xpath_ext_function_php]  child = php_dom_create_object(node, &ret, child, (dom_object *)intern TSRMLS_CC);
+  call      ext/dom/xpath.c:335    [dom_xpath_document_read]  if (NULL == (*retval = php_dom_create_object((xmlNodePtr) docp, &ret, *retval, obj TSRMLS_CC))) {
+  call      ext/dom/xpath.c:502    [php_xpath_eval]  child = php_dom_create_object(node, &ret, child, (dom_object *)intern TSRMLS_CC);
+  call      ext/xsl/xsltprocessor.c:286    [xsl_ext_function_php]  child = php_dom_create_object(node, &ret, child, domintern TSRMLS_CC);
+
+==== zend_is_callable_ex  php-src @ 639e4e1afa^  defined in Zend/zend_API.c:3083  static=False file_scope=False
+     {'decl': 2, 'call': 9} -> 9 call sites, 8 required names, 0 optional
+  decl      Zend/zend_API.c:3083   []  ZEND_API zend_bool zend_is_callable_ex(zval *callable, zval *object_ptr, uint check_flags, char **callable_nam
+  call      Zend/zend_API.c:3287   [zend_is_callable]  return zend_is_callable_ex(callable, NULL, check_flags, callable_name, NULL, NULL, NULL TSRMLS_CC);
+  call      Zend/zend_API.c:3295   [zend_make_callable]  if (zend_is_callable_ex(callable, NULL, IS_CALLABLE_STRICT, callable_name, NULL, &fcc, NULL TSRMLS_CC)) {
+  call      Zend/zend_API.c:3320   [zend_fcall_info_init]  if (!zend_is_callable_ex(callable, NULL, check_flags, callable_name, NULL, fcc, error TSRMLS_CC)) {
+  decl      Zend/zend_API.h:298    []  ZEND_API zend_bool zend_is_callable_ex(zval *callable, zval *object_ptr, uint check_flags, char **callable_nam
+  call      Zend/zend_execute_API.c:787    [zend_call_function]  if (!zend_is_callable_ex(&fci->function_name, fci->object_ptr, IS_CALLABLE_CHECK_SILENT, &callable_name, NULL,
+  call      ext/spl/php_spl.c:494    [PHP_FUNCTION(spl_autoload_register)]  if (!zend_is_callable_ex(zcallable, NULL, IS_CALLABLE_STRICT, &func_name, &func_name_len, &fcc, &error TSRMLS_
+  call      ext/spl/php_spl.c:650    [PHP_FUNCTION(spl_autoload_unregister)]  if (!zend_is_callable_ex(zcallable, NULL, IS_CALLABLE_CHECK_SYNTAX_ONLY, &func_name, &func_name_len, &fcc, &er
+  call      ext/standard/type.c:392    [PHP_FUNCTION(is_callable)]  retval = zend_is_callable_ex(var, NULL, check_flags, &name, NULL, NULL, &error TSRMLS_CC);
+  call      ext/standard/type.c:397    [PHP_FUNCTION(is_callable)]  retval = zend_is_callable_ex(var, NULL, check_flags, NULL, NULL, NULL, &error TSRMLS_CC);
+  call      main/streams/userspace.c:979    [php_userstreamop_set_option]  if (zend_is_callable_ex(&func_name, us->object, IS_CALLABLE_CHECK_SILENT,
+
+==== ramfb_setup  qemu @ 350785d41d^  defined in hw/display/ramfb-stubs.c:11  static=False file_scope=False
+     {'call': 3, 'decl': 3} -> 3 call sites, 3 required names, 0 optional
+  call      hw/display/ramfb-standalone.c:42     [ramfb_realizefn]  ramfb->state = ramfb_setup(errp);
+  decl      hw/display/ramfb-stubs.c:11     []  RAMFBState *ramfb_setup(Error **errp)
+  decl      hw/display/ramfb.c:138    []  RAMFBState *ramfb_setup(Error **errp)
+  call      hw/vfio/display.c:368    [vfio_display_dmabuf_init]  vdev->dpy->ramfb = ramfb_setup(errp);
+  call      hw/vfio/display.c:497    [vfio_display_region_init]  vdev->dpy->ramfb = ramfb_setup(errp);
+  decl      include/hw/display/ramfb.h:9      []  RAMFBState *ramfb_setup(Error **errp);
+
+==== os_mlock  qemu @ e76fadf93e^  defined in include/system/os-win32.h:126  static=True file_scope=False
+     {'decl': 3, 'call': 2} -> 2 call sites, 2 required names, 0 optional
+  decl      include/system/os-posix.h:56     []  int os_mlock(void);
+  decl      include/system/os-win32.h:126    []  static inline int os_mlock(void)
+  call      migration/postcopy-ram.c:655    [postcopy_ram_incoming_cleanup]  if (os_mlock() < 0) {
+  decl      os-posix.c:330    []  int os_mlock(void)
+  call      system/vl.c:800    [realtime_init]  if (os_mlock() < 0) {
+
+==== gdbserver_start  qemu @ c0e6b8b798^  defined in gdbstub/system.c:333  static=False file_scope=False
+     {'call': 3, 'decl': 3, 'comment': 1, 'ref': 1} -> 3 call sites, 2 required names, 1 optional
+     optional: ['qemu_machine_creation_done']
+  call      bsd-user/main.c:631    [main]  gdbserver_start(gdbstub);
+  decl      gdbstub/system.c:333    []  int gdbserver_start(const char *device)
+  decl      gdbstub/user.c:408    []  int gdbserver_start(const char *port_or_path)
+  comment   include/exec/gdbstub.h:50     []  * gdbserver_start: start the gdb server
+  decl      include/exec/gdbstub.h:57     []  int gdbserver_start(const char *port_or_device);
+  call      linux-user/main.c:1026   [main]  if (gdbserver_start(gdbstub) < 0) {
+  call      monitor/hmp-cmds.c:288    [hmp_gdbserver]  if (gdbserver_start(device) < 0) {
+  ref       system/vl.c:2708   [qemu_machine_creation_done]  foreach_device_config_or_exit(DEV_GDB, gdbserver_start);
+
+==== migration_is_running  qemu @ aeaafb1e59^  defined in migration/migration.c:1106  static=False file_scope=False
+     {'decl': 2, 'call': 7} -> 7 call sites, 7 required names, 0 optional
+  decl      migration/migration.c:1106   []  bool migration_is_running(int state)
+  call      migration/migration.c:1480   [migrate_fd_cancel]  if (!migration_is_running(old_state)) {
+  call      migration/migration.c:1965   [migrate_prepare]  if (migration_is_running(s->state)) {
+  decl      migration/migration.h:482    []  bool migration_is_running(int state);
+  call      migration/options.c:684    [migrate_cap_set]  if (migration_is_running(s->state)) {
+  call      migration/options.c:728    [qmp_migrate_set_capabilities]  if (migration_is_running(s->state) || migration_in_colo_state()) {
+  call      migration/savevm.c:1709   [qemu_savevm_state]  if (migration_is_running(ms->state)) {
+  call      system/dirtylimit.c:454    [dirtylimit_is_allowed]  if (migration_is_running(ms->state) &&
+  call      target/riscv/kvm/kvm-cpu.c:732    [kvm_riscv_put_regs_timer]  if (migration_is_running(migrate_get_current()->state)) {
+
+==== qemu_input_is_absolute  qemu @ 0337e4123e^  defined in ui/input.c:497  static=False file_scope=False
+     {'decl': 2, 'comment': 1, 'call': 26} -> 26 call sites, 22 required names, 0 optional
+     calls in files that are not .c/.h: ['ui/cocoa.m']
+  decl      include/ui/input.h:60     []  bool qemu_input_is_absolute(void);
+  comment   ui/cocoa.m:327    []  * isAbsoluteEnabled tracks qemu_input_is_absolute() [ie "is the emulated
+  call      ui/cocoa.m:2004   [cocoa_refresh]  if (qemu_input_is_absolute()) {
+  call      ui/dbus-console.c:389    [dbus_mouse_rel_motion]  if (qemu_input_is_absolute()) {
+  call      ui/dbus-console.c:456    [dbus_mouse_set_pos]  if (!qemu_input_is_absolute()) {
+  call      ui/dbus-console.c:517    [dbus_mouse_update_is_absolute]  "is-absolute", qemu_input_is_absolute(),
+  call      ui/gtk.c:207    [gd_update_cursor]  if (s->full_screen || qemu_input_is_absolute() || s->ptr_owner == vc) {
+  call      ui/gtk.c:456    [gd_mouse_set]  qemu_input_is_absolute()) {
+  call      ui/gtk.c:692    [gd_mouse_mode_change]  if (qemu_input_is_absolute() && s->ptr_owner) {
+  call      ui/gtk.c:906    [gd_motion_event]  if (qemu_input_is_absolute()) {
+  call      ui/gtk.c:926    [gd_motion_event]  if (!qemu_input_is_absolute() && s->ptr_owner == vc) {
+  call      ui/gtk.c:968    [gd_button_event]  !qemu_input_is_absolute() && s->ptr_owner != vc) {
+  decl      ui/input.c:497    []  bool qemu_input_is_absolute(void)
+  call      ui/input.c:591    [qemu_input_check_mode_change]  is_absolute = qemu_input_is_absolute();
+  call      ui/sdl2.c:206    [sdl_hide_cursor]  if (!qemu_input_is_absolute()) {
+  call      ui/sdl2.c:217    [sdl_show_cursor]  if (!qemu_input_is_absolute()) {
+  call      ui/sdl2.c:222    [sdl_show_cursor]  (gui_grab || qemu_input_is_absolute() || absolute_enabled)) {
+  call      ui/sdl2.c:248    [sdl_grab_start]  if (!qemu_input_is_absolute() && !absolute_enabled) {
+  call      ui/sdl2.c:283    [sdl_mouse_mode_change]  if (qemu_input_is_absolute()) {
+  call      ui/sdl2.c:314    [sdl_send_mouse_event]  if (qemu_input_is_absolute()) {
+  call      ui/sdl2.c:500    [handle_mousemotion]  if (qemu_input_is_absolute() || absolute_enabled) {
+  call      ui/sdl2.c:516    [handle_mousemotion]  if (gui_grab || qemu_input_is_absolute() || absolute_enabled) {
+  call      ui/sdl2.c:533    [handle_mousebutton]  if (!gui_grab && !qemu_input_is_absolute()) {
+  call      ui/sdl2.c:606    [handle_windowevent]  if (!gui_grab && (qemu_input_is_absolute() || absolute_enabled)) {
+  call      ui/sdl2.c:736    [sdl_mouse_warp]  if (gui_grab || qemu_input_is_absolute() || absolute_enabled) {
+  call      ui/sdl2.c:738    [sdl_mouse_warp]  if (!qemu_input_is_absolute() && !absolute_enabled) {
+  call      ui/sdl2.c:776    [sdl_mouse_define]  (gui_grab || qemu_input_is_absolute() || absolute_enabled)) {
+  call      ui/spice-input.c:227    [mouse_mode_notifier]  bool is_absolute  = qemu_input_is_absolute();
+  call      ui/vnc.c:1774   [check_pointer_type_change]  int absolute = qemu_input_is_absolute();
+
+==== postcopy_ram_supported_by_host  qemu @ 74c38cf7fd^  defined in migration/postcopy-ram.c:371  static=False file_scope=False
+     {'call': 2, 'comment': 2, 'decl': 3} -> 2 call sites, 2 required names, 0 optional
+  call      migration/options.c:330    [migrate_caps_check]  !postcopy_ram_supported_by_host(mis)) {
+  comment   migration/options.c:331    []  /* postcopy_ram_supported_by_host will have emitted a more
+  comment   migration/postcopy-ram.c:339    []  /* Callback from postcopy_ram_supported_by_host block iterator.
+  decl      migration/postcopy-ram.c:371    []  bool postcopy_ram_supported_by_host(MigrationIncomingState *mis)
+  decl      migration/postcopy-ram.c:1363   []  bool postcopy_ram_supported_by_host(MigrationIncomingState *mis)
+  decl      migration/postcopy-ram.h:17     []  bool postcopy_ram_supported_by_host(MigrationIncomingState *mis);
+  call      migration/savevm.c:1756   [loadvm_postcopy_handle_advise]  if (!postcopy_ram_supported_by_host(mis)) {
+
+==== semihosting_enabled  qemu @ 5202861b20^  defined in include/semihosting/semihost.h:30  static=True file_scope=False
+     {'decl': 4, 'call': 11} -> 11 call sites, 10 required names, 0 optional
+  decl      include/semihosting/semihost.h:30     []  static inline bool semihosting_enabled(void)
+  decl      include/semihosting/semihost.h:55     []  bool semihosting_enabled(void);
+  decl      semihosting/config.c:62     []  bool semihosting_enabled(void)
+  call      softmmu/vl.c:1825   [qemu_apply_machine_options]  if (semihosting_enabled() && !semihosting_get_argc()) {
+  decl      stubs/semihost.c:26     []  bool semihosting_enabled(void)
+  call      target/arm/translate-a64.c:2222   [disas_exc]  if (semihosting_enabled() && imm16 == 0xf000) {
+  call      target/arm/translate.c:1172   [gen_hlt]  if (semihosting_enabled() &&
+  call      target/arm/translate.c:6559   [trans_BKPT]  semihosting_enabled() &&
+  call      target/arm/translate.c:8767   [trans_SVC]  if (!arm_dc_feature(s, ARM_FEATURE_M) && semihosting_enabled() &&
+  call      target/m68k/op_helper.c:206    [cf_interrupt_all]  if (semihosting_enabled()
+  call      target/mips/tcg/translate.c:12090  [is_uhi]  return semihosting_enabled() && sdbbp_code == 1;
+  call      target/nios2/translate.c:821    [gen_break]  if (semihosting_enabled() && instr.imm5 == 1) {
+  call      target/xtensa/translate.c:2369   [test_exceptions_simcall]  bool ill = dc->config->hw_version <= 250002 && !semihosting_enabled();
+  call      target/xtensa/translate.c:2371   [test_exceptions_simcall]  if (ill || !semihosting_enabled()) {
+  call      target/xtensa/translate.c:2381   [translate_simcall]  if (semihosting_enabled()) {

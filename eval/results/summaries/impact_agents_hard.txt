@@ -1,0 +1,158 @@
+
+Tool alone (get_callers vs. history truth, n=18): precision 1.000  recall 1.000  F1 1.000
+
+eval/results/impact_haiku-5-5_hard.jsonl  (anthropic:claude-haiku-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.93    0.91   0.91  13/16  13/16    33,680      26,715    8.9       0
+index       0.95    0.94   0.93  12/16  13/16    37,789      33,556   10.4       0
+tool        0.99    0.99   0.99  15/16  15/16    22,754      20,921    5.4       0
+semantic    0.98    0.97   0.97  12/16  13/16    26,059      24,363    6.4       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    13,480 1.00/1.00    19,922 1.00/1.00    29,893 1.00/1.00    38,855
+php-src    get_cc                             3 1.00/1.00    11,231 1.00/1.00    14,884 1.00/1.00    11,687 1.00/1.00    26,988
+php-src    zend_may_throw                     5 1.00/1.00    60,588 1.00/1.00    61,740 0.80/0.80    52,869 1.00/0.60    29,748
+php-src    emit_op_mem                        9 1.00/1.00    19,871 1.00/1.00    33,556 1.00/1.00    37,325 1.00/1.00    37,612
+php-src    php_addslashes                     3 1.00/1.00    16,950 1.00/1.00    22,378 1.00/1.00    17,967 0.75/1.00    32,486
+php-src    zval_update_constant_ex           24 0.88/0.29    90,355 0.89/0.33   111,693 1.00/1.00    30,869 1.00/0.96    39,085
+php-src    php_dom_create_object             16 0.32/0.56    80,991 1.00/1.00    65,567 1.00/1.00    20,921 1.00/1.00    15,127
+php-src    zend_is_callable_ex                8 1.00/1.00    36,342 1.00/1.00    25,461 1.00/1.00    17,396 1.00/1.00    22,726
+php-src    zend_unmangle_property_name_ex     8 0.75/0.75    41,922 0.75/0.75    56,843 1.00/1.00    18,270 1.00/1.00    18,822
+qemu       ramfb_setup                        3 1.00/1.00     8,642 1.00/1.00     8,559 1.00/1.00     8,898 1.00/1.00    18,929
+qemu       os_mlock                           2 1.00/1.00    12,665 1.00/1.00    13,525 1.00/1.00     8,599 1.00/1.00    18,376
+qemu       gdbserver_start                    2 1.00/1.00    29,380 0.50/1.00    33,847 1.00/1.00    21,916 1.00/1.00    37,685
+qemu       migration_is_running               7 1.00/1.00    26,715 1.00/1.00    27,792 1.00/1.00    16,638 1.00/1.00    17,786
+qemu       qemu_input_is_absolute            22 1.00/1.00    41,184 1.00/0.95    46,549 1.00/1.00    26,565 1.00/0.95    24,363
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    23,554 1.00/1.00    22,119 1.00/1.00    15,394 1.00/1.00    18,678
+qemu       semihosting_enabled               10 1.00/1.00    25,008 1.00/1.00    40,182 1.00/1.00    28,852 1.00/1.00    19,671
+
+eval/results/impact_haiku-5-5_hardr2.jsonl  (anthropic:claude-haiku-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.97    0.93   0.95  13/16  13/16    39,488      32,421    9.8       0
+index       0.96    0.90   0.91  10/16  10/16    37,059      33,880   10.2       0
+tool        1.00    0.96   0.98  14/16  14/16    22,437      18,513    5.4       0
+semantic    1.00    0.97   0.98  13/16  13/16    23,577      21,509    5.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    14,797 1.00/1.00    22,082 1.00/1.00    30,092 1.00/1.00    38,236
+php-src    get_cc                             3 1.00/1.00    11,529 1.00/1.00    14,578 1.00/1.00    11,328 1.00/1.00    30,048
+php-src    zend_may_throw                     5 1.00/1.00    79,046 1.00/0.60    46,973 1.00/0.60    67,555 1.00/0.60    31,720
+php-src    emit_op_mem                        9 1.00/0.89    53,598 1.00/1.00    33,880 1.00/1.00    17,428 1.00/1.00    37,669
+php-src    php_addslashes                     3 1.00/1.00    16,284 1.00/1.00    30,152 1.00/1.00    33,292 1.00/1.00    33,591
+php-src    zval_update_constant_ex           24 0.64/0.29   137,718 0.86/0.25    59,282 1.00/0.83    29,723 1.00/0.96    19,897
+php-src    php_dom_create_object             16 1.00/1.00    48,856 0.88/0.88    76,580 1.00/1.00    22,554 1.00/1.00    23,380
+php-src    zend_is_callable_ex                8 1.00/1.00    26,924 1.00/1.00    40,707 1.00/1.00    17,872 1.00/1.00    12,399
+php-src    zend_unmangle_property_name_ex     8 0.86/0.75    41,767 0.75/0.75    53,301 1.00/1.00    10,497 1.00/1.00    21,509
+qemu       ramfb_setup                        3 1.00/1.00     8,684 1.00/1.00     8,673 1.00/1.00     8,806 1.00/1.00    18,234
+qemu       os_mlock                           2 1.00/1.00    12,724 1.00/1.00    17,938 1.00/1.00     8,610 1.00/1.00    17,511
+qemu       gdbserver_start                    2 1.00/1.00    32,421 1.00/1.00    20,448 1.00/1.00    16,466 1.00/1.00    16,885
+qemu       migration_is_running               7 1.00/1.00    26,476 1.00/1.00    20,071 1.00/1.00    18,513 1.00/1.00    18,807
+qemu       qemu_input_is_absolute            22 1.00/1.00    47,930 1.00/0.95    46,448 1.00/1.00    26,974 1.00/0.95    24,463
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    28,176 1.00/1.00    26,763 1.00/1.00     8,902 1.00/1.00    12,415
+qemu       semihosting_enabled               10 1.00/1.00    44,871 0.90/0.90    75,061 1.00/1.00    30,378 1.00/1.00    20,473
+
+eval/results/impact_haiku-5-5_hardr3.jsonl  (anthropic:claude-haiku-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.94    0.93   0.93  12/16  13/16    34,423      32,796    9.4       0
+index       0.94    0.91   0.92  12/16  12/16    38,396      30,297   10.3       0
+tool        0.99    0.99   0.99  15/16  15/16    20,030      17,592    4.9       0
+semantic    1.00    0.97   0.98  13/16  13/16    28,224      24,111    7.1       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    13,028 1.00/1.00    18,900 1.00/1.00    13,200 1.00/1.00    35,370
+php-src    get_cc                             3 1.00/1.00    11,311 1.00/1.00    14,924 1.00/1.00    30,826 1.00/1.00    24,111
+php-src    zend_may_throw                     5 0.67/0.80    48,238 0.40/0.40    48,925 0.80/0.80    53,346 1.00/0.60    50,316
+php-src    emit_op_mem                        9 1.00/1.00    32,796 1.00/1.00    33,574 1.00/1.00    17,592 1.00/1.00    37,835
+php-src    php_addslashes                     3 1.00/1.00    17,851 1.00/1.00    30,297 1.00/1.00    30,422 1.00/1.00    42,472
+php-src    zval_update_constant_ex           24 0.83/0.42    67,917 0.88/0.29   124,885 1.00/1.00    28,705 1.00/0.96    20,891
+php-src    php_dom_create_object             16 0.91/0.62    82,866 0.94/0.94    48,708 1.00/1.00    22,617 1.00/1.00    22,913
+php-src    zend_is_callable_ex                8 1.00/1.00    25,579 1.00/1.00    40,164 1.00/1.00    17,378 1.00/1.00    22,760
+php-src    zend_unmangle_property_name_ex     8 1.00/1.00    43,450 0.88/0.88    92,324 1.00/1.00    17,702 1.00/1.00    29,988
+qemu       ramfb_setup                        3 1.00/1.00     8,598 1.00/1.00     9,665 1.00/1.00    15,636 1.00/1.00    17,925
+qemu       os_mlock                           2 1.00/1.00    12,403 1.00/1.00    22,269 1.00/1.00     8,569 1.00/1.00    16,724
+qemu       gdbserver_start                    2 0.67/1.00    38,727 1.00/1.00    21,392 1.00/1.00     9,323 1.00/1.00    24,418
+qemu       migration_is_running               7 1.00/1.00    25,721 1.00/1.00    20,342 1.00/1.00     9,201 1.00/1.00    17,981
+qemu       qemu_input_is_absolute            22 1.00/1.00    49,943 1.00/1.00    29,346 1.00/1.00    27,085 1.00/0.95    23,433
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    13,190 1.00/1.00    19,896 1.00/1.00     8,925 1.00/1.00    15,774
+qemu       semihosting_enabled               10 1.00/1.00    59,156 1.00/1.00    38,726 1.00/1.00     9,955 1.00/1.00    48,665
+
+eval/results/impact_sonnet-5-5_hard.jsonl  (anthropic:claude-sonnet-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.97    0.97   0.97  14/16  14/16    27,749      29,507    7.1       0
+index       0.97    0.93   0.95  13/16  13/16    29,255      23,097    7.9       0
+tool        1.00    1.00   1.00  16/16  16/16    14,162       9,647    3.5       0
+semantic    1.00    0.97   0.98  13/16  13/16    10,897       8,500    2.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    13,992 1.00/1.00    19,404 1.00/1.00    12,696 1.00/1.00     8,992
+php-src    get_cc                             3 1.00/1.00    13,014 1.00/1.00    16,372 1.00/1.00    10,917 1.00/1.00     8,183
+php-src    zend_may_throw                     5 1.00/1.00    44,545 1.00/1.00    54,438 1.00/1.00    52,733 1.00/0.60     7,980
+php-src    emit_op_mem                        9 1.00/1.00    35,295 1.00/1.00    21,080 1.00/1.00    12,970 1.00/1.00    10,631
+php-src    php_addslashes                     3 1.00/1.00    13,372 1.00/1.00    14,832 1.00/1.00     9,466 1.00/1.00    18,206
+php-src    zval_update_constant_ex           24 0.71/0.71    45,449 0.75/0.50    49,988 1.00/1.00    21,886 1.00/0.96     9,833
+php-src    php_dom_create_object             16 1.00/1.00    29,507 1.00/1.00    39,690 1.00/1.00    10,705 1.00/1.00    23,748
+php-src    zend_is_callable_ex                8 1.00/1.00    39,906 1.00/1.00    23,097 1.00/1.00     9,647 1.00/1.00    12,040
+php-src    zend_unmangle_property_name_ex     8 0.88/0.88    56,366 1.00/0.62    40,784 1.00/1.00     9,646 1.00/1.00    22,337
+qemu       ramfb_setup                        3 1.00/1.00     6,296 1.00/1.00     7,339 1.00/1.00     8,412 1.00/1.00     6,934
+qemu       os_mlock                           2 1.00/1.00     8,477 1.00/1.00    14,591 1.00/1.00     8,183 1.00/1.00     7,164
+qemu       gdbserver_start                    2 1.00/1.00    22,391 1.00/1.00    18,087 1.00/1.00     8,513 1.00/1.00     7,297
+qemu       migration_is_running               7 1.00/1.00    26,945 1.00/1.00    23,386 1.00/1.00     8,824 1.00/1.00     7,284
+qemu       qemu_input_is_absolute            22 1.00/1.00    34,317 1.00/1.00    39,310 1.00/1.00    24,233 1.00/0.95     8,500
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    10,181 1.00/1.00    11,958 1.00/1.00     8,426 1.00/1.00     7,228
+qemu       semihosting_enabled               10 1.00/1.00    43,928 0.80/0.80    73,722 1.00/1.00     9,343 1.00/1.00     7,999
+
+eval/results/impact_sonnet-5-5_hardr2.jsonl  (anthropic:claude-sonnet-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.96    0.98   0.97  13/16  14/16    27,114      24,357    6.8       0
+index       0.99    0.97   0.98  13/16  13/16    36,763      36,630    8.2       0
+tool        1.00    1.00   1.00  16/16  16/16    13,438       9,647    3.6       0
+semantic    1.00    0.97   0.98  13/16  13/16    10,784       8,736    2.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    14,083 1.00/1.00    18,033 1.00/1.00    12,734 1.00/1.00     8,904
+php-src    get_cc                             3 1.00/1.00    12,770 1.00/1.00    18,144 1.00/1.00    10,945 1.00/1.00     8,736
+php-src    zend_may_throw                     5 1.00/1.00    46,416 1.00/1.00    63,092 1.00/1.00    40,892 1.00/0.60    13,934
+php-src    emit_op_mem                        9 1.00/1.00    21,949 0.89/0.89    39,378 1.00/1.00    12,989 1.00/1.00    10,583
+php-src    php_addslashes                     3 1.00/1.00    14,350 1.00/1.00    16,515 1.00/1.00     9,380 1.00/1.00    18,171
+php-src    zval_update_constant_ex           24 0.88/0.92    44,957 0.96/0.96    73,346 1.00/1.00    22,233 1.00/0.96     9,832
+php-src    php_dom_create_object             16 1.00/1.00    27,473 1.00/1.00    36,630 1.00/1.00    10,671 1.00/1.00    25,006
+php-src    zend_is_callable_ex                8 1.00/1.00    40,113 1.00/1.00    48,327 1.00/1.00     9,647 1.00/1.00     7,487
+php-src    zend_unmangle_property_name_ex     8 1.00/1.00    49,634 1.00/0.75    50,350 1.00/1.00     9,641 1.00/1.00    17,245
+qemu       ramfb_setup                        3 1.00/1.00     6,068 1.00/1.00     7,347 1.00/1.00     8,412 1.00/1.00     7,266
+qemu       os_mlock                           2 1.00/1.00    11,632 1.00/1.00    14,923 1.00/1.00     8,183 1.00/1.00     7,164
+qemu       gdbserver_start                    2 0.67/1.00    17,754 1.00/1.00    19,015 1.00/1.00     8,552 1.00/1.00     7,247
+qemu       migration_is_running               7 1.00/1.00    29,925 1.00/1.00    27,878 1.00/1.00     8,824 1.00/1.00     7,284
+qemu       qemu_input_is_absolute            22 1.00/1.00    24,357 1.00/1.00    39,044 1.00/1.00    24,142 1.00/0.95     8,465
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    12,697 1.00/1.00    12,562 1.00/1.00     8,426 1.00/1.00     7,237
+qemu       semihosting_enabled               10 0.80/0.80    59,640 1.00/1.00   103,626 1.00/1.00     9,343 1.00/1.00     7,990
+
+eval/results/impact_sonnet-5-5_hardr3.jsonl  (anthropic:claude-sonnet-5-5, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.99    0.99   0.99  14/16  14/16    30,211      24,540    7.6       0
+index       0.97    0.97   0.97  14/16  14/16    32,102      32,531    8.1       0
+tool        1.00    1.00   1.00  16/16  16/16    14,367       9,647    3.6       0
+semantic    1.00    0.97   0.98  13/16  13/16    10,017       8,465    2.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    21,721 1.00/1.00    19,371 1.00/1.00    12,826 1.00/1.00     8,923
+php-src    get_cc                             3 1.00/1.00    24,540 1.00/1.00    16,341 1.00/1.00    10,891 1.00/1.00     8,788
+php-src    zend_may_throw                     5 1.00/1.00    49,056 1.00/1.00    54,730 1.00/1.00    53,116 1.00/0.60     8,000
+php-src    emit_op_mem                        9 1.00/1.00    21,920 1.00/1.00    21,102 1.00/1.00    13,055 1.00/1.00    10,594
+php-src    php_addslashes                     3 1.00/1.00    13,850 1.00/1.00    15,094 1.00/1.00     9,571 1.00/1.00    18,218
+php-src    zval_update_constant_ex           24 0.96/0.96    76,137 0.76/0.67    58,520 1.00/1.00    24,508 1.00/0.96     9,772
+php-src    php_dom_create_object             16 1.00/1.00    39,560 1.00/1.00    32,531 1.00/1.00    10,679 1.00/1.00    23,417
+php-src    zend_is_callable_ex                8 1.00/1.00    39,308 1.00/1.00    40,215 1.00/1.00     9,647 1.00/1.00     7,464
+php-src    zend_unmangle_property_name_ex     8 0.88/0.88    66,760 1.00/1.00    57,131 1.00/1.00     9,633 1.00/1.00    12,695
+qemu       ramfb_setup                        3 1.00/1.00     6,051 1.00/1.00     7,347 1.00/1.00     8,412 1.00/1.00     6,942
+qemu       os_mlock                           2 1.00/1.00     8,923 1.00/1.00    14,955 1.00/1.00     8,183 1.00/1.00     7,164
+qemu       gdbserver_start                    2 1.00/1.00    14,922 1.00/1.00    27,184 1.00/1.00     8,520 1.00/1.00     7,265
+qemu       migration_is_running               7 1.00/1.00    21,230 1.00/1.00    40,692 1.00/1.00     8,824 1.00/1.00     7,299
+qemu       qemu_input_is_absolute            22 1.00/1.00    32,394 1.00/1.00    38,963 1.00/1.00    24,232 1.00/0.95     8,465
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    10,542 1.00/1.00    11,956 1.00/1.00     8,426 1.00/1.00     7,251
+qemu       semihosting_enabled               10 1.00/1.00    36,456 0.80/0.80    57,492 1.00/1.00     9,343 1.00/1.00     8,021

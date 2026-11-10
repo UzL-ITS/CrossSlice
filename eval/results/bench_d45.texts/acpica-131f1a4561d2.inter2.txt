@@ -1,6 +1,0 @@
-Context for merged statement of old file: source/components/utilities/utalloc.c with new file: source/components/utilities/utalloc.c:
-void CmInitStaticObject (
-    ACPI_OBJECT_INTERNAL    *ObjDesc) {
-+ ObjDesc->Common.ReferenceCount = 1;
-}
-

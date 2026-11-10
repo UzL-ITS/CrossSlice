@@ -2,7 +2,7 @@ Callers of F at the parent revision, 18 cases, 102 distinct caller names, 135 ca
 
 function level (distinct names, alias-aware; the E10 metric):
 tool                       n   prec recall     F1   exact  t_setup  t_query
-CrossSlice get_callers    18   1.00   1.00   1.00  18/18       0.8     0.04
+CrossSlice get_callers    18   1.00   1.00   1.00  18/18       1.8     0.03
 Joern (cpg.call)          18   1.00   0.98   0.99  16/18     319.2     8.29
 GNU Global (-rx + -f)     18   0.83   0.82   0.82   8/18       1.8     0.02
 cscope (-L -3)            18   0.85   0.87   0.85   7/18       2.1     0.02

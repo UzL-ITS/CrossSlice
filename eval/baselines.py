@@ -1,7 +1,7 @@
 """
 E12 / E13 — external baselines on the inputs of E1 and E10 (added 2026-11-02).
 
-  rescore         re-score stored caller files against a truth file, in place
+  rescore         re-score stored caller files against the (corrected) truth, in place
   joern-time      per repository: Joern import (joern-parse, c2cpg) of one H100
                   commit's checkout — wall-clock and peak RSS — then one callers
                   query from the stored CPG; next to CrossSlice's cold/warm time
@@ -45,7 +45,7 @@ import tempfile
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from eval.impact import score, match_names, _norm, _git  # noqa: E402
+from eval.impact import score, match_names, aliases, _norm, _git  # noqa: E402
 
 JOERN_HOME = os.environ.get("JOERN_HOME", "/opt/joern/joern-cli")
 CASES = "eval/cases_impact_all_v2.jsonl"
@@ -206,7 +206,8 @@ def _score_rec(c, pred, extra):
     """Function level: distinct names, alias-aware, one-to-one (the E10
     metric). Call-site level: (file, line) of every call the commit edited."""
     truth = [tuple(t) for t in c["truth"]]
-    sc = score(pred, truth)
+    optional = c.get("optional") or ()
+    sc = score(pred, truth, optional)
     tnames = []
     for _, fn in truth:
         if fn not in tnames:
@@ -217,8 +218,14 @@ def _score_rec(c, pred, extra):
         if fn and fn not in pnames:
             pnames.append(fn)
     mp, mt = match_names(pnames, tnames)
+    if optional:
+        okeys = set()
+        for o in optional:
+            okeys |= aliases(o)
+        pnames = [p for p in pnames if p in mp or re.sub(r"\s+", "", p) not in okeys]
     sites_t = {(f, int(ln)) for f, ln, _ in c.get("truth_sites", [])}
-    sites_p = {(p["file"], int(p["line"])) for p in pred if p.get("line", -1) and p.get("line", -1) > 0}
+    sites_o = {(f, int(ln)) for f, ln in c.get("optional_sites", [])}
+    sites_p = {(p["file"], int(p["line"])) for p in pred if p.get("line", -1) and p.get("line", -1) > 0} - sites_o
     tp_s = len(sites_t & sites_p)
     sp = tp_s / len(sites_p) if sites_p else 0.0
     sr = tp_s / len(sites_t) if sites_t else 0.0
@@ -445,10 +452,15 @@ def cmd_crossslice_callers(a):
         if c["sha"] in done:
             continue
         prev = _git(c["repo"], "rev-parse", c["sha"] + "^").strip()
+        # --cold: an empty cache per case, so the symbol index is built from
+        # scratch; t_index is then the index build alone (the checkout of the
+        # revision is t_open), comparable with the gtags / cscope baselines
+        cold_dir = tempfile.mkdtemp(prefix="crossslice_cold_") if getattr(a, "cold", False) else None
         t0 = time.time()
         with contextlib.redirect_stdout(io.StringIO()):
-            g = RepoGraph(c["repo"], commit=prev)
+            g = RepoGraph(c["repo"], commit=prev, cache_dir=cold_dir)
             try:
+                t_open = time.time() - t0
                 g._ensure_gtags()
                 t_setup = time.time() - t0
                 t1 = time.time()
@@ -456,9 +468,13 @@ def cmd_crossslice_callers(a):
                 t_q = time.time() - t1
             finally:
                 g.close()
+                if cold_dir:
+                    shutil.rmtree(cold_dir, ignore_errors=True)
         pred = [{"file": s.rel_file, "function": s.caller_name, "line": s.line + 1}
                 for s in found.get(c["function"], []) if s.caller_name]
-        sc = _score_rec(c, pred, {"tool": "crossslice", "t_index": t_setup, "t_query": t_q})
+        timing = ({"t_open": t_open, "t_index": t_setup - t_open, "cold": True} if cold_dir
+                  else {"t_index": t_setup})
+        sc = _score_rec(c, pred, {"tool": "crossslice", **timing, "t_query": t_q})
         _print_case("crossslice", sc)
         _append(a.out, sc)
     print("done")
@@ -553,7 +569,8 @@ _SCORE_KEYS = {"n_pred", "n_truth", "tp", "precision", "recall", "f1", "sha", "f
 
 def cmd_rescore(a):
     """Re-score stored caller files (their `pred_sites`) against the current
-    truth file, in place, without re-running the tools."""
+    truth file, in place. Used after the truth was corrected (2 Nov 2026:
+    comment stripper vs "phar://" strings) without re-running the tools."""
     cases = {c["sha"]: c for c in map(json.loads, open(a.cases))}
     for path in a.results:
         recs = [json.loads(l) for l in open(path) if l.strip()]
@@ -587,6 +604,8 @@ def main():
                           ("crossslice-callers", cmd_crossslice_callers, "eval/results/callers_crossslice_v2.jsonl")):
         p = sub.add_parser(name); common(p)
         p.add_argument("--cases", default=CASES); p.add_argument("--out", default=out); p.set_defaults(func=fn)
+        if name == "crossslice-callers":
+            p.add_argument("--cold", action="store_true", help="empty cache per case: time a cold index build")
     rs = sub.add_parser("rescore")
     rs.add_argument("results", nargs="+"); rs.add_argument("--cases", default=CASES); rs.set_defaults(func=cmd_rescore)
     r = sub.add_parser("report")

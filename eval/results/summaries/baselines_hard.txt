@@ -1,0 +1,35 @@
+Callers of F at the parent revision, 16 cases, 127 distinct caller names, 159 call sites (truth: eval/cases_impact_all_v2.jsonl)
+
+function level (distinct names, alias-aware; the E10 metric):
+tool                       n   prec recall     F1   exact  t_setup  t_query
+CrossSlice get_callers    16   0.94   0.97   0.95  10/16       1.3     0.07
+Joern (cpg.call)          16   0.97   0.80   0.84   8/16     206.9     7.49
+GNU Global (-rx + -f)     16   0.86   0.84   0.84   7/16       3.1     0.04
+cscope (-L -3)            16   0.85   0.86   0.85   6/16       2.0     0.03
+
+call-site level (file, line of every call the commit had to edit):
+tool                       n   prec recall     F1   exact  sites found
+CrossSlice get_callers    16   0.83   0.99   0.85   9/16    153/159   
+Joern (cpg.call)          16   0.78   0.71   0.69   7/16     98/159   
+GNU Global (-rx + -f)     16   0.82   0.95   0.84   8/16    148/159   
+cscope (-L -3)            16   0.79   0.99   0.83   5/16    153/159   
+
+misses and extras per tool (function level):
+  CrossSlice get_callers: missed 4 ['zend_jit_do_fcall', 'zend_jit_needs_call_chain', 'zend_ini_get_constant', 'cocoa_refresh']
+                          extra  6 ['softfloat_call_with_args', 'call_with_args', 'tail_call_with_args', 'emit_op', 'sljit_emit_op2', 'php_addslashes_default']
+  Joern (cpg.call): missed 36 ['zend_jit', 'zend_jit_do_fcall', 'zend_jit_needs_call_chain', 'emit_cmp_to0', 'sljit_emit_fop1_conv_f64_from_sw', 'sljit_emit_fop1_conv_sw_from_f64', 'zend_ini_get_constant', 'ZEND_VM_HANDLER(143, ZEND_DECLARE_CONST, CONST, CONST)', 'ZEND_VM_HANDLER(181, ZEND_FETCH_CLASS_CONSTANT, VAR|CONST|UNUSED|CLASS_FETCH, CONST)', 'ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, CONST, REF)', 'ZEND_VM_HANDLER(64, ZEND_RECV_INIT, NUM, CONST)', 'ZEND_BIND_STATIC_SPEC_CV_CONST_HANDLER']
+                    extra  3 ['call_with_args', 'emit_op', 'sljit_emit_op2']
+  GNU Global (-rx + -f): missed 24 ['zend_jit_do_fcall', 'zend_jit_needs_call_chain', 'sljit_emit_fast_enter', 'sljit_emit_fop1_conv_sw_from_f64', 'PHP_FUNCTION(stream_socket_client)', 'PHP_FUNCTION(addslashes)', 'zval_update_constant', 'ZEND_VM_HANDLER(143, ZEND_DECLARE_CONST, CONST, CONST)', 'ZEND_VM_HANDLER(181, ZEND_FETCH_CLASS_CONSTANT, VAR|CONST|UNUSED|CLASS_FETCH, CONST)', 'ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, CONST, REF)', 'ZEND_VM_HANDLER(64, ZEND_RECV_INIT, NUM, CONST)', 'ZEND_METHOD(reflection_class, getConstant)']
+                         extra  17 ['softfloat_call_with_args', 'call_with_args', 'tail_call_with_args', 'emit_op', 'sljit_emit_op2', 'PHP_FUNCTION', 'PHP_MINIT_FUNCTION', 'php_addslashes_default', 'resolve_stripslashes', 'ZEND_VM_HANDLER', 'ZEND_METHOD', 'PHP_FUNCTION']
+  cscope (-L -3): missed 20 ['zend_jit_do_fcall', 'zend_jit_needs_call_chain', 'PHP_FUNCTION(stream_socket_client)', 'PHP_FUNCTION(addslashes)', 'ZEND_VM_HANDLER(143, ZEND_DECLARE_CONST, CONST, CONST)', 'ZEND_VM_HANDLER(181, ZEND_FETCH_CLASS_CONSTANT, VAR|CONST|UNUSED|CLASS_FETCH, CONST)', 'ZEND_VM_HANDLER(183, ZEND_BIND_STATIC, CV, CONST, REF)', 'ZEND_VM_HANDLER(64, ZEND_RECV_INIT, NUM, CONST)', 'ZEND_METHOD(reflection_class, getConstant)', 'ZEND_METHOD(reflection_class, getConstants)', 'ZEND_METHOD(reflection_function, getStaticVariables)', 'ZEND_METHOD(reflection_parameter, getDefaultValue)']
+                  extra  18 ['softfloat_call_with_args', 'call_with_args', 'tail_call_with_args', 'BEGIN_EXTERN_C', 'emit_op', 'sljit_emit_op2', 'PHP_FUNCTION', 'ZEND_VM_HANDLER', 'ZEND_METHOD', 'PHP_FUNCTION', 'ZEND_FUNCTION', 'BEGIN_EXTERN_C']
+
+Joern import per revision vs CrossSlice per commit (seconds; CrossSlice covers both versions of a commit):
+repo       .c/.h   kLOC   import  peak MB   query  CS median cold  CS median warm   n
+zlib          69     42     11.4     3164     5.5             2.7             2.3  19
+libexpat      44     29      8.0     1313     5.5             5.1             5.2  20
+acpica       350    242     20.6     3173     5.7             5.3             4.7  20
+ffmpeg      4656   1812    362.0    30431     nan             8.6             5.1  20
+php-src     2118   1862    234.9    31074     7.1            11.2             7.0  19
+  query = one `joern --script` run: JVM start + CPG load + cpg.call query; peak = max over runs;
+  CS = CrossSlice full enrichment of one commit (E1 H100, per-repository median over n commits)
