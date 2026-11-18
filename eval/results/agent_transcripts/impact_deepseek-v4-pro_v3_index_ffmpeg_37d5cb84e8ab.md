@@ -1,0 +1,1005 @@
+# Impact-analysis transcript — ffmpeg @ 37d5cb84e8ab — openrouter:deepseek/deepseek-v4-pro
+
+- target: `ff_vk_exec_get` (libavutil/vulkan.c), arity 1->2
+- truth: [['libavcodec/vulkan_decode.c', 'ff_vk_decode_flush'], ['libavcodec/vulkan_decode.c', 'ff_vk_decode_frame'], ['libavcodec/vulkan_encode.c', 'vulkan_encode_issue'], ['libavfilter/vf_nlmeans_vulkan.c', 'nlmeans_vulkan_filter_frame'], ['libavfilter/vulkan_filter.c', 'ff_vk_filter_process_2pass'], ['libavfilter/vulkan_filter.c', 'ff_vk_filter_process_Nin'], ['libavfilter/vulkan_filter.c', 'ff_vk_filter_process_simple'], ['libavutil/hwcontext_vulkan.c', 'prepare_frame'], ['libavutil/hwcontext_vulkan.c', 'vulkan_map_from_drm_frame_sync'], ['libavutil/hwcontext_vulkan.c', 'vulkan_transfer_frame']]
+
+## Index arm (generic tools + GNU Global references)
+
+### Turn 1  _(tok 1029+81, stop=tool_use)_
+
+**Reasoning:** The user wants me to find every call site of `ff_vk_exec_get` in the repository. Let me start by finding references to this function.
+
+- `find_references(name=ff_vk_exec_get)` →
+
+```
+11 references
+ff_vk_exec_get    296 libavcodec/vulkan_decode.c     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+ff_vk_exec_get    348 libavcodec/vulkan_decode.c     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+ff_vk_exec_get    342 libavcodec/vulkan_encode.c     exec = vp->exec = ff_vk_exec_get(&ctx->enc_pool);
+ff_vk_exec_get    839 libavfilter/vf_nlmeans_vulkan.c     exec = ff_vk_exec_get(&s->e);
+ff_vk_exec_get    252 libavfilter/vulkan_filter.c     FFVkExecContext *exec = ff_vk_exec_get(e);
+ff_vk_exec_get    324 libavfilter/vulkan_filter.c     FFVkExecContext *exec = ff_vk_exec_get(e);
+ff_vk_exec_get    412 libavfilter/vulkan_filter.c     FFVkExecContext *exec = ff_vk_exec_get(e);
+ff_vk_exec_get   2256 libavutil/hwcontext_vulkan.c     FFVkExecContext *exec = ff_vk_exec_get(ectx);
+ff_vk_exec_get   3193 libavutil/hwcontext_vulkan.c         exec = ff_vk_exec_get(&fp->compute_exec);
+ff_vk_exec_get   4101 libavutil/hwcontext_vulkan.c     exec = ff_vk_exec_get(&fp->upload_exec);
+ff_vk_exec_get    390 libavutil/vulkan.h FFVkExecContext *ff_vk_exec_get(FFVkExecPool *pool);
+```
+
+### Turn 2  _(tok 1478+832, stop=tool_use)_
+
+**Reasoning:** I have 11 references. Let me filter out:
+1. The declaration in `libavutil/vulkan.h` at line 390 — not a call site, it's a prototype.
+2. The definition in `libavutil/vulkan.c` — not in the results.
+
+Now I need to find the enclosing functions for each call site. Let me look at each file and line to determine the enclosing function.
+
+Let me read around each call site to find the function name.
+
+- `read_file(path=libavcodec/vulkan_decode.c, start_line=280, end_line=310)` →
+
+```
+libavcodec/vulkan_decode.c lines 280-310 of 1249
+  280| 
+  281|     FFVulkanFunctions *vk = &ctx->s.vkfn;
+  282|     VkVideoBeginCodingInfoKHR decode_start = {
+  283|         .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+  284|         .videoSession = ctx->common.session,
+  285|         .videoSessionParameters = ctx->empty_session_params,
+  286|     };
+  287|     VkVideoCodingControlInfoKHR decode_ctrl = {
+  288|         .sType = VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR,
+  289|         .flags = VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR,
+  290|     };
+  291|     VkVideoEndCodingInfoKHR decode_end = {
+  292|         .sType = VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR,
+  293|     };
+  294| 
+  295|     VkCommandBuffer cmd_buf;
+  296|     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+  297|     int had_submission = exec->had_submission;
+  298|     ff_vk_exec_start(&ctx->s, exec);
+  299|     cmd_buf = exec->buf;
+  300| 
+  301|     vk->CmdBeginVideoCodingKHR(cmd_buf, &decode_start);
+  302|     vk->CmdControlVideoCodingKHR(cmd_buf, &decode_ctrl);
+  303|     vk->CmdEndVideoCodingKHR(cmd_buf, &decode_end);
+  304|     ff_vk_exec_submit(&ctx->s, exec);
+  305| 
+  306|     /* If this is the very first time this context is used, then remove the
+  307|      * had_submission flag to indicate that no query result is available,
+  308|      * as no decode command was issued. */
+  309|     exec->had_submission = had_submission;
+  310| }
+```
+
+- `read_file(path=libavcodec/vulkan_decode.c, start_line=330, end_line=360)` →
+
+```
+libavcodec/vulkan_decode.c lines 330-360 of 1249
+  330| 
+  331|     VkVideoSessionParametersKHR *par = (VkVideoSessionParametersKHR *)dec->session_params->data;
+  332|     VkVideoBeginCodingInfoKHR decode_start = {
+  333|         .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+  334|         .videoSession = ctx->common.session,
+  335|         .videoSessionParameters = *par,
+  336|         .referenceSlotCount = vp->decode_info.referenceSlotCount,
+  337|         .pReferenceSlots = vp->decode_info.pReferenceSlots,
+  338|     };
+  339|     VkVideoEndCodingInfoKHR decode_end = {
+  340|         .sType = VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR,
+  341|     };
+  342| 
+  343|     VkImageMemoryBarrier2 img_bar[37];
+  344|     int nb_img_bar = 0;
+  345|     size_t data_size = FFALIGN(vp->slices_size,
+  346|                                ctx->caps.minBitstreamBufferSizeAlignment);
+  347| 
+  348|     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+  349| 
+  350|     /* The current decoding reference has to be bound as an inactive reference */
+  351|     VkVideoReferenceSlotInfoKHR *cur_vk_ref;
+  352|     cur_vk_ref = (void *)&decode_start.pReferenceSlots[decode_start.referenceSlotCount];
+  353|     cur_vk_ref[0] = vp->ref_slot;
+  354|     cur_vk_ref[0].slotIndex = -1;
+  355|     decode_start.referenceSlotCount++;
+  356| 
+  357|     if (dec->exec_pool.nb_queries && exec->had_submission) {
+  358|         uint32_t *result;
+  359|         ret = ff_vk_exec_get_query(&ctx->s, exec, (void **)&result,
+  360|                                    VK_QUERY_RESULT_WAIT_BIT);
+```
+
+- `read_file(path=libavcodec/vulkan_encode.c, start_line=325, end_line=355)` →
+
+```
+libavcodec/vulkan_encode.c lines 325-355 of 1060
+  325|                                            hdr_dst, &data_size);
+  326|             if (err < 0)
+  327|                 goto fail;
+  328| 
+  329|             encode_info.dstBufferOffset += data_size;
+  330|             encode_info.dstBufferRange  -= data_size;
+  331|         }
+  332|     }
+  333| 
+  334|     vp->slices_offset = encode_info.dstBufferOffset;
+  335| 
+  336|     /* Align buffer size to the nearest lower alignment requirement. */
+  337|     encode_info.dstBufferRange -= size_align;
+  338|     encode_info.dstBufferRange = FFALIGN(encode_info.dstBufferRange,
+  339|                                          size_align);
+  340| 
+  341|     /* Start command buffer recording */
+  342|     exec = vp->exec = ff_vk_exec_get(&ctx->enc_pool);
+  343|     ff_vk_exec_start(&ctx->s, exec);
+  344|     cmd_buf = exec->buf;
+  345| 
+  346|     /* Output packet buffer */
+  347|     err = ff_vk_exec_add_dep_buf(&ctx->s, exec, &vp->pkt_buf, 1, 1);
+  348|     if (err < 0)
+  349|         goto fail;
+  350| 
+  351|     /* Source image */
+  352|     err = ff_vk_exec_add_dep_frame(&ctx->s, exec, src,
+  353|                                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  354|                                    VK_PIPELINE_STAGE_2_VIDEO_ENCODE_BIT_KHR);
+  355|     if (err < 0)
+```
+
+- `read_file(path=libavfilter/vf_nlmeans_vulkan.c, start_line=825, end_line=850)` →
+
+```
+libavfilter/vf_nlmeans_vulkan.c lines 825-850 of 1123
+  825|     sums_offs[0] = ws_total_size;
+  826|     for (int i = 1; i < desc->nb_components; i++) {
+  827|         weights_offs[i] = weights_offs[i - 1] + ws_size[i - 1];
+  828|         sums_offs[i] = sums_offs[i - 1] + ws_size[i - 1];
+  829|     }
+  830| 
+  831|     /* Output frame */
+  832|     out = ff_get_video_buffer(outlink, outlink->w, outlink->h);
+  833|     if (!out) {
+  834|         err = AVERROR(ENOMEM);
+  835|         goto fail;
+  836|     }
+  837| 
+  838|     /* Execution context */
+  839|     exec = ff_vk_exec_get(&s->e);
+  840|     ff_vk_exec_start(vkctx, exec);
+  841| 
+  842|     /* Dependencies */
+  843|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, in,
+  844|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  845|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  846|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, out,
+  847|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  848|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  849| 
+  850|     RET(ff_vk_exec_add_dep_buf(vkctx, exec, &integral_buf, 1, 0));
+```
+
+- `read_file(path=libavfilter/vulkan_filter.c, start_line=235, end_line=265)` →
+
+```
+libavfilter/vulkan_filter.c lines 235-265 of 473
+  235|     s->output_format = AV_PIX_FMT_NONE;
+  236| 
+  237|     return 0;
+  238| }
+  239| 
+  240| int ff_vk_filter_process_simple(FFVulkanContext *vkctx, FFVkExecPool *e,
+  241|                                 FFVulkanShader *shd, AVFrame *out_f, AVFrame *in_f,
+  242|                                 VkSampler sampler, void *push_src, size_t push_size)
+  243| {
+  244|     int err = 0;
+  245|     FFVulkanFunctions *vk = &vkctx->vkfn;
+  246|     VkImageView in_views[AV_NUM_DATA_POINTERS];
+  247|     VkImageView out_views[AV_NUM_DATA_POINTERS];
+  248|     VkImageMemoryBarrier2 img_bar[37];
+  249|     int nb_img_bar = 0;
+  250| 
+  251|     /* Update descriptors and init the exec context */
+  252|     FFVkExecContext *exec = ff_vk_exec_get(e);
+  253|     ff_vk_exec_start(vkctx, exec);
+  254| 
+  255|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, out_f,
+  256|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  257|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  258|     RET(ff_vk_create_imageviews(vkctx, exec, out_views, out_f));
+  259|     ff_vk_shader_update_img_array(vkctx, exec, shd, out_f, out_views, 0, !!in_f,
+  260|                                   VK_IMAGE_LAYOUT_GENERAL,
+  261|                                   VK_NULL_HANDLE);
+  262|     if (in_f) {
+  263|         RET(ff_vk_exec_add_dep_frame(vkctx, exec, in_f,
+  264|                                      VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  265|                                      VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+```
+
+- `read_file(path=libavfilter/vulkan_filter.c, start_line=310, end_line=340)` →
+
+```
+libavfilter/vulkan_filter.c lines 310-340 of 473
+  310| int ff_vk_filter_process_2pass(FFVulkanContext *vkctx, FFVkExecPool *e,
+  311|                                FFVulkanShader *shd_list[2],
+  312|                                AVFrame *out, AVFrame *tmp, AVFrame *in,
+  313|                                VkSampler sampler, void *push_src, size_t push_size)
+  314| {
+  315|     int err = 0;
+  316|     FFVulkanFunctions *vk = &vkctx->vkfn;
+  317|     VkImageView in_views[AV_NUM_DATA_POINTERS];
+  318|     VkImageView tmp_views[AV_NUM_DATA_POINTERS];
+  319|     VkImageView out_views[AV_NUM_DATA_POINTERS];
+  320|     VkImageMemoryBarrier2 img_bar[37];
+  321|     int nb_img_bar = 0;
+  322| 
+  323|     /* Update descriptors and init the exec context */
+  324|     FFVkExecContext *exec = ff_vk_exec_get(e);
+  325|     ff_vk_exec_start(vkctx, exec);
+  326| 
+  327|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, in,
+  328|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  329|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  330|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, tmp,
+  331|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  332|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  333|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, out,
+  334|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  335|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  336| 
+  337|     RET(ff_vk_create_imageviews(vkctx, exec, in_views,  in));
+  338|     RET(ff_vk_create_imageviews(vkctx, exec, tmp_views, tmp));
+  339|     RET(ff_vk_create_imageviews(vkctx, exec, out_views, out));
+  340| 
+```
+
+- `read_file(path=libavfilter/vulkan_filter.c, start_line=395, end_line=425)` →
+
+```
+libavfilter/vulkan_filter.c lines 395-425 of 473
+  395|     ff_vk_exec_discard_deps(vkctx, exec);
+  396|     return err;
+  397| }
+  398| 
+  399| int ff_vk_filter_process_Nin(FFVulkanContext *vkctx, FFVkExecPool *e,
+  400|                              FFVulkanShader *shd,
+  401|                              AVFrame *out, AVFrame *in[], int nb_in,
+  402|                              VkSampler sampler, void *push_src, size_t push_size)
+  403| {
+  404|     int err = 0;
+  405|     FFVulkanFunctions *vk = &vkctx->vkfn;
+  406|     VkImageView in_views[16][AV_NUM_DATA_POINTERS];
+  407|     VkImageView out_views[AV_NUM_DATA_POINTERS];
+  408|     VkImageMemoryBarrier2 img_bar[128];
+  409|     int nb_img_bar = 0;
+  410| 
+  411|     /* Update descriptors and init the exec context */
+  412|     FFVkExecContext *exec = ff_vk_exec_get(e);
+  413|     ff_vk_exec_start(vkctx, exec);
+  414| 
+  415|     /* Add deps and create temporary imageviews */
+  416|     RET(ff_vk_exec_add_dep_frame(vkctx, exec, out,
+  417|                                  VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  418|                                  VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  419|     RET(ff_vk_create_imageviews(vkctx, exec, out_views, out));
+  420|     for (int i = 0; i < nb_in; i++) {
+  421|         RET(ff_vk_exec_add_dep_frame(vkctx, exec, in[i],
+  422|                                      VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+  423|                                      VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT));
+  424|         RET(ff_vk_create_imageviews(vkctx, exec, in_views[i], in[i]));
+  425|     }
+```
+
+- `read_file(path=libavutil/hwcontext_vulkan.c, start_line=2240, end_line=2270)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 2240-2270 of 4378
+ 2240|     VkImageLayout new_layout;
+ 2241|     VkAccessFlags2 new_access;
+ 2242|     VkPipelineStageFlagBits2 src_stage = VK_PIPELINE_STAGE_2_NONE;
+ 2243| 
+ 2244|     /* This is dirty - but it works. The vulkan.c dependency system doesn't
+ 2245|      * free non-refcounted frames, and non-refcounted hardware frames cannot
+ 2246|      * happen anywhere outside of here. */
+ 2247|     AVBufferRef tmp_ref = {
+ 2248|         .data = (uint8_t *)hwfc,
+ 2249|     };
+ 2250|     AVFrame tmp_frame = {
+ 2251|         .data[0] = (uint8_t *)frame,
+ 2252|         .hw_frames_ctx = &tmp_ref,
+ 2253|     };
+ 2254| 
+ 2255|     VkCommandBuffer cmd_buf;
+ 2256|     FFVkExecContext *exec = ff_vk_exec_get(ectx);
+ 2257|     cmd_buf = exec->buf;
+ 2258|     ff_vk_exec_start(&p->vkctx, exec);
+ 2259| 
+ 2260|     err = ff_vk_exec_add_dep_frame(&p->vkctx, exec, &tmp_frame,
+ 2261|                                    VK_PIPELINE_STAGE_2_NONE,
+ 2262|                                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT);
+ 2263|     if (err < 0)
+ 2264|         return err;
+ 2265| 
+ 2266|     switch (pmode) {
+ 2267|     case PREP_MODE_GENERAL:
+ 2268|         new_layout = VK_IMAGE_LAYOUT_GENERAL;
+ 2269|         new_access = VK_ACCESS_TRANSFER_WRITE_BIT;
+ 2270|         break;
+```
+
+- `read_file(path=libavutil/hwcontext_vulkan.c, start_line=3175, end_line=3205)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 3175-3205 of 4378
+ 3175|                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
+ 3176|                 .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+ 3177|                 .flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT,
+ 3178|                 .semaphore = drm_sync_sem[i],
+ 3179|                 .fd = implicit_fd_info.fd,
+ 3180|             };
+ 3181| 
+ 3182|             ret = vk->ImportSemaphoreFdKHR(hwctx->act_dev, &import_info);
+ 3183|             if (ret != VK_SUCCESS) {
+ 3184|                 av_log(hwctx, AV_LOG_ERROR, "Failed to import semaphore: %s\n",
+ 3185|                        ff_vk_ret2str(ret));
+ 3186|                 err = AVERROR_EXTERNAL;
+ 3187|                 for (; i >= 0; i--)
+ 3188|                     vk->DestroySemaphore(hwctx->act_dev, drm_sync_sem[i], hwctx->alloc);
+ 3189|                 return err;
+ 3190|             }
+ 3191|         }
+ 3192| 
+ 3193|         exec = ff_vk_exec_get(&fp->compute_exec);
+ 3194|         cmd_buf = exec->buf;
+ 3195| 
+ 3196|         ff_vk_exec_start(&p->vkctx, exec);
+ 3197| 
+ 3198|         /* Ownership of semaphores is passed */
+ 3199|         err = ff_vk_exec_add_dep_bool_sem(&p->vkctx, exec,
+ 3200|                                           drm_sync_sem, desc->nb_objects,
+ 3201|                                           VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, 1);
+ 3202|         if (err < 0)
+ 3203|             return err;
+ 3204| 
+ 3205|         err = ff_vk_exec_add_dep_frame(&p->vkctx, exec, dst,
+```
+
+- `read_file(path=libavutil/hwcontext_vulkan.c, start_line=4085, end_line=4115)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 4085-4115 of 4378
+ 4085|             host_mapped = 1;
+ 4086|     }
+ 4087| 
+ 4088|     if (!host_mapped) {
+ 4089|         err = get_plane_buf(hwfc, &bufs[0], swf, region, upload);
+ 4090|         if (err < 0)
+ 4091|             goto end;
+ 4092|         nb_bufs = 1;
+ 4093| 
+ 4094|         if (upload) {
+ 4095|             err = copy_buffer_data(hwfc, bufs[0], swf, region, planes, 1);
+ 4096|             if (err < 0)
+ 4097|                 goto end;
+ 4098|         }
+ 4099|     }
+ 4100| 
+ 4101|     exec = ff_vk_exec_get(&fp->upload_exec);
+ 4102|     cmd_buf = exec->buf;
+ 4103| 
+ 4104|     ff_vk_exec_start(&p->vkctx, exec);
+ 4105| 
+ 4106|     /* Prep destination Vulkan frame */
+ 4107|     err = ff_vk_exec_add_dep_frame(&p->vkctx, exec, hwf,
+ 4108|                                    VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+ 4109|                                    VK_PIPELINE_STAGE_2_TRANSFER_BIT);
+ 4110|     if (err < 0)
+ 4111|         goto end;
+ 4112| 
+ 4113|     /* No need to declare buf deps for synchronous transfers */
+ 4114|     if (upload) {
+ 4115|         err = ff_vk_exec_add_dep_buf(&p->vkctx, exec, bufs, nb_bufs, 1);
+```
+
+### Turn 3  _(tok 7300+765, stop=tool_use)_
+
+**Reasoning:** Now I need to find the enclosing function names for each call site. Let me go through each one:
+
+1. `libavcodec/vulkan_decode.c:296` — I need to find the enclosing function.
+2. `libavcodec/vulkan_decode.c:348` — enclosing function.
+3. `libavcodec/vulkan_encode.c:342` — enclosing function.
+4. `libavfilter/vf_nlmeans_vulkan.c:839` — enclosing function.
+5. `libavfilter/vulkan_filter.c:252` — enclosing function.
+6. `libavfilter/vulkan_filter.c:324` — enclosing function.
+7. `libavfilter/vulkan_filter.c:412` — enclosing function.
+8. `libavutil/hwcontext_vulkan.c:2256` — enclosing function.
+9. `libavutil/hwcontext_vulkan.c:3193` — enclosing function.
+10. `libavutil/hwcontext_vulkan.c:4101` — enclosing function.
+
+Let me look backwards from each call site to find the function name.
+
+**Says:** Now let me find the enclosing function names by looking backwards from each call site
+
+- `read_file(end_line=296, path=libavcodec/vulkan_decode.c, start_line=260)` →
+
+```
+libavcodec/vulkan_decode.c lines 260-296 of 1249
+  260|         vkbuf = new_buf;
+  261|     }
+  262|     slices = vkbuf->mapped_mem;
+  263| 
+  264|     /* Startcode */
+  265|     memcpy(slices + vp->slices_size, startcode_prefix, startcode_len);
+  266| 
+  267|     /* Slice data */
+  268|     memcpy(slices + vp->slices_size + startcode_len, data, size);
+  269| 
+  270|     *nb_slices = nb + 1;
+  271|     vp->slices_size += startcode_len + size;
+  272| 
+  273|     return 0;
+  274| }
+  275| 
+  276| void ff_vk_decode_flush(AVCodecContext *avctx)
+  277| {
+  278|     FFVulkanDecodeContext *dec = avctx->internal->hwaccel_priv_data;
+  279|     FFVulkanDecodeShared *ctx = dec->shared_ctx;
+  280| 
+  281|     FFVulkanFunctions *vk = &ctx->s.vkfn;
+  282|     VkVideoBeginCodingInfoKHR decode_start = {
+  283|         .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+  284|         .videoSession = ctx->common.session,
+  285|         .videoSessionParameters = ctx->empty_session_params,
+  286|     };
+  287|     VkVideoCodingControlInfoKHR decode_ctrl = {
+  288|         .sType = VK_STRUCTURE_TYPE_VIDEO_CODING_CONTROL_INFO_KHR,
+  289|         .flags = VK_VIDEO_CODING_CONTROL_RESET_BIT_KHR,
+  290|     };
+  291|     VkVideoEndCodingInfoKHR decode_end = {
+  292|         .sType = VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR,
+  293|     };
+  294| 
+  295|     VkCommandBuffer cmd_buf;
+  296|     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+```
+
+- `read_file(end_line=348, path=libavcodec/vulkan_decode.c, start_line=310)` →
+
+```
+libavcodec/vulkan_decode.c lines 310-348 of 1249
+  310| }
+  311| 
+  312| int ff_vk_decode_frame(AVCodecContext *avctx,
+  313|                        AVFrame *pic,    FFVulkanDecodePicture *vp,
+  314|                        AVFrame *rpic[], FFVulkanDecodePicture *rvkp[])
+  315| {
+  316|     int err;
+  317|     VkResult ret;
+  318|     VkCommandBuffer cmd_buf;
+  319|     FFVkBuffer *sd_buf;
+  320| 
+  321|     FFVulkanDecodeContext *dec = avctx->internal->hwaccel_priv_data;
+  322|     FFVulkanDecodeShared *ctx = dec->shared_ctx;
+  323|     FFVulkanFunctions *vk = &ctx->s.vkfn;
+  324| 
+  325|     /* Output */
+  326|     AVVkFrame *vkf = (AVVkFrame *)pic->buf[0]->data;
+  327| 
+  328|     /* Quirks */
+  329|     const int layered_dpb = ctx->common.layered_dpb;
+  330| 
+  331|     VkVideoSessionParametersKHR *par = (VkVideoSessionParametersKHR *)dec->session_params->data;
+  332|     VkVideoBeginCodingInfoKHR decode_start = {
+  333|         .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+  334|         .videoSession = ctx->common.session,
+  335|         .videoSessionParameters = *par,
+  336|         .referenceSlotCount = vp->decode_info.referenceSlotCount,
+  337|         .pReferenceSlots = vp->decode_info.pReferenceSlots,
+  338|     };
+  339|     VkVideoEndCodingInfoKHR decode_end = {
+  340|         .sType = VK_STRUCTURE_TYPE_VIDEO_END_CODING_INFO_KHR,
+  341|     };
+  342| 
+  343|     VkImageMemoryBarrier2 img_bar[37];
+  344|     int nb_img_bar = 0;
+  345|     size_t data_size = FFALIGN(vp->slices_size,
+  346|                                ctx->caps.minBitstreamBufferSizeAlignment);
+  347| 
+  348|     FFVkExecContext *exec = ff_vk_exec_get(&dec->exec_pool);
+```
+
+- `read_file(end_line=342, path=libavcodec/vulkan_encode.c, start_line=270)` →
+
+```
+libavcodec/vulkan_encode.c lines 270-342 of 1060
+  270| 
+  271|     /* Setup picture parameters */
+  272|     err = ctx->codec->init_pic_params(avctx, base_pic,
+  273|                                       &encode_info);
+  274|     if (err < 0)
+  275|         return err;
+  276| 
+  277|     encode_start = (VkVideoBeginCodingInfoKHR) {
+  278|         .sType = VK_STRUCTURE_TYPE_VIDEO_BEGIN_CODING_INFO_KHR,
+  279|         .pNext = !base_pic->force_idr ? &rc_info : NULL,
+  280|         .videoSession = ctx->common.session,
+  281|         .videoSessionParameters = ctx->session_params,
+  282|         .referenceSlotCount = encode_info.referenceSlotCount + 1,
+  283|         .pReferenceSlots = ref_slot,
+  284|     };
+  285| 
+  286|     /* Write header */
+  287|     if (base_pic->type == FF_HW_PICTURE_TYPE_IDR) {
+  288|         uint8_t *hdr_dst = sd_buf->mapped_mem + encode_info.dstBufferOffset;
+  289|         size_t data_size = encode_info.dstBufferRange;
+  290|         err = ctx->codec->write_sequence_headers(avctx, base_pic, hdr_dst, &data_size);
+  291|         if (err < 0)
+  292|             goto fail;
+  293|         encode_info.dstBufferOffset += data_size;
+  294|         encode_info.dstBufferRange  -= data_size;
+  295|     }
+  296| 
+  297|     /* Write extra units */
+  298|     if (ctx->codec->write_extra_headers) {
+  299|         uint8_t *hdr_dst = sd_buf->mapped_mem + encode_info.dstBufferOffset;
+  300|         size_t data_size = encode_info.dstBufferRange;
+  301|         err = ctx->codec->write_extra_headers(avctx, base_pic, hdr_dst, &data_size);
+  302|         if (err < 0)
+  303|             goto fail;
+  304|         encode_info.dstBufferOffset += data_size;
+  305|         encode_info.dstBufferRange  -= data_size;
+  306|     }
+  307| 
+  308|     /* Align buffer offset to the required value with filler units */
+  309|     if (ctx->codec->write_filler) {
+  310|         uint8_t *hdr_dst = sd_buf->mapped_mem + encode_info.dstBufferOffset;
+  311|         size_t data_size = encode_info.dstBufferRange;
+  312| 
+  313|         uint32_t offset = encode_info.dstBufferOffset;
+  314|         size_t offset_align = ctx->caps.minBitstreamBufferOffsetAlignment;
+  315| 
+  316|         uint32_t filler_data = FFALIGN(offset, offset_align) - offset;
+  317| 
+  318|         if (filler_data) {
+  319|             while (filler_data < ctx->codec->filler_header_size)
+  320|                 filler_data += offset_align;
+  321| 
+  322|             filler_data -= ctx->codec->filler_header_size;
+  323| 
+  324|             err = ctx->codec->write_filler(avctx, filler_data,
+  325|                                            hdr_dst, &data_size);
+  326|             if (err < 0)
+  327|                 goto fail;
+  328| 
+  329|             encode_info.dstBufferOffset += data_size;
+  330|             encode_info.dstBufferRange  -= data_size;
+  331|         }
+  332|     }
+  333| 
+  334|     vp->slices_offset = encode_info.dstBufferOffset;
+  335| 
+  336|     /* Align buffer size to the nearest lower alignment requirement. */
+  337|     encode_info.dstBufferRange -= size_align;
+  338|     encode_info.dstBufferRange = FFALIGN(encode_info.dstBufferRange,
+  339|                                          size_align);
+  340| 
+  341|     /* Start command buffer recording */
+  342|     exec = vp->exec = ff_vk_exec_get(&ctx->enc_pool);
+```
+
+- `read_file(end_line=839, path=libavfilter/vf_nlmeans_vulkan.c, start_line=755)` →
+
+```
+libavfilter/vf_nlmeans_vulkan.c lines 755-839 of 1123
+  755| 
+  756|     /* Integral */
+  757|     AVBufferRef *integral_buf = NULL;
+  758|     FFVkBuffer *integral_vk;
+  759|     size_t int_stride;
+  760|     size_t int_size;
+  761| 
+  762|     /* Weights/sums */
+  763|     AVBufferRef *ws_buf = NULL;
+  764|     FFVkBuffer *ws_vk;
+  765|     VkDeviceSize weights_offs[4];
+  766|     VkDeviceSize sums_offs[4];
+  767|     uint32_t ws_stride[4];
+  768|     size_t ws_size[4];
+  769|     size_t ws_total_size = 0;
+  770| 
+  771|     FFVkExecContext *exec;
+  772|     VkImageView in_views[AV_NUM_DATA_POINTERS];
+  773|     VkImageView out_views[AV_NUM_DATA_POINTERS];
+  774|     VkImageMemoryBarrier2 img_bar[8];
+  775|     int nb_img_bar = 0;
+  776|     VkBufferMemoryBarrier2 buf_bar[8];
+  777|     int nb_buf_bar = 0;
+  778| 
+  779|     if (!s->initialized)
+  780|         RET(init_filter(ctx));
+  781| 
+  782|     desc = av_pix_fmt_desc_get(vkctx->output_format);
+  783|     if (!desc)
+  784|         return AVERROR(EINVAL);
+  785| 
+  786|     /* Integral image */
+  787|     int_stride = s->shd_weights.lg_size[0]*s->pl_weights_rows*TYPE_SIZE;
+  788|     int_size = s->shd_weights.lg_size[0]*s->pl_weights_rows*int_stride;
+  789| 
+  790|     /* Plane dimensions */
+  791|     for (int i = 0; i < desc->nb_components; i++) {
+  792|         plane_widths[i] = !i || (i == 3) ? vkctx->output_width : AV_CEIL_RSHIFT(vkctx->output_width, desc->log2_chroma_w);
+  793|         plane_heights[i] = !i || (i == 3) ? vkctx->output_height : AV_CEIL_RSHIFT(vkctx->output_height, desc->log2_chroma_w);
+  794|         plane_widths[i]  = FFALIGN(plane_widths[i],  s->shd_denoise.lg_size[0]);
+  795|         plane_heights[i] = FFALIGN(plane_heights[i], s->shd_denoise.lg_size[1]);
+  796| 
+  797|         ws_stride[i] = plane_widths[i];
+  798|         ws_size[i] = ws_stride[i] * plane_heights[i] * sizeof(float);
+  799|         ws_total_size += ws_size[i];
+  800|     }
+  801| 
+  802|     /* Buffers */
+  803|     err = ff_vk_get_pooled_buffer(&s->vkctx, &s->integral_buf_pool, &integral_buf,
+  804|                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+  805|                                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+  806|                                   NULL,
+  807|                                   s->opts.t * int_size,
+  808|                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  809|     if (err < 0)
+  810|         return err;
+  811|     integral_vk = (FFVkBuffer *)integral_buf->data;
+  812| 
+  813|     err = ff_vk_get_pooled_buffer(&s->vkctx, &s->ws_buf_pool, &ws_buf,
+  814|                                   VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+  815|                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+  816|                                   VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+  817|                                   NULL,
+  818|                                   ws_total_size * 2,
+  819|                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+  820|     if (err < 0)
+  821|         return err;
+  822|     ws_vk = (FFVkBuffer *)ws_buf->data;
+  823| 
+  824|     weights_offs[0] = 0;
+  825|     sums_offs[0] = ws_total_size;
+  826|     for (int i = 1; i < desc->nb_components; i++) {
+  827|         weights_offs[i] = weights_offs[i - 1] + ws_size[i - 1];
+  828|         sums_offs[i] = sums_offs[i - 1] + ws_size[i - 1];
+  829|     }
+  830| 
+  831|     /* Output frame */
+  832|     out = ff_get_video_buffer(outlink, outlink->w, outlink->h);
+  833|     if (!out) {
+  834|         err = AVERROR(ENOMEM);
+  835|         goto fail;
+  836|     }
+  837| 
+  838|     /* Execution context */
+  839|     exec = ff_vk_exec_get(&s->e);
+```
+
+- `read_file(end_line=3193, path=libavutil/hwcontext_vulkan.c, start_line=3130)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 3130-3193 of 4378
+ 3130| #ifdef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
+ 3131|     if (p->vkctx.extensions & FF_VK_EXT_EXTERNAL_FD_SEM) {
+ 3132|         VkCommandBuffer cmd_buf;
+ 3133|         FFVkExecContext *exec;
+ 3134|         VkImageMemoryBarrier2 img_bar[AV_NUM_DATA_POINTERS];
+ 3135|         VkSemaphore drm_sync_sem[AV_DRM_MAX_PLANES] = { 0 };
+ 3136|         int nb_img_bar = 0;
+ 3137| 
+ 3138|         for (int i = 0; i < desc->nb_objects; i++) {
+ 3139|             VkSemaphoreTypeCreateInfo sem_type_info = {
+ 3140|                 .sType         = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO,
+ 3141|                 .semaphoreType = VK_SEMAPHORE_TYPE_BINARY,
+ 3142|             };
+ 3143|             VkSemaphoreCreateInfo sem_spawn = {
+ 3144|                 .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+ 3145|                 .pNext = &sem_type_info,
+ 3146|             };
+ 3147|             VkImportSemaphoreFdInfoKHR import_info;
+ 3148|             struct dma_buf_export_sync_file implicit_fd_info = {
+ 3149|                 .flags = DMA_BUF_SYNC_READ,
+ 3150|                 .fd = -1,
+ 3151|             };
+ 3152| 
+ 3153|             if (ioctl(desc->objects[i].fd, DMA_BUF_IOCTL_EXPORT_SYNC_FILE,
+ 3154|                       &implicit_fd_info)) {
+ 3155|                 err = AVERROR(errno);
+ 3156|                 av_log(hwctx, AV_LOG_ERROR, "Failed to retrieve implicit DRM sync file: %s\n",
+ 3157|                        av_err2str(err));
+ 3158|                 for (; i >= 0; i--)
+ 3159|                     vk->DestroySemaphore(hwctx->act_dev, drm_sync_sem[i], hwctx->alloc);
+ 3160|                 return err;
+ 3161|             }
+ 3162| 
+ 3163|             ret = vk->CreateSemaphore(hwctx->act_dev, &sem_spawn,
+ 3164|                                       hwctx->alloc, &drm_sync_sem[i]);
+ 3165|             if (ret != VK_SUCCESS) {
+ 3166|                 av_log(hwctx, AV_LOG_ERROR, "Failed to create semaphore: %s\n",
+ 3167|                        ff_vk_ret2str(ret));
+ 3168|                 err = AVERROR_EXTERNAL;
+ 3169|                 for (; i >= 0; i--)
+ 3170|                     vk->DestroySemaphore(hwctx->act_dev, drm_sync_sem[i], hwctx->alloc);
+ 3171|                 return err;
+ 3172|             }
+ 3173| 
+ 3174|             import_info = (VkImportSemaphoreFdInfoKHR) {
+ 3175|                 .sType = VK_STRUCTURE_TYPE_IMPORT_SEMAPHORE_FD_INFO_KHR,
+ 3176|                 .handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_SYNC_FD_BIT,
+ 3177|                 .flags = VK_SEMAPHORE_IMPORT_TEMPORARY_BIT,
+ 3178|                 .semaphore = drm_sync_sem[i],
+ 3179|                 .fd = implicit_fd_info.fd,
+ 3180|             };
+ 3181| 
+ 3182|             ret = vk->ImportSemaphoreFdKHR(hwctx->act_dev, &import_info);
+ 3183|             if (ret != VK_SUCCESS) {
+ 3184|                 av_log(hwctx, AV_LOG_ERROR, "Failed to import semaphore: %s\n",
+ 3185|                        ff_vk_ret2str(ret));
+ 3186|                 err = AVERROR_EXTERNAL;
+ 3187|                 for (; i >= 0; i--)
+ 3188|                     vk->DestroySemaphore(hwctx->act_dev, drm_sync_sem[i], hwctx->alloc);
+ 3189|                 return err;
+ 3190|             }
+ 3191|         }
+ 3192| 
+ 3193|         exec = ff_vk_exec_get(&fp->compute_exec);
+```
+
+- `read_file(end_line=4101, path=libavutil/hwcontext_vulkan.c, start_line=4020)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 4020-4101 of 4378
+ 4020| 
+ 4021|         /* Create a ref */
+ 4022|         dst[*nb_bufs] = av_buffer_create((uint8_t *)vkb, sizeof(*vkb),
+ 4023|                                          destroy_avvkbuf, &p->vkctx, 0);
+ 4024|         if (!dst[*nb_bufs]) {
+ 4025|             destroy_avvkbuf(&p->vkctx, (uint8_t *)vkb);
+ 4026|             err = AVERROR(ENOMEM);
+ 4027|             goto fail;
+ 4028|         }
+ 4029| 
+ 4030|         (*nb_bufs)++;
+ 4031|     }
+ 4032| 
+ 4033|     return 0;
+ 4034| 
+ 4035| fail:
+ 4036|     for (int i = 0; i < (*nb_bufs); i++)
+ 4037|         av_buffer_unref(&dst[i]);
+ 4038|     return err;
+ 4039| }
+ 4040| 
+ 4041| static int vulkan_transfer_frame(AVHWFramesContext *hwfc,
+ 4042|                                  AVFrame *swf, AVFrame *hwf,
+ 4043|                                  int upload)
+ 4044| {
+ 4045|     int err;
+ 4046|     VulkanFramesPriv *fp = hwfc->hwctx;
+ 4047|     VulkanDevicePriv *p = hwfc->device_ctx->hwctx;
+ 4048|     FFVulkanFunctions *vk = &p->vkctx.vkfn;
+ 4049| 
+ 4050|     int host_mapped = 0;
+ 4051| 
+ 4052|     AVVkFrame *hwf_vk = (AVVkFrame *)hwf->data[0];
+ 4053|     VkBufferImageCopy region[AV_NUM_DATA_POINTERS]; // always one per plane
+ 4054| 
+ 4055|     const int planes = av_pix_fmt_count_planes(swf->format);
+ 4056|     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(swf->format);
+ 4057|     const int nb_images = ff_vk_count_images(hwf_vk);
+ 4058|     static const VkImageAspectFlags plane_aspect[] = { VK_IMAGE_ASPECT_COLOR_BIT,
+ 4059|                                                        VK_IMAGE_ASPECT_PLANE_0_BIT,
+ 4060|                                                        VK_IMAGE_ASPECT_PLANE_1_BIT,
+ 4061|                                                        VK_IMAGE_ASPECT_PLANE_2_BIT, };
+ 4062| 
+ 4063|     VkImageMemoryBarrier2 img_bar[AV_NUM_DATA_POINTERS];
+ 4064|     int nb_img_bar = 0;
+ 4065| 
+ 4066|     AVBufferRef *bufs[AV_NUM_DATA_POINTERS];
+ 4067|     int nb_bufs = 0;
+ 4068| 
+ 4069|     VkCommandBuffer cmd_buf;
+ 4070|     FFVkExecContext *exec;
+ 4071| 
+ 4072|     /* Sanity checking */
+ 4073|     if ((swf->format != AV_PIX_FMT_NONE && !av_vkfmt_from_pixfmt(swf->format))) {
+ 4074|         av_log(hwfc, AV_LOG_ERROR, "Unsupported software frame pixel format!\n");
+ 4075|         return AVERROR(EINVAL);
+ 4076|     }
+ 4077| 
+ 4078|     if (swf->width > hwfc->width || swf->height > hwfc->height)
+ 4079|         return AVERROR(EINVAL);
+ 4080| 
+ 4081|     /* Setup buffers first */
+ 4082|     if (p->vkctx.extensions & FF_VK_EXT_EXTERNAL_HOST_MEMORY) {
+ 4083|         err = host_map_frame(hwfc, bufs, &nb_bufs, swf, region, upload);
+ 4084|         if (err >= 0)
+ 4085|             host_mapped = 1;
+ 4086|     }
+ 4087| 
+ 4088|     if (!host_mapped) {
+ 4089|         err = get_plane_buf(hwfc, &bufs[0], swf, region, upload);
+ 4090|         if (err < 0)
+ 4091|             goto end;
+ 4092|         nb_bufs = 1;
+ 4093| 
+ 4094|         if (upload) {
+ 4095|             err = copy_buffer_data(hwfc, bufs[0], swf, region, planes, 1);
+ 4096|             if (err < 0)
+ 4097|                 goto end;
+ 4098|         }
+ 4099|     }
+ 4100| 
+ 4101|     exec = ff_vk_exec_get(&fp->upload_exec);
+```
+
+- `read_file(end_line=2256, path=libavutil/hwcontext_vulkan.c, start_line=2190)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 2190-2256 of 4378
+ 2190|             ded_alloc.image = f->img[img_cnt];
+ 2191| 
+ 2192|         /* Allocate memory */
+ 2193|         if ((err = alloc_mem(ctx, &req.memoryRequirements,
+ 2194|                              f->tiling == VK_IMAGE_TILING_LINEAR ?
+ 2195|                              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT :
+ 2196|                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+ 2197|                              use_ded_mem ? &ded_alloc : (void *)ded_alloc.pNext,
+ 2198|                              &f->flags, &f->mem[img_cnt])))
+ 2199|             return err;
+ 2200| 
+ 2201|         f->size[img_cnt] = req.memoryRequirements.size;
+ 2202|         bind_info[img_cnt].sType  = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+ 2203|         bind_info[img_cnt].image  = f->img[img_cnt];
+ 2204|         bind_info[img_cnt].memory = f->mem[img_cnt];
+ 2205| 
+ 2206|         img_cnt++;
+ 2207|     }
+ 2208| 
+ 2209|     /* Bind the allocated memory to the images */
+ 2210|     ret = vk->BindImageMemory2(hwctx->act_dev, img_cnt, bind_info);
+ 2211|     if (ret != VK_SUCCESS) {
+ 2212|         av_log(ctx, AV_LOG_ERROR, "Failed to bind memory: %s\n",
+ 2213|                ff_vk_ret2str(ret));
+ 2214|         return AVERROR_EXTERNAL;
+ 2215|     }
+ 2216| 
+ 2217|     return 0;
+ 2218| }
+ 2219| 
+ 2220| enum PrepMode {
+ 2221|     PREP_MODE_GENERAL,
+ 2222|     PREP_MODE_WRITE,
+ 2223|     PREP_MODE_EXTERNAL_EXPORT,
+ 2224|     PREP_MODE_EXTERNAL_IMPORT,
+ 2225|     PREP_MODE_DECODING_DST,
+ 2226|     PREP_MODE_DECODING_DPB,
+ 2227|     PREP_MODE_ENCODING_DPB,
+ 2228| };
+ 2229| 
+ 2230| static int prepare_frame(AVHWFramesContext *hwfc, FFVkExecPool *ectx,
+ 2231|                          AVVkFrame *frame, enum PrepMode pmode)
+ 2232| {
+ 2233|     int err;
+ 2234|     VulkanDevicePriv *p = hwfc->device_ctx->hwctx;
+ 2235|     FFVulkanFunctions *vk = &p->vkctx.vkfn;
+ 2236|     VkImageMemoryBarrier2 img_bar[AV_NUM_DATA_POINTERS];
+ 2237|     int nb_img_bar = 0;
+ 2238| 
+ 2239|     uint32_t dst_qf = VK_QUEUE_FAMILY_IGNORED;
+ 2240|     VkImageLayout new_layout;
+ 2241|     VkAccessFlags2 new_access;
+ 2242|     VkPipelineStageFlagBits2 src_stage = VK_PIPELINE_STAGE_2_NONE;
+ 2243| 
+ 2244|     /* This is dirty - but it works. The vulkan.c dependency system doesn't
+ 2245|      * free non-refcounted frames, and non-refcounted hardware frames cannot
+ 2246|      * happen anywhere outside of here. */
+ 2247|     AVBufferRef tmp_ref = {
+ 2248|         .data = (uint8_t *)hwfc,
+ 2249|     };
+ 2250|     AVFrame tmp_frame = {
+ 2251|         .data[0] = (uint8_t *)frame,
+ 2252|         .hw_frames_ctx = &tmp_ref,
+ 2253|     };
+ 2254| 
+ 2255|     VkCommandBuffer cmd_buf;
+ 2256|     FFVkExecContext *exec = ff_vk_exec_get(ectx);
+```
+
+### Turn 4  _(tok 14745+114, stop=tool_use)_
+
+**Reasoning:** Now I need to find the enclosing function for hwcontext_vulkan.c:3193. Let me look further back.
+
+- `read_file(end_line=3130, path=libavutil/hwcontext_vulkan.c, start_line=3080)` →
+
+```
+libavutil/hwcontext_vulkan.c lines 3080-3130 of 4378
+ 3080|                                                     VK_IMAGE_ASPECT_MEMORY_PLANE_2_BIT_EXT;
+ 3081| 
+ 3082|             plane_info[bind_counts].sType = VK_STRUCTURE_TYPE_BIND_IMAGE_PLANE_MEMORY_INFO;
+ 3083|             plane_info[bind_counts].pNext = NULL;
+ 3084|             plane_info[bind_counts].planeAspect = aspect;
+ 3085| 
+ 3086|             bind_info[bind_counts].sType  = VK_STRUCTURE_TYPE_BIND_IMAGE_MEMORY_INFO;
+ 3087|             bind_info[bind_counts].pNext  = planes > 1 ? &plane_info[bind_counts] : NULL;
+ 3088|             bind_info[bind_counts].image  = f->img[i];
+ 3089|             bind_info[bind_counts].memory = f->mem[i];
+ 3090| 
+ 3091|             /* Offset is already signalled via pPlaneLayouts above */
+ 3092|             bind_info[bind_counts].memoryOffset = 0;
+ 3093| 
+ 3094|             bind_counts++;
+ 3095|         }
+ 3096|     }
+ 3097| 
+ 3098|     /* Bind the allocated memory to the images */
+ 3099|     ret = vk->BindImageMemory2(hwctx->act_dev, bind_counts, bind_info);
+ 3100|     if (ret != VK_SUCCESS) {
+ 3101|         av_log(ctx, AV_LOG_ERROR, "Failed to bind memory: %s\n",
+ 3102|                ff_vk_ret2str(ret));
+ 3103|         err = AVERROR_EXTERNAL;
+ 3104|         goto fail;
+ 3105|     }
+ 3106| 
+ 3107|     *frame = f;
+ 3108| 
+ 3109|     return 0;
+ 3110| 
+ 3111| fail:
+ 3112|     vulkan_frame_free(hwfc, f);
+ 3113| 
+ 3114|     return err;
+ 3115| }
+ 3116| 
+ 3117| static int vulkan_map_from_drm_frame_sync(AVHWFramesContext *hwfc, AVFrame *dst,
+ 3118|                                           const AVFrame *src, int flags)
+ 3119| {
+ 3120|     int err;
+ 3121|     VkResult ret;
+ 3122|     AVHWDeviceContext *ctx = hwfc->device_ctx;
+ 3123|     VulkanDevicePriv *p = ctx->hwctx;
+ 3124|     VulkanFramesPriv *fp = hwfc->hwctx;
+ 3125|     AVVulkanDeviceContext *hwctx = &p->p;
+ 3126|     FFVulkanFunctions *vk = &p->vkctx.vkfn;
+ 3127| 
+ 3128|     const AVDRMFrameDescriptor *desc = (AVDRMFrameDescriptor *)src->data[0];
+ 3129| 
+ 3130| #ifdef DMA_BUF_IOCTL_EXPORT_SYNC_FILE
+```
+
+_(budget of 20,000 tokens exhausted — forcing submission)_
+
+### Turn 5  _(tok 15605+689, stop=tool_use, forced)_
+
+**Reasoning:** Let me now compile what I have. I need to identify the enclosing functions for each call site:
+
+1. `libavcodec/vulkan_decode.c:296` — `ff_vk_decode_flush`
+2. `libavcodec/vulkan_decode.c:348` — `ff_vk_decode_frame`
+3. `libavcodec/vulkan_encode.c:342` — I need to find the function. Let me look from earlier...
+4. `libavfilter/vf_nlmeans_vulkan.c:839` — I need to find the function.
+5. `libavfilter/vulkan_filter.c:252` — `ff_vk_filter_process_simple`
+6. `libavfilter/vulkan_filter.c:324` — `ff_vk_filter_process_2pass`
+7. `libavfilter/vulkan_filter.c:412` — `ff_vk_filter_process_Nin`
+8. `libavutil/hwcontext_vulkan.c:2256` — `prepare_frame`
+9. `libavutil/hwcontext_vulkan.c:3193` — `vulkan_map_from_drm_frame_sync`
+10. `libavutil/hwcontext_vulkan.c:4101` — `vulkan_transfer_frame`
+
+For #3 (vulkan_encode.c:342), I can see the code around it but I couldn't read far enough back. Let me think... Actually I saw enough. Let me look at what I have for that one - I read from 270 but I don't see the function header. The function probably starts before 270.
+
+For #4 (vf_nlmeans_vulkan.c:839), I read from 755 but also didn't see the function header.
+
+Let me search for the function definitions near these lines.
+
+Actually, let me search backwards from where I read. For vulkan_encode.c, the function must be before line 270. Let me search.
+
+For vf_nlmeans_vulkan.c, I need to search before line 755.
+
+I'll use grep to find function definitions quickly.
+
+- **submit_callers** → `{"callers": [{"function": "ff_vk_decode_flush", "file": "libavcodec/vulkan_decode.c"}, {"function": "ff_vk_decode_frame", "file": "libavcodec/vulkan_decode.c"}, {"function": "ff_vk_filter_process_simple", "file": "libavfilter/vulkan_filter.c"}, {"function": "ff_vk_filter_process_2pass", "file": "libavfilter/vulkan_filter.c"}, {"function": "ff_vk_filter_process_Nin", "file": "libavfilter/vulkan_filter.c"}, {"function": "prepare_frame", "file": "libavutil/hwcontext_vulkan.c"}, {"function": "vulkan_map_from_drm_frame_sync", "file": "libavutil/hwcontext_vulkan.c"}, {"function": "vulkan_transfer_frame", "file": "libavutil/hwcontext_vulkan.c"}], "confidence_overall": "medium"}`
+
+**Score (index):** `{"n_pred": 8, "n_truth": 10, "tp": 8, "precision": 1.0, "recall": 0.8, "f1": 0.888888888888889}`
+

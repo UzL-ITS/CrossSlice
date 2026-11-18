@@ -1,0 +1,279 @@
+
+Tool alone (get_callers vs. history truth, n=18): precision 1.000  recall 1.000  F1 1.000
+
+eval/results/impact_deepseek-v4-pro_hard.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.89    0.85   0.87  10/16  10/16    27,828      29,683   10.6       0
+index       0.84    0.76   0.78   5/16   7/16    27,986      30,942   11.2       0
+tool        0.97    0.97   0.96  13/16  14/16    19,252      13,577    4.6       0
+semantic    0.94    0.97   0.95  10/16  13/16    13,633      11,314    3.8       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    10,153 0.60/1.00    35,323 0.50/1.00     8,901 0.50/1.00    15,330
+php-src    get_cc                             3 1.00/1.00    36,150 1.00/1.00    18,844 1.00/1.00    48,855 1.00/1.00    11,522
+php-src    zend_may_throw                     5 0.67/0.40    33,377 0.67/0.40    33,352 1.00/0.60    13,577 1.00/0.60    10,736
+php-src    emit_op_mem                        9 1.00/1.00    28,899 0.00/0.00    34,455 1.00/1.00    63,717 0.82/1.00    31,423
+php-src    php_addslashes                     3 1.00/1.00    27,013 1.00/1.00    16,561 1.00/1.00    17,046 0.75/1.00     9,889
+php-src    zval_update_constant_ex           25 0.26/0.21    33,954 0.75/0.25    37,030 1.00/0.96     8,591 1.00/0.96    14,847
+php-src    zend_unmangle_property_name_ex     8 0.71/0.62    30,336 0.83/0.62    30,942 1.00/1.00    23,486 1.00/1.00    28,173
+php-src    php_dom_create_object             16 0.88/0.88    49,847 1.00/0.81    41,856 1.00/1.00    31,860 1.00/1.00     9,729
+php-src    zend_is_callable_ex                8 0.88/0.88    27,140 0.88/0.88    33,574 1.00/1.00    10,897 1.00/1.00    15,292
+qemu       ramfb_setup                        3 1.00/1.00     5,665 1.00/1.00     6,245 1.00/1.00     9,523 1.00/1.00    11,314
+qemu       os_mlock                           2 1.00/1.00    10,674 1.00/1.00    17,288 1.00/1.00    14,269 1.00/1.00    11,060
+qemu       gdbserver_start                    3 1.00/1.00    29,683 0.67/1.00    28,502 1.00/1.00     6,071 1.00/1.00     8,267
+qemu       migration_is_running               7 1.00/1.00    27,920 1.00/0.86    27,855 1.00/1.00     9,962 1.00/1.00     8,702
+qemu       qemu_input_is_absolute            22 0.88/0.68    34,387 1.00/0.55    31,912 1.00/1.00    23,581 1.00/0.95    11,014
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    25,908 1.00/1.00    25,048 1.00/1.00     6,421 1.00/1.00    11,595
+qemu       semihosting_enabled               10 1.00/1.00    34,135 1.00/0.80    28,987 1.00/1.00    11,280 1.00/1.00     9,233
+
+eval/results/impact_deepseek-v4-pro_hardr2.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.84    0.86   0.85   8/16   8/16    27,806      29,776   10.1       0
+index       0.84    0.80   0.80   5/16   7/16    28,490      31,697   10.6       0
+tool        0.88    0.93   0.89  10/16  12/16    19,802      14,870    5.0       0
+semantic    0.94    0.97   0.95  10/16  13/16    13,144      11,606    3.5       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    15,706 0.50/1.00    38,371 0.50/1.00    19,744 0.50/1.00     8,747
+php-src    get_cc                             3 1.00/1.00    28,942 1.00/1.00    39,160 1.00/1.00    14,870 1.00/1.00    12,559
+php-src    zend_may_throw                     5 0.50/0.60    27,693 1.00/0.60    31,697 1.00/0.80    30,946 1.00/0.60    10,681
+php-src    emit_op_mem                        9 1.00/1.00    37,098 1.00/0.56    35,078 0.82/1.00    37,234 0.82/1.00    35,827
+php-src    php_addslashes                     3 1.00/1.00    14,852 1.00/1.00    19,118 1.00/1.00    31,124 0.75/1.00    12,818
+php-src    zval_update_constant_ex           25 0.35/0.25    42,338 0.28/0.21    30,790 0.38/0.25    33,262 1.00/0.96    14,732
+php-src    zend_unmangle_property_name_ex     8 0.86/0.75    30,489 1.00/0.50    36,238 0.41/0.88    45,337 1.00/1.00     9,312
+php-src    php_dom_create_object             16 0.48/0.88    47,863 0.62/0.62    29,705 1.00/1.00    30,925 1.00/1.00     9,742
+php-src    zend_is_callable_ex                8 0.88/0.88    36,030 0.88/0.88    31,896 1.00/1.00    11,028 1.00/1.00    15,272
+qemu       ramfb_setup                        3 1.00/1.00     5,584 1.00/1.00     5,841 1.00/1.00     9,337 1.00/1.00    11,261
+qemu       os_mlock                           2 1.00/1.00    13,728 1.00/1.00    20,486 1.00/1.00     9,302 1.00/1.00    19,496
+qemu       gdbserver_start                    3 1.00/1.00    29,776 0.67/1.00    34,160 1.00/1.00     5,999 1.00/1.00     8,509
+qemu       migration_is_running               7 0.86/0.86    33,422 0.86/0.86    25,424 1.00/1.00    10,052 1.00/1.00    12,475
+qemu       qemu_input_is_absolute            22 0.74/0.77    36,740 0.77/0.77    36,017 1.00/0.95     7,794 1.00/0.95    11,606
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00    16,374 1.00/1.00    11,645 1.00/1.00     9,612 1.00/1.00     7,979
+qemu       semihosting_enabled               10 0.80/0.80    28,253 0.80/0.80    30,209 1.00/1.00    10,270 1.00/1.00     9,286
+
+eval/results/impact_deepseek-v4-pro_hardr3.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.86    0.83   0.83   8/16   9/16    27,300      33,315    9.5       0
+index       0.89    0.82   0.84   8/16  10/16    28,768      30,088   10.6       0
+tool        0.96    0.96   0.96  15/16  15/16    16,496      13,204    4.4       0
+semantic    0.94    0.97   0.95  10/16  13/16    15,188      12,375    3.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 0.75/1.00    40,282 0.75/1.00    38,251 1.00/1.00    17,628 0.50/1.00    13,757
+php-src    get_cc                             3 1.00/1.00     8,779 1.00/1.00    17,535 1.00/1.00    13,204 1.00/1.00    10,916
+php-src    zend_may_throw                     5 0.20/0.20    35,280 1.00/0.40    38,964 1.00/1.00    31,267 1.00/0.60    13,928
+php-src    emit_op_mem                        9 0.75/0.67    38,095 0.82/1.00    42,143 1.00/1.00    21,458 0.82/1.00    17,352
+php-src    php_addslashes                     3 1.00/1.00    20,370 1.00/1.00    18,010 1.00/1.00    26,835 0.75/1.00    29,262
+php-src    zval_update_constant_ex           25 0.41/0.29    33,315 0.25/0.17    36,884 0.42/0.33    43,920 1.00/0.96    21,067
+php-src    zend_unmangle_property_name_ex     8 1.00/0.50    36,834 0.67/0.25    29,679 1.00/1.00    11,330 1.00/1.00     9,100
+php-src    php_dom_create_object             16 0.94/0.94    40,266 0.75/0.75    28,647 1.00/1.00    12,234 1.00/1.00     9,809
+php-src    zend_is_callable_ex                8 1.00/1.00    38,346 1.00/1.00    40,132 1.00/1.00     6,675 1.00/1.00    31,025
+qemu       ramfb_setup                        3 1.00/1.00     5,964 1.00/1.00     6,092 1.00/1.00    15,560 1.00/1.00     8,207
+qemu       os_mlock                           2 1.00/1.00    22,907 1.00/1.00    18,036 1.00/1.00    12,733 1.00/1.00    12,267
+qemu       gdbserver_start                    3 1.00/1.00    17,432 1.00/1.00    30,193 1.00/1.00    10,143 1.00/1.00     5,198
+qemu       migration_is_running               7 1.00/1.00    24,340 1.00/1.00    29,777 1.00/1.00     6,846 1.00/1.00    12,375
+qemu       qemu_input_is_absolute            22 0.86/0.82    37,418 0.95/0.82    34,247 1.00/1.00    17,627 1.00/0.95    30,804
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00     5,792 1.00/1.00    21,606 1.00/1.00     9,826 1.00/1.00     8,097
+qemu       semihosting_enabled               10 0.80/0.80    31,375 1.00/0.80    30,088 1.00/1.00     6,645 1.00/1.00     9,847
+
+eval/results/impact_qwen3.8-2.4t-a95b_hard.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=10)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.95    0.95   0.95   8/10   8/10    23,709      25,049    6.9       0
+index       0.83    0.84   0.84   7/10   8/10    26,288      21,222    7.2       0
+tool        0.93    1.00   0.96   8/10  10/10    20,650      11,869    5.2       0
+semantic    1.00    0.96   0.97   9/10   9/10    22,917      20,174    6.0       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    31,259 0.00/0.00    42,594 0.50/1.00    31,200 1.00/1.00    38,349
+php-src    get_cc                             3 1.00/1.00    25,049 0.75/1.00    44,053 1.00/1.00     9,281 1.00/1.00    20,174
+qemu       ramfb_setup                        3 1.00/1.00     8,706 1.00/1.00    12,543 1.00/1.00     6,194 1.00/1.00    15,931
+qemu       os_mlock                           2 1.00/1.00    17,469 1.00/1.00     9,349 1.00/1.00    10,172 1.00/1.00    14,708
+qemu       gdbserver_start                    3 1.00/1.00    17,544 1.00/1.00    21,222 1.00/1.00    11,869 1.00/1.00    11,473
+qemu       migration_is_running               7 1.00/1.00    15,442 1.00/1.00    16,379 1.00/1.00     6,662 1.00/1.00     8,889
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00     7,919 1.00/1.00     5,742 1.00/1.00    11,088 1.00/1.00    10,116
+php-src    zend_may_throw                     5 0.60/0.60    35,294 1.00/1.00    47,485 1.00/1.00    45,422 1.00/0.60    34,817
+php-src    emit_op_mem                        9 0.89/0.89    47,401 0.57/0.44    46,584 0.82/1.00    60,997 1.00/1.00    43,855
+php-src    php_addslashes                     3 1.00/1.00    31,007 1.00/1.00    16,926 1.00/1.00    13,618 1.00/1.00    30,854
+
+eval/results/impact_qwen3.8-2.4t-a95b_hardr2.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=8)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        1.00    1.00   1.00   8/8    8/8     18,916      18,577    6.6       0
+index       0.90    0.95   0.92   6/8    7/8     21,760      20,482    7.4       0
+tool        0.94    0.95   0.93   6/8    7/8     16,385      10,972    4.9       0
+semantic    0.94    0.95   0.93   6/8    7/8     16,083      14,758    5.8       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    23,061 1.00/1.00    43,128 0.50/1.00    32,327 0.50/1.00    18,904
+php-src    get_cc                             3 1.00/1.00    10,713 1.00/1.00    39,602 1.00/1.00     8,539 1.00/1.00    32,660
+php-src    zend_may_throw                     5 1.00/1.00    45,175 0.50/0.60    33,838 1.00/0.60    44,290 1.00/0.60     6,200
+qemu       ramfb_setup                        3 1.00/1.00    10,806 1.00/1.00     9,037 1.00/1.00    10,972 1.00/1.00     8,587
+qemu       os_mlock                           2 1.00/1.00    11,879 1.00/1.00    10,681 1.00/1.00    10,817 1.00/1.00    14,758
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00     6,154 1.00/1.00     6,706 1.00/1.00    11,046 1.00/1.00     8,576
+qemu       gdbserver_start                    3 1.00/1.00    24,959 0.67/1.00    20,482 1.00/1.00     6,425 1.00/1.00    26,151
+qemu       migration_is_running               7 1.00/1.00    18,577 1.00/1.00    10,607 1.00/1.00     6,661 1.00/1.00    12,827
+
+eval/results/impact_qwen3.8-2.4t-a95b_hardr3.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=9)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+self        0.96    0.93   0.94   7/9    7/9     23,640      22,363    6.6       0
+index       0.96    0.93   0.94   8/9    8/9     26,296      27,476    6.8       0
+tool        0.92    1.00   0.95   7/9    9/9     22,733      18,483    5.4       0
+semantic    0.95    0.96   0.95   6/9    8/9     20,517      14,284    5.9       0
+
+per case:
+repo       function                       truth     self P/R     tok    index P/R     tok     tool P/R     tok semantic P/R     tok
+php-src    emit_stack_frame_release           3 1.00/1.00    28,222 1.00/1.00    37,997 0.50/1.00    40,315 1.00/1.00    44,864
+php-src    get_cc                             3 1.00/1.00    37,824 1.00/1.00    32,086 1.00/1.00    32,794 1.00/1.00    14,284
+qemu       ramfb_setup                        3 1.00/1.00     6,064 1.00/1.00    11,671 1.00/1.00     6,233 1.00/1.00     8,170
+qemu       os_mlock                           2 1.00/1.00    18,930 1.00/1.00    16,450 1.00/1.00    10,784 1.00/1.00    14,039
+qemu       postcopy_ram_supported_by_host     2 1.00/1.00     6,199 1.00/1.00     6,941 1.00/1.00    11,084 1.00/1.00    14,226
+php-src    zend_may_throw                     5 0.75/0.60    34,901 0.67/0.40    45,162 1.00/1.00    43,072 1.00/0.60    16,258
+php-src    emit_op_mem                        9 0.88/0.78    39,350 1.00/1.00    42,172 0.82/1.00    35,366 0.82/1.00    38,990
+php-src    php_addslashes                     3 1.00/1.00    18,903 1.00/1.00    16,712 1.00/1.00    18,483 0.75/1.00    24,360
+qemu       gdbserver_start                    3 1.00/1.00    22,363 1.00/1.00    27,476 1.00/1.00     6,470 1.00/1.00     9,465
+
+eval/results/impact_deepseek-v4-pro_v3_index.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=18)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.82    0.75   0.78   9/18   9/18    30,384      31,856   12.2       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00     6,478
+ffmpeg     ff_attach_decode_data              4 1.00/1.00    29,615
+ffmpeg     ff_sws_graph_add_pass              5 0.80/0.80    31,206
+ffmpeg     ff_mjpeg_decode_sos                3 1.00/1.00    31,452
+ffmpeg     mpeg_get_qscale                    5 1.00/1.00    26,471
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00    11,093
+ffmpeg     ff_vk_shader_rep_fmt              12 0.00/0.00    30,755
+ffmpeg     ff_vk_exec_get                    10 1.00/0.80    42,638
+ffmpeg     ff_vk_shader_init                 13 1.00/0.75    37,437
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/1.00    31,856
+php-src    phar_parse_url                     7 1.00/1.00    32,595
+php-src    phar_open_from_filename            6 1.00/1.00    31,999
+php-src    phar_get_archive                  16 1.00/0.31    40,645
+php-src    phar_create_signature              3 0.33/0.33    32,854
+php-src    phar_get_entry_data                3 0.67/0.67    28,737
+php-src    phar_split_fname                  14 0.57/0.57    43,778
+php-src    phar_free_alias                    6 0.40/0.33    33,105
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    24,196
+
+eval/results/impact_deepseek-v4-pro_v3_indexr2.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=18)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.79    0.76   0.77  10/18  10/18    28,775      31,721   11.7       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00    15,724
+ffmpeg     ff_attach_decode_data              4 1.00/1.00    29,470
+ffmpeg     ff_sws_graph_add_pass              5 1.00/1.00    19,884
+ffmpeg     ff_mjpeg_decode_sos                3 1.00/1.00    32,110
+ffmpeg     mpeg_get_qscale                    5 1.00/1.00    35,414
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00    10,425
+ffmpeg     ff_vk_shader_rep_fmt              12 0.00/0.00    27,985
+ffmpeg     ff_vk_exec_get                    10 0.70/0.70    38,255
+ffmpeg     ff_vk_shader_init                 13 0.33/0.25    36,760
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/0.67    26,832
+php-src    phar_parse_url                     7 1.00/1.00    14,501
+php-src    phar_open_from_filename            6 1.00/1.00    33,560
+php-src    phar_get_archive                  16 0.39/0.44    30,070
+php-src    phar_create_signature              3 0.33/0.33    38,404
+php-src    phar_get_entry_data                3 1.00/1.00    31,721
+php-src    phar_split_fname                  14 0.79/0.79    34,533
+php-src    phar_free_alias                    6 0.60/0.50    39,711
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    22,590
+
+eval/results/impact_deepseek-v4-pro_v3_indexr3.jsonl  (openrouter:deepseek/deepseek-v4-pro, budget 20000, n=18)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.87    0.74   0.79   8/18   8/18    29,278      30,069   11.7       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00    14,493
+ffmpeg     ff_attach_decode_data              4 1.00/0.75    14,202
+ffmpeg     ff_sws_graph_add_pass              5 1.00/0.80    30,833
+ffmpeg     ff_mjpeg_decode_sos                3 1.00/1.00    18,757
+ffmpeg     mpeg_get_qscale                    5 1.00/1.00    29,309
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00    17,682
+ffmpeg     ff_vk_shader_rep_fmt              12 1.00/0.33    57,987
+ffmpeg     ff_vk_exec_get                    10 0.50/0.50    31,112
+ffmpeg     ff_vk_shader_init                 13 1.00/0.50    38,833
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/1.00    29,050
+php-src    phar_parse_url                     7 1.00/1.00    30,069
+php-src    phar_open_from_filename            6 1.00/1.00    34,549
+php-src    phar_get_archive                  16 0.31/0.31    32,944
+php-src    phar_create_signature              3 0.67/0.67    28,740
+php-src    phar_get_entry_data                3 1.00/0.67    27,610
+php-src    phar_split_fname                  14 0.78/0.50    34,096
+php-src    phar_free_alias                    6 0.40/0.33    38,987
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    17,753
+
+eval/results/impact_qwen3.8-2.4t-a95b_v3_index.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=14)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.87    0.84   0.85   9/14   9/14    27,400      27,980    8.3       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00    18,081
+ffmpeg     ff_attach_decode_data              4 1.00/1.00    18,561
+ffmpeg     ff_sws_graph_add_pass              5 0.80/0.80    27,980
+ffmpeg     ff_mjpeg_decode_sos                3 1.00/1.00    26,535
+ffmpeg     mpeg_get_qscale                    5 1.00/1.00    40,415
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00    25,908
+ffmpeg     ff_vk_shader_rep_fmt              12 0.50/0.33    32,539
+ffmpeg     ff_vk_exec_get                    10 0.50/0.50    36,354
+ffmpeg     ff_vk_shader_init                 13 0.67/0.50    30,948
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/1.00    23,767
+php-src    phar_parse_url                     7 1.00/1.00    33,843
+php-src    phar_open_from_filename            6 0.67/0.67    34,795
+php-src    phar_get_entry_data                3 1.00/1.00    10,380
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    23,501
+
+eval/results/impact_qwen3.8-2.4t-a95b_v3_indexr2.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.88    0.81   0.82   9/16   9/16    29,835      33,786    8.4       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00    26,258
+ffmpeg     ff_attach_decode_data              4 1.00/1.00    27,071
+ffmpeg     ff_sws_graph_add_pass              5 1.00/1.00    34,913
+ffmpeg     ff_mjpeg_decode_sos                3 0.67/0.67    36,617
+ffmpeg     mpeg_get_qscale                    5 0.60/0.60    36,730
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00    12,217
+ffmpeg     ff_vk_shader_rep_fmt              12 1.00/0.33    33,553
+ffmpeg     ff_vk_exec_get                    10 0.40/0.40    39,515
+ffmpeg     ff_vk_shader_init                 13 1.00/0.50    34,980
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/1.00    38,466
+php-src    phar_parse_url                     7 1.00/1.00    26,787
+php-src    phar_create_signature              3 1.00/1.00    18,870
+php-src    phar_get_entry_data                3 1.00/1.00    16,615
+php-src    phar_open_from_filename            6 0.83/0.83    34,923
+php-src    phar_get_archive                  16 0.50/0.56    33,786
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    26,058
+
+eval/results/impact_qwen3.8-2.4t-a95b_v3_indexr3.jsonl  (openrouter:qwen/qwen3.8-2.4t-a95b, budget 20000, n=16)
+arm         prec  recall     F1  exact  R=1.0  mean tok  median tok  calls  no sub
+index       0.91    0.85   0.87  10/16  10/16    29,925      31,309    8.2       0
+
+per case:
+repo       function                       truth    index P/R     tok
+ffmpeg     ff_sws_ops_translate               3 1.00/1.00    31,309
+ffmpeg     ff_attach_decode_data              4 1.00/1.00    18,380
+ffmpeg     ff_sws_graph_add_pass              5 1.00/1.00    35,649
+ffmpeg     ff_mjpeg_decode_sos                3 1.00/1.00    30,523
+ffmpeg     mpeg_get_qscale                    5 0.60/0.60    43,420
+ffmpeg     ff_mpeg4_get_video_packet_pref     3 1.00/1.00     7,185
+ffmpeg     ff_vk_shader_rep_fmt              12 1.00/0.33    30,840
+ffmpeg     ff_vk_exec_get                    10 0.80/0.80    41,252
+ffmpeg     ff_vk_shader_init                 13 1.00/0.75    36,764
+ffmpeg     ff_hevc_frame_nb_refs              3 1.00/1.00    36,151
+php-src    phar_parse_url                     7 1.00/1.00    30,685
+php-src    phar_open_from_filename            6 1.00/1.00    35,053
+php-src    phar_create_signature              3 0.67/0.67    12,823
+php-src    phar_get_entry_data                3 1.00/1.00    24,389
+php-src    phar_get_archive                  16 0.44/0.50    35,379
+php-src    phar_get_or_create_entry_data      4 1.00/1.00    28,993
