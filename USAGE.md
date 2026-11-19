@@ -163,7 +163,7 @@ Podman both work.
 
 ```bash
 docker build -t crossslice .
-docker run --rm -p 8000:8000 crossslice                  # the explorer on the bundled example
+docker run --rm -p 127.0.0.1:8000:8000 crossslice        # the explorer on the bundled example
 ```
 
 For your own checkout, mount it at `/repo`, keep the caches in a named volume
@@ -176,7 +176,7 @@ crossslice check
 crossslice enrich REV
 crossslice context src/file.c:120 --slice
 crossslice mcp                                           # MCP server over stdio
-docker run --rm -p 8000:8000 -u "$(id -u):$(id -g)" -v "$PWD:/repo" \
+docker run --rm -p 127.0.0.1:8000:8000 -u "$(id -u):$(id -g)" -v "$PWD:/repo" \
     -v crossslice-cache:/cache crossslice explore         # http://127.0.0.1:8000
 ```
 

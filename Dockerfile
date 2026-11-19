@@ -1,6 +1,6 @@
 # CrossSlice: everything the analysis needs (git, GNU Global, clangd, gcc, Java + GumTree, Python).
 #   docker build -t crossslice .
-#   docker run --rm -p 8000:8000 crossslice                     # explorer on the bundled example
+#   docker run --rm -p 127.0.0.1:8000:8000 crossslice           # explorer on the bundled example
 # On your own checkout (mounted at /repo, the working directory; caches in a named volume;
 # running as your user so nothing in the checkout ends up owned by root):
 #   alias crossslice='docker run --rm -i -u "$(id -u):$(id -g)" \
@@ -8,7 +8,7 @@
 #   crossslice enrich                  # commit context of HEAD
 #   crossslice context src/foo.c:120   # code context at a line
 #   crossslice mcp                     # stdio MCP server for agents
-#   docker run --rm -p 8000:8000 -u "$(id -u):$(id -g)" -v "$PWD:/repo" \
+#   docker run --rm -p 127.0.0.1:8000:8000 -u "$(id -u):$(id -g)" -v "$PWD:/repo" \
 #       -v crossslice-cache:/cache crossslice explore      # http://127.0.0.1:8000/
 FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
