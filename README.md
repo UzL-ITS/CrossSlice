@@ -26,6 +26,9 @@ and every result behind the paper's numbers are in [`eval/`](eval/README.md).
 
 ![The explorer with the commit tab, the call graph and the detail panel of a function](docs/img/explorer.gif)
 
+A [demonstration video](https://youtu.be/rYU8xd6q0V8) explains the approach
+and shows the VS Code extension on a small example.
+
 ## How it works
 
 1. **Intra-procedural slice.** Both versions of a changed file are parsed with
@@ -44,10 +47,10 @@ and every result behind the paper's numbers are in [`eval/`](eval/README.md).
    the arguments and the return value of the call and summarized by the
    parameters they read and write; callers are found through the references
    Global reports.
-3. **Repository graph.** The explorer and the MCP server work on a SQLite
-   graph of functions, macros and call edges that grows by one ring per query,
-   lives in `~/.cache/crossslice/` and is updated incrementally by file
-   content hash.
+3. **Repository graph.** The code-context commands, the explorer and the MCP
+   server work on a SQLite graph of functions, macros and call edges that
+   grows by one ring per query, lives in `~/.cache/crossslice/` and is updated
+   incrementally by file content hash.
 
 ## Install
 
@@ -150,8 +153,11 @@ The extension in [vscode/](vscode/) shows the explorer in a panel, offers
 revision as a document. It starts the backend itself, with the local
 `crossslice` command or the Docker image.
 
-Building the extension needs Node.js 20 or newer, and it runs in VS Code 1.101
-or newer:
+The extension runs in VS Code 1.101 or newer. A packaged
+`crossslice-0.1.0.vsix` is attached to the
+[latest release](https://github.com/UzL-ITS/CrossSlice/releases/latest) and is
+installed with `code --install-extension crossslice-0.1.0.vsix`. Building it
+needs Node.js 20 or newer:
 
 ```bash
 cd vscode && npm install && npm run package      # crossslice-0.1.0.vsix
